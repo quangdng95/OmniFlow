@@ -1,0 +1,67 @@
+.omniflow-container {
+  width: 100%;
+  background: white;
+}
+
+.omniflow-header {
+  width: 100%;
+}
+
+.omniflow-header-inner {
+  width: min(94vw, 680px);
+  margin: 0 auto;
+  padding: 16px clamp(16px, 4vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.omniflow-nav {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.omniflow-content {
+  width: 100%;
+}
+
+.omniflow-content-inner {
+  width: min(94vw, 680px);
+  margin: 0 auto;
+  padding: clamp(16px, 4vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.omniflow-card {
+  padding: 16px;
+}
+
+.omniflow-video-info {
+  flex-direction: row;
+}
+
+.omniflow-thumb {
+  width: 163px;
+}
+
+@media (max-width: 480px) {
+  .omniflow-card {
+    padding: 12px;
+  }
+
+  .omniflow-video-info {
+    flex-direction: column;
+  }
+
+  .omniflow-thumb {
+    width: 100%;
+    aspect-ratio: 280 / 158;
+  }
+
+  .omniflow-heading-title {
+    font-size: 20px !important;
+    line-height: 28px !important;
+  }
+}

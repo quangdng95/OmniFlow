@@ -1,0 +1,17 @@
+# Web app (server.py, desktop_app.py) — primary entry points
+flask
+pywebview
+# Used in-process for both /api/check and /api/download (see server.py's
+# extract_video_info / build_download_options) - the vendored ./yt-dlp binary
+# is no longer used by any code path.
+yt-dlp
+
+# Legacy Tkinter desktop app (main.py, ui.py)
+# Currently broken — see MISTAKES.md / rules/known-issues.md — kept for reference only.
+customtkinter
+pillow
+requests
+cairosvg
+
+# Testing (tests/test_server.py)
+pytest

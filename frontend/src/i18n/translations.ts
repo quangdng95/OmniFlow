@@ -1,0 +1,336 @@
+export type Language = "en" | "vi";
+
+export interface Translations {
+  header: {
+    nav: { home: string; settings: string; terms: string };
+    home: { title: string; descriptionLine1: string; descriptionLine2: string };
+    settings: { title: string };
+    terms: { title: string };
+  };
+  footer: { by: string };
+  urlInput: {
+    label: string;
+    placeholder: string;
+    paste: string;
+    pasting: string;
+    checking: string;
+    clearUrl: string;
+  };
+  checkingStatus: { checkingLink: string; cancel: string };
+  videoInfo: { titleLabel: string; authorLabel: string; timeLabel: string };
+  qualityAction: {
+    videoQuality: string;
+    startDownload: string;
+    downloading: string;
+    downloadAgain: string;
+  };
+  downloadProgress: { cancelDownload: string };
+  downloadSuccess: { saved: string; openFolder: string; download: string };
+  home: {
+    introLines: string[];
+    howToHeading: string;
+    steps: { label: string; body: string }[];
+  };
+  downloadStatus: {
+    cancelled: string;
+    failedFallback: string;
+  };
+  settingsPage: {
+    targetPath: {
+      heading: string;
+      description: string;
+      browse: string;
+      rememberPath: string;
+    };
+    cookies: {
+      heading: string;
+      description: string;
+      browse: string;
+      noneSelected: string;
+      clear: string;
+      statusValid: string;
+      statusNoSession: string;
+    };
+    language: {
+      heading: string;
+      description: string;
+      english: string;
+      vietnamese: string;
+    };
+  };
+  terms: {
+    heading: string;
+    lastUpdatedLabel: string;
+    lastUpdatedValue: string;
+    intro: string;
+    sections: { heading: string; body: string; list?: string[]; trailing?: string }[];
+  };
+}
+
+const en: Translations = {
+  header: {
+    nav: { home: "Home", settings: "Settings", terms: "Terms of Use" },
+    home: {
+      title: "OmniFlow – All-in-One Video Downloader",
+      descriptionLine1: "Download videos and stories instantly with OmniFlow.",
+      descriptionLine2: "It's fast, free, and fully compatible with all your devices!",
+    },
+    settings: { title: "Settings" },
+    terms: { title: "Terms of Use" },
+  },
+  footer: { by: "By" },
+  urlInput: {
+    label: "Insert a video URL (Youtube/Tiktok/Insta/Facebook/Rednote)",
+    placeholder: "Copy and Paste your url",
+    paste: "Paste",
+    pasting: "Pasting…",
+    checking: "Checking",
+    clearUrl: "Clear URL",
+  },
+  checkingStatus: { checkingLink: "Checking Link…", cancel: "Cancel" },
+  videoInfo: { titleLabel: "Title:", authorLabel: "Author:", timeLabel: "Time:" },
+  qualityAction: {
+    videoQuality: "Video Quality:",
+    startDownload: "Start Download",
+    downloading: "Downloading",
+    downloadAgain: "Download Again",
+  },
+  downloadProgress: { cancelDownload: "Cancel Download" },
+  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", download: "Download" },
+  home: {
+    introLines: [
+      "OmniFlow allows you to easily download videos from YouTube, TikTok, Instagram, Facebook, or Rednote.",
+      "The service is completely free and requires no sign-up or additional software.",
+      "It's optimized to work seamlessly across all modern devices, from your computer to your phone.",
+      "Built entirely on our self-developed technology without third-party reliance, OmniFlow ensures lightning-fast processing and safe, verified downloads.",
+      "By using OmniFlow, you accept our Terms of Use.",
+    ],
+    howToHeading: "How to download a video:",
+    steps: [
+      {
+        label: "Copy the link:",
+        body: "Go to YouTube, TikTok, Instagram, Facebook, or Rednote and find the video you want. Copy the video URL from the app or your browser.",
+      },
+      {
+        label: "Paste & Choose Format:",
+        body: 'Paste the URL into the OmniFlow input box above. Choose whether you want MP4 (Video) or MP3 (Audio), and select your preferred quality.',
+      },
+      {
+        label: "Download:",
+        body: 'Click the "Convert" button. Once the fast processing is complete, hit "Download" to save the file straight to your device.',
+      },
+    ],
+  },
+  downloadStatus: {
+    cancelled: "Download cancelled",
+    failedFallback: "Download failed",
+  },
+  settingsPage: {
+    targetPath: {
+      heading: "Target Path",
+      description: "Here you can configure where the downloaded videos are to be saved.",
+      browse: "Browse…",
+      rememberPath: "Always save at the last used path.",
+    },
+    cookies: {
+      heading: "Instagram Cookies (optional)",
+      description:
+        'Most Instagram posts require a logged-in session to check or download. Log into instagram.com in your browser, export cookies for that tab as a cookies.txt file using an extension (e.g. "Get cookies.txt"), then select it below.',
+      browse: "Select File…",
+      noneSelected: "No cookies file selected",
+      clear: "Remove",
+      statusValid: "Instagram session cookie found.",
+      statusNoSession: "This file doesn't look like it has an Instagram session — make sure you were logged into instagram.com when you exported it.",
+    },
+    language: {
+      heading: "Language",
+      description: "Choose the display language for the app.",
+      english: "English",
+      vietnamese: "Vietnamese",
+    },
+  },
+  terms: {
+    heading: "Terms of Use for OmniFlow",
+    lastUpdatedLabel: "Last Updated:",
+    lastUpdatedValue: "27-02-2026",
+    intro:
+      "By accessing or using OmniFlow, you agree to be bound by these Terms of Use. If you do not agree with any part of these terms, please stop using our service immediately.",
+    sections: [
+      {
+        heading: "1. Our Service",
+        body: "OmniFlow is a free, general-purpose utility tool designed to help users download video and audio content from third-party platforms, including YouTube, TikTok, Instagram, Facebook, and Rednote.",
+      },
+      {
+        heading: "2. Personal & Non-Commercial Use",
+        body: "We grant you a limited, non-exclusive right to use OmniFlow strictly for your personal, non-commercial purposes. You agree not to use our service to license, sell, distribute, or commercially exploit any downloaded content.",
+      },
+      {
+        heading: "3. Copyright & User Responsibility",
+        body: "OmniFlow acts only as a technical conduit. We do not host, store, or own any of the media content downloaded through our service.",
+        list: [
+          "Your Responsibility: You are solely responsible for the media you download. You must ensure you have the legal right, explicit permission, or fair-use justification from the rightful copyright owner to download and use the content.",
+          "No Infringement: OmniFlow does not encourage, condone, or support the unauthorized downloading or distribution of copyrighted material.",
+        ],
+      },
+      {
+        heading: "4. Acceptable Conduct",
+        body: "To keep OmniFlow running smoothly for everyone, you agree NOT to:",
+        list: [
+          "Use any automated scripts, bots, crawlers, or data mining tools on our website.",
+          "Take any action that imposes an unreasonable load on our server infrastructure.",
+          "Interfere with the security features of the website.",
+          "Use the service for any illegal or unlawful purpose.",
+        ],
+        trailing:
+          "We reserve the right to block IP addresses or terminate access for anyone violating these rules, without prior notice.",
+      },
+      {
+        heading: "5. Disclaimer of Warranties",
+        body: 'OmniFlow is provided on an "AS-IS" and "AS-AVAILABLE" basis. While we strive for the best experience, we do not guarantee that the service will be entirely error-free, perfectly secure, or uninterrupted, especially since third-party platforms constantly update their systems.',
+      },
+      {
+        heading: "6. Limitation of Liability",
+        body: "To the maximum extent permitted by law, OmniFlow and its team shall not be held liable for any direct, indirect, incidental, or consequential damages resulting from your use of the website, including but not limited to data loss, device issues, or legal claims from third parties regarding the content you download.",
+      },
+      {
+        heading: "7. Changes to These Terms",
+        body: "We reserve the right to modify these Terms at any time. Your continued use of OmniFlow after any changes indicates your acceptance of the updated terms.",
+      },
+    ],
+  },
+};
+
+const vi: Translations = {
+  header: {
+    nav: { home: "Trang chủ", settings: "Cài đặt", terms: "Điều khoản sử dụng" },
+    home: {
+      title: "OmniFlow – Tải video từ mọi nền tảng",
+      descriptionLine1: "Tải video và story ngay lập tức với OmniFlow.",
+      descriptionLine2: "Nhanh, miễn phí và tương thích với mọi thiết bị của bạn!",
+    },
+    settings: { title: "Cài đặt" },
+    terms: { title: "Điều khoản sử dụng" },
+  },
+  footer: { by: "Bởi" },
+  urlInput: {
+    label: "Nhập đường dẫn video (Youtube/Tiktok/Insta/Facebook/Rednote)",
+    placeholder: "Sao chép và dán đường dẫn của bạn",
+    paste: "Dán",
+    pasting: "Đang dán…",
+    checking: "Đang kiểm tra",
+    clearUrl: "Xoá đường dẫn",
+  },
+  checkingStatus: { checkingLink: "Đang kiểm tra đường dẫn…", cancel: "Huỷ" },
+  videoInfo: { titleLabel: "Tiêu đề:", authorLabel: "Tác giả:", timeLabel: "Thời lượng:" },
+  qualityAction: {
+    videoQuality: "Chất lượng video:",
+    startDownload: "Bắt đầu tải xuống",
+    downloading: "Đang tải xuống",
+    downloadAgain: "Tải lại",
+  },
+  downloadProgress: { cancelDownload: "Huỷ tải xuống" },
+  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", download: "Tải xuống" },
+  home: {
+    introLines: [
+      "OmniFlow giúp bạn dễ dàng tải video từ YouTube, TikTok, Instagram, Facebook hoặc Rednote.",
+      "Dịch vụ hoàn toàn miễn phí và không yêu cầu đăng ký hay cài thêm phần mềm nào khác.",
+      "Được tối ưu để hoạt động mượt mà trên mọi thiết bị hiện đại, từ máy tính đến điện thoại.",
+      "Được xây dựng hoàn toàn trên công nghệ tự phát triển, không phụ thuộc bên thứ ba, OmniFlow đảm bảo xử lý cực nhanh và tải xuống an toàn, đã được xác minh.",
+      "Bằng việc sử dụng OmniFlow, bạn đồng ý với Điều khoản sử dụng của chúng tôi.",
+    ],
+    howToHeading: "Cách tải một video:",
+    steps: [
+      {
+        label: "Sao chép đường dẫn:",
+        body: "Vào YouTube, TikTok, Instagram, Facebook hoặc Rednote và tìm video bạn muốn. Sao chép đường dẫn video từ ứng dụng hoặc trình duyệt.",
+      },
+      {
+        label: "Dán & Chọn định dạng:",
+        body: "Dán đường dẫn vào ô nhập của OmniFlow ở trên. Chọn MP4 (Video) hoặc MP3 (Âm thanh), và chọn chất lượng bạn muốn.",
+      },
+      {
+        label: "Tải xuống:",
+        body: 'Nhấn nút "Bắt đầu tải xuống". Sau khi xử lý xong, tệp sẽ được lưu thẳng vào thiết bị của bạn.',
+      },
+    ],
+  },
+  downloadStatus: {
+    cancelled: "Đã huỷ tải xuống",
+    failedFallback: "Tải xuống thất bại",
+  },
+  settingsPage: {
+    targetPath: {
+      heading: "Thư mục lưu",
+      description: "Tại đây bạn có thể cấu hình nơi lưu các video đã tải xuống.",
+      browse: "Chọn thư mục…",
+      rememberPath: "Luôn lưu vào thư mục đã dùng gần nhất.",
+    },
+    cookies: {
+      heading: "Cookies Instagram (tuỳ chọn)",
+      description:
+        'Hầu hết bài viết Instagram yêu cầu đăng nhập mới có thể kiểm tra hoặc tải xuống. Hãy đăng nhập instagram.com trên trình duyệt, xuất cookies của tab đó thành file cookies.txt bằng một tiện ích (ví dụ "Get cookies.txt"), sau đó chọn file đó bên dưới.',
+      browse: "Chọn file…",
+      noneSelected: "Chưa chọn file cookies",
+      clear: "Xoá",
+      statusValid: "Đã tìm thấy session cookie của Instagram.",
+      statusNoSession: "File này có vẻ không chứa session Instagram — hãy chắc chắn bạn đã đăng nhập instagram.com khi xuất file.",
+    },
+    language: {
+      heading: "Ngôn ngữ",
+      description: "Chọn ngôn ngữ hiển thị cho ứng dụng.",
+      english: "Tiếng Anh",
+      vietnamese: "Tiếng Việt",
+    },
+  },
+  terms: {
+    heading: "Điều khoản sử dụng OmniFlow",
+    lastUpdatedLabel: "Cập nhật lần cuối:",
+    lastUpdatedValue: "27-02-2026",
+    intro:
+      "Khi truy cập hoặc sử dụng OmniFlow, bạn đồng ý tuân theo các Điều khoản sử dụng này. Nếu bạn không đồng ý với bất kỳ phần nào trong các điều khoản này, vui lòng ngừng sử dụng dịch vụ của chúng tôi ngay lập tức.",
+    sections: [
+      {
+        heading: "1. Dịch vụ của chúng tôi",
+        body: "OmniFlow là một công cụ tiện ích miễn phí, đa năng, được thiết kế để giúp người dùng tải video và âm thanh từ các nền tảng bên thứ ba, bao gồm YouTube, TikTok, Instagram, Facebook và Rednote.",
+      },
+      {
+        heading: "2. Sử dụng cá nhân & phi thương mại",
+        body: "Chúng tôi cấp cho bạn quyền hạn chế, không độc quyền để sử dụng OmniFlow chỉ cho mục đích cá nhân, phi thương mại. Bạn đồng ý không sử dụng dịch vụ của chúng tôi để cấp phép, bán, phân phối hoặc khai thác thương mại bất kỳ nội dung nào đã tải xuống.",
+      },
+      {
+        heading: "3. Bản quyền & Trách nhiệm của người dùng",
+        body: "OmniFlow chỉ đóng vai trò là công cụ kỹ thuật trung gian. Chúng tôi không lưu trữ, sở hữu bất kỳ nội dung media nào được tải xuống thông qua dịch vụ của chúng tôi.",
+        list: [
+          "Trách nhiệm của bạn: Bạn hoàn toàn chịu trách nhiệm về nội dung mình tải xuống. Bạn phải đảm bảo có quyền hợp pháp, được cho phép rõ ràng, hoặc có căn cứ sử dụng hợp lý từ chủ sở hữu bản quyền hợp pháp để tải xuống và sử dụng nội dung đó.",
+          "Không vi phạm: OmniFlow không khuyến khích, dung túng hay hỗ trợ việc tải xuống hoặc phân phối trái phép nội dung có bản quyền.",
+        ],
+      },
+      {
+        heading: "4. Hành vi được chấp nhận",
+        body: "Để OmniFlow vận hành trơn tru cho mọi người, bạn đồng ý KHÔNG:",
+        list: [
+          "Sử dụng bất kỳ script tự động, bot, crawler hoặc công cụ khai thác dữ liệu nào trên website của chúng tôi.",
+          "Thực hiện bất kỳ hành động nào gây tải trọng bất hợp lý lên hạ tầng máy chủ của chúng tôi.",
+          "Can thiệp vào các tính năng bảo mật của website.",
+          "Sử dụng dịch vụ cho bất kỳ mục đích bất hợp pháp hoặc trái luật nào.",
+        ],
+        trailing:
+          "Chúng tôi có quyền chặn địa chỉ IP hoặc chấm dứt quyền truy cập đối với bất kỳ ai vi phạm các quy tắc này mà không cần báo trước.",
+      },
+      {
+        heading: "5. Từ chối bảo đảm",
+        body: 'OmniFlow được cung cấp trên cơ sở "NGUYÊN TRẠNG" và "TUỲ THEO SẴN CÓ". Mặc dù chúng tôi luôn cố gắng mang lại trải nghiệm tốt nhất, chúng tôi không đảm bảo dịch vụ sẽ hoàn toàn không có lỗi, an toàn tuyệt đối hoặc không bị gián đoạn, đặc biệt khi các nền tảng bên thứ ba liên tục thay đổi hệ thống của họ.',
+      },
+      {
+        heading: "6. Giới hạn trách nhiệm pháp lý",
+        body: "Trong phạm vi tối đa được pháp luật cho phép, OmniFlow và đội ngũ của chúng tôi sẽ không chịu trách nhiệm cho bất kỳ thiệt hại trực tiếp, gián tiếp, ngẫu nhiên hay hệ quả nào phát sinh từ việc bạn sử dụng website, bao gồm nhưng không giới hạn ở mất dữ liệu, hư hỏng thiết bị, hoặc khiếu nại pháp lý từ bên thứ ba liên quan đến nội dung bạn tải xuống.",
+      },
+      {
+        heading: "7. Thay đổi điều khoản",
+        body: "Chúng tôi có quyền chỉnh sửa các Điều khoản này bất kỳ lúc nào. Việc bạn tiếp tục sử dụng OmniFlow sau khi có thay đổi đồng nghĩa với việc bạn chấp nhận các điều khoản đã cập nhật.",
+      },
+    ],
+  },
+};
+
+export const translations: Record<Language, Translations> = { en, vi };
