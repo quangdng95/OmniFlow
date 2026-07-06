@@ -5,7 +5,7 @@ import yt_dlp
 import instaloader
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, config, cookies, instagram, jobs, paths
+from backend import classify, config, cookies, download, extraction, instagram, jobs, paths
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
@@ -29,40 +29,6 @@ def is_local_request():
     else:
         hostname = host.split(":")[0]
     return hostname in LOCAL_HOSTNAMES
-
-
-def sanitize_filename(name):
-    return re.sub(r'[\\/*?:"<>|]', "", name).strip()
-
-
-def get_unique_filename(directory, filename, extension):
-    base_name = sanitize_filename(filename)
-    full_path = os.path.join(directory, f"{base_name}.{extension}")
-    counter = 1
-    while os.path.exists(full_path):
-        full_path = os.path.join(directory, f"{base_name} ({counter}).{extension}")
-        counter += 1
-    return full_path
-
-
-def resolve_thumbnail(info):
-    # Some extractors (e.g. RedNote/Xiaohongshu) only populate the plural
-    # "thumbnails" list and rely on a later processing step - which doesn't
-    # always run in --simulate/skip_download mode - to fill in the singular
-    # "thumbnail" field. Fall back to the list directly instead of showing no
-    # thumbnail at all when that field is missing.
-    thumbnail = info.get("thumbnail")
-    if thumbnail:
-        return thumbnail
-    thumbnails = info.get("thumbnails") or []
-    if thumbnails:
-        # yt-dlp orders thumbnails worst-to-best by convention
-        return thumbnails[-1].get("url")
-    return None
-
-
-def combined_download_percent(stream_index, raw_percent, total_streams):
-    return min(100.0, (stream_index * 100 + raw_percent) / total_streams)
 
 
 @app.get("/")
@@ -148,275 +114,7 @@ def browse_file():
     return jsonify({"path": path, "cookies_status": config.cookies_status_for(path)})
 
 
-def extract_video_info(cls):
-    # `cls` is a classify.Classification - what the link IS was already decided
-    # by classify.classify_url() (owner core capability #4); this function only
-    # executes the extraction that classification dictates. It never re-derives
-    # platform/kind from the URL string.
-    url = cls.extraction_url
-    if cls.kind == classify.LinkKind.INSTAGRAM_PROFILE:
-        # Use our Custom Instagram Profile/Reels Resolver to bypass Meta blocks
-        username = cls.username
-        if not username:
-            raise Exception("Cannot extract Instagram username from URL")
-            
-        cookies_path = config.get_cookies_path()
-        auto_cookiefile = None
-        # Fall back to auto browser cookies extraction if manual cookies settings not valid/empty
-        if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
-            candidates = cookies.instagram_cookiefile_candidates()
-            if candidates:
-                auto_cookiefile = candidates[0]
-                cookies._cleanup_temp_cookiefiles(candidates[1:])
-                cookies_path = auto_cookiefile
-                
-        try:
-            print(f"[debug] Resolving Instagram profile for username: {username} using cookies: {cookies_path}", flush=True)
-            entries = []
-            try:
-                # Primary method: instaloader
-                entries = instagram.fetch_instagram_profile_instaloader(username, cookies_path)
-            except Exception as e_insta:
-                print(f"[debug] Instaloader profile fetch failed: {e_insta}. Trying Web Profile API fallback...", flush=True)
-                data = None
-                try:
-                    data = instagram.fetch_instagram_profile_info(username, cookies_path)
-                except Exception as e1:
-                    print(f"[debug] fetch_instagram_profile_info failed: {e1}. Trying Graph API fallback...", flush=True)
-                    try:
-                        data = instagram.fetch_instagram_profile_info_fallback(username, cookies_path)
-                    except Exception as e2:
-                        print(f"[debug] Instagram fallback profile fetch also failed: {e2}", flush=True)
-                        raise Exception(f"Failed to fetch Instagram profile: {e_insta} / {e1} / {e2}")
-                entries = instagram.parse_instagram_profile_json(data, username)
-            
-            # Format as playlist/entries
-            return {
-                "_type": "playlist",
-                "title": f"Instagram: {username}",
-                "uploader": username,
-                "entries": entries,
-                "thumbnail": entries[0].get("thumbnail") if entries else None,
-            }
-        finally:
-            if auto_cookiefile:
-                cookies._cleanup_temp_cookiefiles([auto_cookiefile])
-
-    # Runs in-process via the yt-dlp Python package instead of spawning the
-    # vendored PyInstaller-frozen ./yt-dlp binary: that binary self-extracts
-    # its bundled Python runtime into a temp dir on every single invocation,
-    # which measured 12+ seconds of pure startup overhead before it even
-    # begins extracting - the actual network extraction only takes ~1-2s.
-    # Calling the library directly skips that overhead entirely.
-    ydl_opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "simulate": True,
-        "skip_download": True,
-        "socket_timeout": 30,
-    }
-    if cls.is_multi:
-        # Flat extraction: list each entry's id/title/url/duration/thumbnail
-        # WITHOUT fetching every video's full metadata - a channel with thousands
-        # of videos would otherwise hang the app. playlistend caps the count as a
-        # second guard on top of the flat (metadata-free) listing; the classifier
-        # already picked the cap (50 for an endless Mix, 200 otherwise).
-        ydl_opts["noplaylist"] = False
-        ydl_opts["extract_flat"] = "in_playlist"
-        ydl_opts["playlistend"] = cls.playlist_cap or classify.PLAYLIST_ITEM_CAP
-    else:
-        ydl_opts["noplaylist"] = True
-
-    cookies_path = config.get_cookies_path()
-    auto_cookiefile = None
-
-    if "instagram" in url.lower():
-        # Inject modern browser user-agent and referer headers to bypass block/rate-limits
-        ydl_opts["http_headers"] = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://www.instagram.com/",
-        }
-        # Fall back to auto browser cookies extraction if manual cookies settings not valid/empty
-        if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
-            candidates = cookies.instagram_cookiefile_candidates()
-            if candidates:
-                auto_cookiefile = candidates[0]
-                # Cleanup candidates list we won't use
-                cookies._cleanup_temp_cookiefiles(candidates[1:])
-                cookies_path = auto_cookiefile
-
-    if cookies_path:
-        ydl_opts["cookiefile"] = cookies_path
-
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            return ydl.extract_info(url, download=False)
-    except Exception as e:
-        print(f"[debug] Instagram check failed for {url}. Error: {e}", flush=True)
-        raise
-    finally:
-        if auto_cookiefile:
-            cookies._cleanup_temp_cookiefiles([auto_cookiefile])
-
-
-def describe_extraction_error(url, error, cookies_path=None):
-    message = str(error)
-    lower = message.lower()
-    
-    # Instagram profile / user failures
-    is_ig_profile = classify.is_instagram_profile_url(url)
-    if is_ig_profile or "instagram:user" in lower or "instagram:profile" in lower or ("unable to extract data" in lower and "instagram" in url.lower()):
-        return "❌ Lỗi: Không thể lấy danh sách từ tài khoản Instagram này do giới hạn bảo mật. Vui lòng tải từng bài viết (Post/Reel) hoặc kiểm tra lại Cookies trong Settings."
-
-    # Instagram, TikTok, Facebook private/login required errors
-    is_private_or_login = (
-        "login" in lower or 
-        "cookie" in lower or 
-        "confirm your identity" in lower or 
-        "requires logged-in session" in lower or 
-        "private video" in lower or 
-        "private account" in lower or 
-        "only available for registered users" in lower or 
-        "empty media response" in lower or
-        "302" in lower or
-        "400" in lower or
-        "redirect" in lower
-    )
-    is_major_platform = any(p in url.lower() for p in ("instagram", "tiktok", "facebook", "fb.watch", "fb.com"))
-    
-    if is_major_platform and is_private_or_login:
-        return "❌ Lỗi: Không thể tải video từ tài khoản Private (Kín). OmniFlow hiện tại chỉ hỗ trợ tải nội dung Public (Công khai)."
-
-    # General cleanup: hide traceback or github links
-    if "unable to extract data" in lower or "traceback" in lower or "report this issue" in lower or "github.com" in lower:
-        return "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung."
-        
-    message = message.removeprefix("ERROR: ")
-    first_sentence = message.split(". ")[0].strip()
-    if "github" in first_sentence.lower() or "report this issue" in first_sentence.lower():
-        return "❌ Lỗi: Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau."
-        
-    return first_sentence or "Invalid link or private video"
-
-
 INSTAGRAM_LOCAL_ONLY_ERROR = "Instagram downloads are only available when running OmniFlow locally on your own machine."
-
-def download_direct_url(cdn_url, output_path, job_id, chunk_size=131072, on_progress=None):
-    # Streams a resolved Instagram CDN url (image or video) to disk, driving the
-    # same jobs-dict progress model and honoring the same cooperative cancel
-    # flag as the yt-dlp path. Instagram CDN urls are pre-signed, so only a
-    # browser-like User-Agent is needed (no cookies). When on_progress is given
-    # (batch mode) it reports this item's own 0-100 percent instead of writing
-    # the shared job percent/text, so per-item bars stay independent.
-    req = urllib.request.Request(cdn_url, headers={"User-Agent": instagram.INSTAGRAM_UA})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        raw_total = resp.headers.get("Content-Length")
-        total = int(raw_total) if raw_total and raw_total.isdigit() else 0
-        downloaded = 0
-        with open(output_path, "wb") as out:
-            while True:
-                if jobs.jobs[job_id]["cancelled"]:
-                    raise yt_dlp.utils.DownloadCancelled("cancelled by user")
-                chunk = resp.read(chunk_size)
-                if not chunk:
-                    break
-                out.write(chunk)
-                downloaded += len(chunk)
-                if total:
-                    percent = min(100.0, downloaded / total * 100)
-                    if on_progress:
-                        on_progress(percent)
-                    else:
-                        jobs.jobs[job_id]["percent"] = percent
-                        jobs.jobs[job_id]["text"] = f"Downloading... ({percent:.1f}%)"
-                elif not on_progress:
-                    jobs.jobs[job_id]["text"] = "Downloading..."
-
-
-# ---------------------------------------------------------------------------
-
-
-def qualities_for(info):
-    res_set = set()
-    for f in info.get("formats", []):
-        h = f.get("height")
-        if h and isinstance(h, int) and h >= 360:
-            res_set.add(h)
-    qualities = [f"{h}p" for h in sorted(res_set, reverse=True)]
-    qualities.append("Best")
-    qualities.append("Audio Only")
-    return qualities
-
-
-def format_duration(duration):
-    if not isinstance(duration, (int, float)):
-        return None
-    minutes, seconds = divmod(int(duration), 60)
-    return f"{minutes:02d}:{seconds:02d}"
-
-
-def flat_playlist_items(entries):
-    # Shape flat-extraction entries (YouTube playlist/channel, Instagram profile)
-    # into /api/check playlist items. The 1-based `position` is the video's TRUE
-    # spot in the list (kept even for hidden/removed videos) and is used for UI
-    # numbering ONLY - PRD §7: the number must never touch the physical filename,
-    # so `title` stays the raw video title (the batch download builds the saved
-    # file from it). A 1-item "playlist" gets position None - the frontend
-    # renders it as a plain single video.
-    number_items = len(entries) > 1
-    items = []
-    for pos, entry in enumerate(entries, start=1):
-        item_url = entry.get("url") or entry.get("webpage_url")
-        if not item_url and entry.get("id"):
-            item_url = f"https://www.youtube.com/watch?v={entry['id']}"
-        raw_title = entry.get("title") or "Video"
-        duration = entry.get("duration")
-        # A playlist routinely contains hidden/removed videos. yt-dlp lists
-        # them with a "[Private video]"/"[Deleted video]" title and no
-        # duration - flag those so the UI can disable/hide them and never
-        # let a batch queue a doomed download. Keep them in the list (not
-        # dropped) so the numbering stays true to the real playlist.
-        lower = raw_title.lower()
-        is_available = not (
-            "[private video]" in lower
-            or "[deleted video]" in lower
-            or "[unavailable video]" in lower
-            or duration is None
-            or not item_url
-        )
-        items.append({
-            "id": entry.get("id"),
-            "title": raw_title,
-            "position": pos if number_items else None,
-            "uploader": entry.get("uploader") or entry.get("channel") or "",
-            "thumbnail": resolve_thumbnail(entry),
-            "duration": format_duration(duration),
-            "url": item_url,
-            "qualities": classify.PLAYLIST_QUALITIES,
-            "is_available": is_available,
-        })
-    return items
-
-
-def story_playlist_items(entries):
-    # Shape a full (non-flat) yt-dlp playlist - an Instagram Story - into
-    # /api/check playlist items: keep only the actual videos (photo entries
-    # carry no formats) but remember each one's ORIGINAL 1-based position so
-    # download targets the right entry even after photos are filtered out.
-    items = []
-    for original_index, entry in enumerate(entries, start=1):
-        if not entry.get("formats"):
-            continue
-        items.append({
-            "id": entry.get("id"),
-            "title": entry.get("title") or "Video",
-            "thumbnail": resolve_thumbnail(entry),
-            "duration": format_duration(entry.get("duration")),
-            "entry_index": original_index,
-            "qualities": qualities_for(entry),
-        })
-    return items
-
 
 @app.post("/api/check")
 def check_link():
@@ -454,9 +152,9 @@ def check_link():
                 cookies._cleanup_temp_cookiefiles(candidates)
 
     try:
-        info = extract_video_info(cls)
+        info = extraction.extract_video_info(cls)
     except yt_dlp.utils.DownloadError as e:
-        return jsonify({"error": describe_extraction_error(url, e, config.get_cookies_path())}), 400
+        return jsonify({"error": extraction.describe_extraction_error(url, e, config.get_cookies_path())}), 400
     except Exception:
         return jsonify({"error": "Invalid link or private video"}), 400
 
@@ -474,7 +172,7 @@ def check_link():
     if info.get("_type") == "playlist" or "entries" in info:
         entries = [e for e in (info.get("entries") or []) if e]
         is_flat = cls.is_multi
-        items = flat_playlist_items(entries) if is_flat else story_playlist_items(entries)
+        items = extraction.flat_playlist_items(entries) if is_flat else extraction.story_playlist_items(entries)
         return jsonify({
             "type": "playlist",
             "platform": cls.platform,
@@ -487,239 +185,11 @@ def check_link():
         "type": "video",
         "title": info.get("title", "Video"),
         "uploader": info.get("uploader", ""),
-        "thumbnail": resolve_thumbnail(info),
+        "thumbnail": extraction.resolve_thumbnail(info),
         "platform": cls.platform,
-        "qualities": qualities_for(info),
-        "duration": format_duration(info.get("duration")),
+        "qualities": extraction.qualities_for(info),
+        "duration": extraction.format_duration(info.get("duration")),
     })
-
-
-def build_download_options(
-    quality, output_path_no_ext, ffmpeg_bin, progress_hooks, postprocessor_hooks, cookies_path=None, entry_index=None, url=None
-):
-    opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "noprogress": True,
-        "outtmpl": output_path_no_ext + ".%(ext)s",
-        "ffmpeg_location": ffmpeg_bin,
-        "progress_hooks": progress_hooks,
-        "postprocessor_hooks": postprocessor_hooks,
-        # Network resilience: auto-retry a flaky connection / dropped fragment
-        # instead of failing the whole item on a transient blip - important for a
-        # long playlist where one hiccup shouldn't kill an item.
-        "socket_timeout": 30,
-        "retries": 5,
-        "fragment_retries": 5,
-        # Speed: pull 10 fragments of a stream in parallel (PRD §7). Applies to
-        # both the single-video route and each item of a batch.
-        "concurrent_fragment_downloads": 10,
-        # Never keep the separate pre-merge video/audio files (the .f137/.f140
-        # leftovers) - yt-dlp deletes them after a successful merge when this is
-        # False (the default, pinned explicitly here so it can't drift).
-        "keepvideo": False,
-    }
-    if entry_index:
-        # The URL resolves to a playlist (an Instagram Story, or a multi-video
-        # carousel post) and the caller picked one specific item. Without
-        # this, yt-dlp downloads every entry into the same fixed outtmpl,
-        # each one silently overwriting the last.
-        opts["noplaylist"] = False
-        opts["playlist_items"] = str(entry_index)
-    else:
-        opts["noplaylist"] = True
-        
-    is_ig = url and "instagram" in url.lower()
-    if is_ig:
-        opts["http_headers"] = {"User-Agent": instagram.INSTAGRAM_UA}
-    if cookies_path:
-        opts["cookiefile"] = cookies_path
-            
-    if "Audio" in quality:
-        opts["format"] = "bestaudio/best"
-        opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}]
-    else:
-        h = quality.replace("p", "").replace("Best", "2160")
-        # Strongly prefer H.264 (avc1) video + AAC (m4a) audio. macOS (Finder
-        # QuickLook / QuickTime) cannot decode VP9 or AV1 inside an .mp4 - such a
-        # file opens as a black/white screen even though the download "succeeded".
-        # yt-dlp will otherwise happily hand back VP9 for anything YouTube serves
-        # above 1080p. This format ladder tries h264 first at every step, relaxing
-        # one constraint per fallback so a download never fails outright; anything
-        # that STILL slips through as VP9/AV1 (e.g. a 4K source with no h264 track)
-        # is caught afterward by the ensure_h264() re-encode safety net in run().
-        opts["format"] = (
-            f"bestvideo[vcodec^=avc1][height<={h}]+bestaudio[ext=m4a]/"
-            f"bestvideo[vcodec^=avc1][height<={h}]+bestaudio/"
-            f"best[vcodec^=avc1][height<={h}]/"
-            f"bestvideo[height<={h}]+bestaudio/best[height<={h}]/best"
-        )
-        opts["format_sort"] = ["vcodec:h264", "res", "acodec:m4a"]
-        # PRD §7: merge straight into an mp4 container. Because the selector above
-        # already lands H.264 video + m4a audio in the common case, both the merge
-        # and the FFmpegVideoRemuxer are a fast stream-COPY (`-c copy`) - NO
-        # re-encode, which is what was making "combine" slow before. The remuxer
-        # also normalizes any single-file (non-merged) result to .mp4 so the saved
-        # extension is predictable. The rare VP9/AV1 straggler that a copy can't
-        # make macOS-playable is caught afterward by ensure_h264() in run().
-        opts["merge_output_format"] = "mp4"
-        opts["postprocessors"] = [{"key": "FFmpegVideoRemuxer", "preferedformat": "mp4"}]
-    return opts
-
-
-# Video codecs macOS' native stack (Finder QuickLook / QuickTime) can't play
-# when muxed into an .mp4 - the download looks fine but the file is unwatchable.
-MACOS_INCOMPATIBLE_VCODECS = ("vp9", "vp09", "vp8", "av01", "av1")
-
-
-def detect_video_codec(path, ffmpeg_bin):
-    # Returns the video stream's codec name (lowercased) for `path`, or None if
-    # it can't be determined. Uses the bundled ffmpeg itself (`-i` prints stream
-    # info to stderr) so we never depend on a separate ffprobe binary being
-    # present - only ./ffmpeg is vendored.
-    try:
-        result = subprocess.run(
-            [ffmpeg_bin, "-hide_banner", "-i", path],
-            capture_output=True, text=True, timeout=60,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    for line in result.stderr.splitlines():
-        if "Video:" in line:
-            m = re.search(r"Video:\s*([A-Za-z0-9_]+)", line)
-            if m:
-                return m.group(1).lower()
-    return None
-
-
-def ensure_h264(path, ffmpeg_bin, job_id):
-    # Guarantees the finished video is macOS-playable H.264. When the format
-    # selector already landed h264 (the common case) this only probes and
-    # returns - no re-encode. It re-encodes ONLY when the file positively
-    # carries a known-incompatible codec (VP9/AV1), which the h264-preferring
-    # selector should make rare (e.g. a 4K-only-in-VP9 source). Honors the same
-    # cooperative cancel flag as the rest of the download.
-    codec = detect_video_codec(path, ffmpeg_bin)
-    if not codec or not any(codec.startswith(bad) for bad in MACOS_INCOMPATIBLE_VCODECS):
-        return
-    jobs.jobs[job_id]["text"] = "Converting to H.264 for macOS..."
-    tmp_out = path + ".h264.mp4"
-    cmd = [
-        ffmpeg_bin, "-y", "-i", path,
-        # yuv420p 8-bit is the profile QuickTime actually decodes - some VP9/AV1
-        # sources are 10-bit (yuv420p10le), which would stay unplayable if copied
-        # through, so pin it explicitly.
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-b:a", "192k",
-        "-movflags", "+faststart", tmp_out,
-    ]
-    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    while proc.poll() is None:
-        if jobs.jobs[job_id]["cancelled"]:
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-            if os.path.exists(tmp_out):
-                try:
-                    os.remove(tmp_out)
-                except OSError:
-                    pass
-            raise yt_dlp.utils.DownloadCancelled("cancelled by user")
-        time.sleep(0.3)
-    if proc.returncode == 0 and os.path.exists(tmp_out):
-        os.replace(tmp_out, path)
-    elif os.path.exists(tmp_out):
-        # Re-encode failed - keep the original (still-playable-elsewhere) file
-        # rather than leaving a truncated temp output behind.
-        try:
-            os.remove(tmp_out)
-        except OSError:
-            pass
-
-
-def apply_progress_update(job, progress_dict, stream_index, total_streams):
-    # Video downloads merge two separate yt-dlp streams (video then audio), each
-    # reporting its own independent 0-100% sequence - naively showing that raw
-    # number makes the progress bar visibly jump backwards when the second
-    # stream starts. Split the displayed percent into one slice per expected
-    # stream so it only ever moves forward. Our own format selector always
-    # requests a video+audio pair (falling back to a single combined format
-    # only if that pair isn't available), so 2 is the correct expectation for
-    # non-audio jobs.
-    status = progress_dict.get("status")
-    if status == "downloading":
-        total = progress_dict.get("total_bytes") or progress_dict.get("total_bytes_estimate")
-        downloaded = progress_dict.get("downloaded_bytes") or 0
-        if total:
-            raw_percent = downloaded / total * 100
-            combined = combined_download_percent(stream_index, raw_percent, total_streams)
-            job["percent"] = combined
-            job["text"] = f"Downloading... ({combined:.1f}%)"
-    elif status == "finished":
-        stream_index = min(stream_index + 1, total_streams - 1)
-    return stream_index
-
-
-def cleanup_partial_download(output_path_no_ext):
-    directory = os.path.dirname(output_path_no_ext) or "."
-    prefix = os.path.basename(output_path_no_ext)
-    try:
-        for name in os.listdir(directory):
-            if name.startswith(prefix):
-                try:
-                    os.remove(os.path.join(directory, name))
-                except OSError:
-                    pass
-    except OSError:
-        pass
-
-
-def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
-    # Download a single video URL into save_dir via yt-dlp and return the saved
-    # path. Used by the batch runner - the single-video /api/download route keeps
-    # its own copy so this can't destabilize that tested path. Honors
-    # jobs.jobs[job_id]['cancelled'] (raising DownloadCancelled), applies the H.264
-    # safety net, and reports THIS item's own 0-100 percent via on_progress(pct)
-    # so the caller can fold it into an overall bar. Raises yt-dlp errors to the
-    # caller so the batch loop can record/skip a failed item and keep going.
-    ext = "mp3" if "Audio" in quality else "mp4"
-    final_output_path = get_unique_filename(save_dir, title, ext)
-    output_path_no_ext = os.path.splitext(final_output_path)[0]
-    total_streams = 1 if "Audio" in quality else 2
-    state = {"stream_index": 0, "scratch": {}}
-
-    def progress_hook(d):
-        if jobs.jobs[job_id]["cancelled"]:
-            raise yt_dlp.utils.DownloadCancelled("cancelled by user")
-        state["stream_index"] = apply_progress_update(state["scratch"], d, state["stream_index"], total_streams)
-        if on_progress and "percent" in state["scratch"]:
-            on_progress(state["scratch"]["percent"])
-
-    def postprocessor_hook(d):
-        if jobs.jobs[job_id]["cancelled"]:
-            raise yt_dlp.utils.DownloadCancelled("cancelled by user")
-
-    cookies_path = config.get_cookies_path()
-    if url and "instagram" in url.lower():
-        if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
-            candidates = cookies.instagram_cookiefile_candidates()
-            if candidates:
-                cookies_path = candidates[0]
-                cookies._cleanup_temp_cookiefiles(candidates[1:])
-
-    ydl_opts = build_download_options(
-        quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookies_path, entry_index, url
-    )
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-        if "Audio" not in quality:
-            ensure_h264(final_output_path, ffmpeg_bin, job_id)
-    finally:
-        cookies._cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
-    return final_output_path
 
 
 @app.post("/api/download")
@@ -780,10 +250,10 @@ def start_download():
                 if not cdn_url:
                     raise ValueError("No downloadable media found")
                 ext = "jpg" if item["kind"] == "image" else "mp4"
-                final_output_path = get_unique_filename(save_dir, title, ext)
+                final_output_path = download.get_unique_filename(save_dir, title, ext)
                 jobs.jobs[job_id]["filename"] = os.path.basename(final_output_path)
                 jobs.jobs[job_id]["filepath"] = final_output_path
-                download_direct_url(cdn_url, final_output_path, job_id)
+                download.download_direct_url(cdn_url, final_output_path, job_id)
             # In every terminal branch the final text/percent is written BEFORE
             # flipping status off "running", so any observer keying on status
             # (the frontend poll, tests) always reads a fully-updated job.
@@ -794,7 +264,7 @@ def start_download():
                 return
             except instagram.InstagramAuthError as e:
                 jobs._remove_job_file(job_id)
-                jobs.jobs[job_id]["text"] = describe_extraction_error(url, e, ig_candidates[0])
+                jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, ig_candidates[0])
                 jobs.jobs[job_id]["status"] = "error"
                 return
             except Exception as e:
@@ -819,7 +289,7 @@ def start_download():
         return jsonify({"error": "FFmpeg missing! Run 'brew install ffmpeg'"}), 400
 
     ext = "mp3" if "Audio" in quality else "mp4"
-    final_output_path = get_unique_filename(save_dir, title, ext)
+    final_output_path = download.get_unique_filename(save_dir, title, ext)
     final_filename = os.path.basename(final_output_path)
     output_path_no_ext = os.path.splitext(final_output_path)[0]
 
@@ -840,7 +310,7 @@ def start_download():
         def progress_hook(d):
             if jobs.jobs[job_id]["cancelled"]:
                 raise yt_dlp.utils.DownloadCancelled("cancelled by user")
-            state["stream_index"] = apply_progress_update(jobs.jobs[job_id], d, state["stream_index"], total_streams)
+            state["stream_index"] = download.apply_progress_update(jobs.jobs[job_id], d, state["stream_index"], total_streams)
 
         def postprocessor_hook(d):
             if jobs.jobs[job_id]["cancelled"]:
@@ -857,7 +327,7 @@ def start_download():
                     # Clean up other temporary files immediately
                     cookies._cleanup_temp_cookiefiles(candidates[1:])
 
-        ydl_opts = build_download_options(
+        ydl_opts = download.build_download_options(
             quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookies_path, entry_index, url
         )
 
@@ -869,11 +339,11 @@ def start_download():
             # file is actually playable on macOS. No-op (a fast probe only) for
             # the common already-h264 case and for audio-only jobs.
             if "Audio" not in quality:
-                ensure_h264(final_output_path, ffmpeg_bin, job_id)
+                download.ensure_h264(final_output_path, ffmpeg_bin, job_id)
         except yt_dlp.utils.DownloadCancelled:
             jobs.jobs[job_id]["status"] = "cancelled"
             jobs.jobs[job_id]["text"] = "Cancelled"
-            cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
@@ -884,8 +354,8 @@ def start_download():
             # plain explanation check_link() already gives for the same error.
             print(f"[download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
-            jobs.jobs[job_id]["text"] = describe_extraction_error(url, e, cookies_path)
-            cleanup_partial_download(output_path_no_ext)
+            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path)
+            download.cleanup_partial_download(output_path_no_ext)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
@@ -893,7 +363,7 @@ def start_download():
             print(f"[download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
             jobs.jobs[job_id]["text"] = str(e) or "Download failed"
-            cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
@@ -994,13 +464,13 @@ def start_batch_download():
                     if not cdn_url:
                         raise ValueError("No downloadable media found")
                     ext = "jpg" if node["kind"] == "image" else "mp4"
-                    out = get_unique_filename(save_dir, item_title, ext)
-                    download_direct_url(cdn_url, out, job_id, on_progress=on_progress)
+                    out = download.get_unique_filename(save_dir, item_title, ext)
+                    download.download_direct_url(cdn_url, out, job_id, on_progress=on_progress)
                 elif item.get("url"):
-                    out = download_one_video(item["url"], save_dir, item_title, quality, ffmpeg_bin, job_id, on_progress=on_progress)
+                    out = download.download_one_video(item["url"], save_dir, item_title, quality, ffmpeg_bin, job_id, on_progress=on_progress)
                 elif item.get("entry_index"):
                     # Instagram Story: yt-dlp playlist, targeted by its entry index.
-                    out = download_one_video(url, save_dir, item_title, quality, ffmpeg_bin, job_id, entry_index=item["entry_index"], on_progress=on_progress)
+                    out = download.download_one_video(url, save_dir, item_title, quality, ffmpeg_bin, job_id, entry_index=item["entry_index"], on_progress=on_progress)
                 else:
                     p["status"] = "error"
                     with lock:
@@ -1039,7 +509,7 @@ def start_batch_download():
             # Only a pre-flight failure (e.g. Instagram auth before the pool starts).
             print(f"[batch] job {job_id} failed: {e}")
             cookies._cleanup_temp_cookiefiles(ig_candidates)
-            jobs.jobs[job_id]["text"] = describe_extraction_error(url, e) if is_ig_carousel else (str(e) or "Download failed")
+            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e) if is_ig_carousel else (str(e) or "Download failed")
             jobs.jobs[job_id]["status"] = "error"
             return
 

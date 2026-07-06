@@ -1,14 +1,22 @@
 import json
 import os
+import subprocess
 import sys
+import threading
 import time
 import types
+import urllib.error
+import urllib.request
 from types import SimpleNamespace
 
 import pytest
 
 import server as server_module
 from backend import classify, config, paths
+import yt_dlp
+
+from backend import download as download_module
+from backend import extraction as extraction_module
 from backend import instagram as instagram_module
 from backend import cookies as cookies_module
 from backend import jobs as jobs_module
@@ -30,20 +38,22 @@ from backend.instagram import (
     instagram_check_response,
     instagram_media_id_from_shortcode,
 )
-from server import (
+from backend.download import (
     apply_progress_update,
     build_download_options,
     combined_download_percent,
-    describe_extraction_error,
     detect_video_codec,
     ensure_h264,
-    format_duration,
     get_unique_filename,
-    is_local_request,
-    qualities_for,
-    resolve_thumbnail,
     sanitize_filename,
 )
+from backend.extraction import (
+    describe_extraction_error,
+    format_duration,
+    qualities_for,
+    resolve_thumbnail,
+)
+from server import is_local_request
 
 
 # ---- sanitize_filename ----
@@ -258,7 +268,7 @@ def test_cookies_status_for_no_session_when_file_lacks_session(tmp_path):
 
 def test_browse_file_returns_chosen_path(client, monkeypatch):
     monkeypatch.setattr(
-        server_module.subprocess,
+        subprocess,
         "run",
         lambda *a, **k: SimpleNamespace(returncode=0, stdout="/Users/test/cookies.txt\n", stderr=""),
     )
@@ -272,7 +282,7 @@ def test_browse_file_reports_cookies_status_for_the_picked_file(client, monkeypa
     cookies_file = tmp_path / "cookies.txt"
     cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
     monkeypatch.setattr(
-        server_module.subprocess,
+        subprocess,
         "run",
         lambda *a, **k: SimpleNamespace(returncode=0, stdout=f"{cookies_file}\n", stderr=""),
     )
@@ -282,7 +292,7 @@ def test_browse_file_reports_cookies_status_for_the_picked_file(client, monkeypa
 
 def test_browse_file_returns_error_when_cancelled(client, monkeypatch):
     monkeypatch.setattr(
-        server_module.subprocess,
+        subprocess,
         "run",
         lambda *a, **k: SimpleNamespace(returncode=1, stdout="", stderr="User cancelled"),
     )
@@ -318,7 +328,7 @@ def test_post_settings_reports_cookies_status_no_session(client, tmp_path):
 
 def test_get_clipboard_returns_pasteboard_text(client, monkeypatch):
     monkeypatch.setattr(
-        server_module.subprocess,
+        subprocess,
         "run",
         lambda *a, **k: SimpleNamespace(returncode=0, stdout="https://youtube.com/watch?v=abc", stderr=""),
     )
@@ -329,7 +339,7 @@ def test_get_clipboard_returns_pasteboard_text(client, monkeypatch):
 
 def test_get_clipboard_errors_when_pbpaste_fails(client, monkeypatch):
     monkeypatch.setattr(
-        server_module.subprocess,
+        subprocess,
         "run",
         lambda *a, **k: SimpleNamespace(returncode=1, stdout="", stderr="boom"),
     )
@@ -342,7 +352,7 @@ def test_get_clipboard_errors_when_pbpaste_is_missing(client, monkeypatch):
     def raise_not_found(*a, **k):
         raise FileNotFoundError("pbpaste not found")
 
-    monkeypatch.setattr(server_module.subprocess, "run", raise_not_found)
+    monkeypatch.setattr(subprocess, "run", raise_not_found)
     resp = client.get("/api/clipboard")
     assert resp.status_code == 500
 
@@ -533,9 +543,9 @@ def test_check_link_missing_url(client):
 
 def test_check_link_invalid_link(client, monkeypatch):
     def raise_error(url):
-        raise server_module.yt_dlp.utils.DownloadError("ERROR: no such video. more CLI-only detail here")
+        raise yt_dlp.utils.DownloadError("ERROR: no such video. more CLI-only detail here")
 
-    monkeypatch.setattr(server_module, "extract_video_info", raise_error)
+    monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
     resp = client.post("/api/check", json={"url": "https://example.com/dead"})
     assert resp.status_code == 400
     # surfaces yt-dlp's real (trimmed) message instead of a generic one
@@ -546,7 +556,7 @@ def test_check_link_unexpected_exception_falls_back_to_generic_message(client, m
     def raise_error(url):
         raise RuntimeError("something unrelated broke")
 
-    monkeypatch.setattr(server_module, "extract_video_info", raise_error)
+    monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
     resp = client.post("/api/check", json={"url": "https://example.com/dead"})
     assert resp.status_code == 400
     assert resp.get_json()["error"] == "Invalid link or private video"
@@ -554,12 +564,12 @@ def test_check_link_unexpected_exception_falls_back_to_generic_message(client, m
 
 def test_check_link_instagram_login_required_shows_clear_explanation(client, monkeypatch):
     def raise_error(url):
-        raise server_module.yt_dlp.utils.DownloadError(
+        raise yt_dlp.utils.DownloadError(
             "ERROR: [Instagram] abc: Instagram sent an empty media response. "
             "Check if this post is accessible in your browser without being logged-in."
         )
 
-    monkeypatch.setattr(server_module, "extract_video_info", raise_error)
+    monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
     resp = client.post("/api/check", json={"url": "https://www.instagram.com/p/abc/"})
     assert resp.status_code == 400
     assert "Không thể tải video từ tài khoản Private" in resp.get_json()["error"]
@@ -571,11 +581,11 @@ def test_check_link_instagram_with_no_session_cookies_file_flags_the_file(client
     save_session(os.path.expanduser("~/Downloads"), str(cookies_file))
 
     def raise_error(url):
-        raise server_module.yt_dlp.utils.DownloadError(
+        raise yt_dlp.utils.DownloadError(
             "ERROR: [Instagram] abc: Instagram sent an empty media response."
         )
 
-    monkeypatch.setattr(server_module, "extract_video_info", raise_error)
+    monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
     resp = client.post("/api/check", json={"url": "https://www.instagram.com/p/abc/"})
     assert resp.status_code == 400
     assert "Không thể tải video từ tài khoản Private" in resp.get_json()["error"]
@@ -649,9 +659,9 @@ def test_fetch_instagram_media_maps_login_redirect_to_auth_error(tmp_path, monke
     cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tbad\n")
 
     def raise_302(req, timeout=30):
-        raise server_module.urllib.error.HTTPError(req.full_url, 302, "Found", {}, None)
+        raise urllib.error.HTTPError(req.full_url, 302, "Found", {}, None)
 
-    monkeypatch.setattr(server_module.urllib.request, "urlopen", raise_302)
+    monkeypatch.setattr(urllib.request, "urlopen", raise_302)
     with pytest.raises(InstagramAuthError):
         instagram_module.fetch_instagram_media("https://www.instagram.com/p/abc/", str(cookies_file))
 
@@ -729,7 +739,7 @@ def test_check_link_instagram_carousel_end_to_end(client, monkeypatch, tmp_path)
 
 
 def test_describe_extraction_error_trims_to_first_sentence():
-    error = server_module.yt_dlp.utils.DownloadError(
+    error = yt_dlp.utils.DownloadError(
         "ERROR: Video unavailable. This video has been removed by the uploader. Confirm you are on the latest version."
     )
     # strips the CLI-style "ERROR: " prefix and keeps just the first sentence
@@ -737,7 +747,7 @@ def test_describe_extraction_error_trims_to_first_sentence():
 
 
 def test_describe_extraction_error_special_cases_instagram_login_message():
-    error = server_module.yt_dlp.utils.DownloadError(
+    error = yt_dlp.utils.DownloadError(
         "ERROR: [Instagram] abc: Instagram sent an empty media response. Check if this post is accessible "
         "in your browser without being logged-in. Use --cookies-from-browser for authentication."
     )
@@ -749,7 +759,7 @@ def test_describe_extraction_error_special_cases_instagram_private_post_message(
     # real message shape from a live private Instagram post - raise_login_required()
     # here uses wording that contains neither "empty media response" nor "login",
     # only the "Use --cookies..." hint it always appends
-    error = server_module.yt_dlp.utils.DownloadError(
+    error = yt_dlp.utils.DownloadError(
         "ERROR: [Instagram] abc123: This content is only available for registered users who follow this "
         "account. Use --cookies-from-browser or --cookies for the authentication. See "
         "https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp for how to manually pass cookies"
@@ -761,7 +771,7 @@ def test_describe_extraction_error_special_cases_instagram_private_post_message(
 def test_describe_extraction_error_instagram_cookies_without_session_flags_the_file(tmp_path):
     cookies_file = tmp_path / "cookies.txt"
     cookies_file.write_text("# no session in here\n")
-    error = server_module.yt_dlp.utils.DownloadError(
+    error = yt_dlp.utils.DownloadError(
         "ERROR: [Instagram] abc: Instagram sent an empty media response."
     )
     message = describe_extraction_error("https://www.instagram.com/reel/abc/", error, str(cookies_file))
@@ -771,7 +781,7 @@ def test_describe_extraction_error_instagram_cookies_without_session_flags_the_f
 def test_describe_extraction_error_instagram_cookies_with_session_suggests_refreshing(tmp_path):
     cookies_file = tmp_path / "cookies.txt"
     cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
-    error = server_module.yt_dlp.utils.DownloadError(
+    error = yt_dlp.utils.DownloadError(
         "ERROR: [Instagram] abc: Instagram sent an empty media response."
     )
     message = describe_extraction_error("https://www.instagram.com/reel/abc/", error, str(cookies_file))
@@ -779,13 +789,13 @@ def test_describe_extraction_error_instagram_cookies_with_session_suggests_refre
 
 
 def test_describe_extraction_error_does_not_special_case_non_instagram_urls():
-    error = server_module.yt_dlp.utils.DownloadError("ERROR: [TikTok] abc: empty media response")
+    error = yt_dlp.utils.DownloadError("ERROR: [TikTok] abc: empty media response")
     message = describe_extraction_error("https://www.tiktok.com/@user/video/1", error)
     assert "logged-in session" not in message
 
 
 def test_check_link_returns_error_when_info_is_empty(client, monkeypatch):
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: None)
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: None)
     resp = client.post("/api/check", json={"url": "https://youtube.com/watch?v=abc"})
     assert resp.status_code == 400
     assert resp.get_json()["error"] == "Invalid link or private video"
@@ -806,7 +816,7 @@ def test_check_link_builds_qualities_and_duration(client, monkeypatch):
             {"height": None},
         ],
     }
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: info)
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: info)
     resp = client.post("/api/check", json={"url": "https://www.youtube.com/watch?v=abc"})
     assert resp.status_code == 200
     body = resp.get_json()
@@ -820,7 +830,7 @@ def test_check_link_builds_qualities_and_duration(client, monkeypatch):
 
 def test_check_link_drops_formats_below_360p(client, monkeypatch):
     info = {"title": "Low res", "formats": [{"height": 144}, {"height": 240}]}
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: info)
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: info)
     resp = client.post("/api/check", json={"url": "https://www.youtube.com/watch?v=abc"})
     body = resp.get_json()
     assert body["qualities"] == ["Best", "Audio Only"]
@@ -853,7 +863,7 @@ def test_check_link_playlist_returns_video_entries_only(client, monkeypatch):
             },
         ],
     }
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: info)
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: info)
     resp = client.post("/api/check", json={"url": "https://www.instagram.com/stories/someone/1/"})
     assert resp.status_code == 200
     body = resp.get_json()
@@ -866,7 +876,7 @@ def test_check_link_playlist_returns_video_entries_only(client, monkeypatch):
 
 def test_check_link_playlist_with_only_photo_entries_returns_empty_items(client, monkeypatch):
     info = {"_type": "playlist", "title": "Story by someone", "entries": [{"id": "photo1", "title": "Photo"}]}
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: info)
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: info)
     resp = client.post("/api/check", json={"url": "https://www.instagram.com/stories/someone/1/"})
     assert resp.status_code == 200
     assert resp.get_json()["items"] == []
@@ -890,8 +900,8 @@ def test_extract_video_info_uses_yt_dlp_in_process(monkeypatch):
             captured["download"] = download
             return {"title": "ok"}
 
-    monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYoutubeDL)
-    result = server_module.extract_video_info(classify.classify_url("https://youtube.com/watch?v=abc"))
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", FakeYoutubeDL)
+    result = extraction_module.extract_video_info(classify.classify_url("https://youtube.com/watch?v=abc"))
 
     assert result == {"title": "ok"}
     assert captured["url"] == "https://youtube.com/watch?v=abc"
@@ -924,7 +934,7 @@ def test_resolve_save_dir_falls_back_and_creates_fallback_dir(tmp_path):
 
 
 def test_resolve_save_dir_returns_none_when_nothing_is_writable(tmp_path, monkeypatch):
-    monkeypatch.setattr(server_module.os, "access", lambda *a, **k: False)
+    monkeypatch.setattr(os, "access", lambda *a, **k: False)
     result = resolve_save_dir("/this/path/does/not/exist", fallback_dir=str(tmp_path / "fallback"))
     assert result is None
 
@@ -947,7 +957,7 @@ def test_start_download_falls_back_when_configured_folder_is_missing(client, mon
         lambda: {"path": "/this/path/does/not/exist"},
     )
     monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
-    monkeypatch.setattr(server_module.threading, "Thread", _NoOpThread)
+    monkeypatch.setattr(threading, "Thread", _NoOpThread)
     resp = client.post(
         "/api/download",
         json={"url": "https://youtube.com/watch?v=abc", "title": "Video", "quality": "720p"},
@@ -973,7 +983,7 @@ def test_start_download_of_watch_list_url_downloads_the_watch_url_not_the_playli
     monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
     monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
-    monkeypatch.setattr(server_module, "ensure_h264", lambda *a, **k: None)
+    monkeypatch.setattr(download_module, "ensure_h264", lambda *a, **k: None)
 
     seen = {}
 
@@ -990,7 +1000,7 @@ def test_start_download_of_watch_list_url_downloads_the_watch_url_not_the_playli
         def download(self, urls):
             seen["urls"] = urls
 
-    monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYDL)
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", FakeYDL)
 
     class SyncThread:
         # Runs the download worker inline so the assertion sees its yt-dlp call.
@@ -1000,7 +1010,7 @@ def test_start_download_of_watch_list_url_downloads_the_watch_url_not_the_playli
         def start(self):
             self._target()
 
-    monkeypatch.setattr(server_module.threading, "Thread", SyncThread)
+    monkeypatch.setattr(threading, "Thread", SyncThread)
 
     watch_url = "https://www.youtube.com/watch?v=-It5L-gC6nA&list=PLIILL6veL783kKkdiIybbxARNY9bAVQYe"
     resp = client.post("/api/download", json={"url": watch_url, "title": "V", "quality": "720p"})
@@ -1125,7 +1135,7 @@ def test_start_download_instagram_rejected_when_remote(client):
 
 
 def test_start_download_remote_uses_a_temp_dir_not_the_configured_folder(client, monkeypatch):
-    monkeypatch.setattr(server_module.threading, "Thread", _NoOpThread)
+    monkeypatch.setattr(threading, "Thread", _NoOpThread)
     resp = client.post(
         "/api/download",
         json={"url": "https://www.tiktok.com/@user/video/1", "title": "Video", "quality": "720p"},
@@ -1152,9 +1162,9 @@ def test_start_download_instagram_no_cookies_succeeds_scheduling_and_fails_async
         def __exit__(self, *args):
             pass
         def download(self, urls):
-            raise server_module.yt_dlp.utils.DownloadError("ERROR: [Instagram] abc: Instagram sent an empty media response.")
+            raise yt_dlp.utils.DownloadError("ERROR: [Instagram] abc: Instagram sent an empty media response.")
 
-    monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", MockYoutubeDL)
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
     
     resp = client.post(
         "/api/download",
@@ -1215,7 +1225,7 @@ def test_start_download_instagram_image_writes_a_jpg(client, monkeypatch, tmp_pa
         with open(output_path, "wb") as f:
             f.write(b"fake-image-bytes")
 
-    monkeypatch.setattr(server_module, "download_direct_url", fake_download)
+    monkeypatch.setattr(download_module, "download_direct_url", fake_download)
 
     resp = client.post(
         "/api/download",
@@ -1258,7 +1268,7 @@ def test_start_download_instagram_entry_index_picks_that_carousel_item(client, m
         with open(output_path, "wb") as f:
             f.write(b"fake")
 
-    monkeypatch.setattr(server_module, "download_direct_url", fake_download)
+    monkeypatch.setattr(download_module, "download_direct_url", fake_download)
 
     # entry_index 2 (1-based) -> the video slide.
     resp = client.post(
@@ -1325,7 +1335,7 @@ def test_detect_video_codec_parses_ffmpeg_stderr(monkeypatch):
         "  Stream #0:1(und): Audio: aac (LC), 44100 Hz\n"
     )
     monkeypatch.setattr(
-        server_module.subprocess, "run",
+        subprocess, "run",
         lambda *a, **k: SimpleNamespace(returncode=1, stdout="", stderr=stderr),
     )
     assert detect_video_codec("x.mp4", "/ff") == "vp9"
@@ -1335,18 +1345,18 @@ def test_detect_video_codec_returns_none_when_ffmpeg_unavailable(monkeypatch):
     def boom(*a, **k):
         raise OSError("no ffmpeg")
 
-    monkeypatch.setattr(server_module.subprocess, "run", boom)
+    monkeypatch.setattr(subprocess, "run", boom)
     assert detect_video_codec("x.mp4", "/ff") is None
 
 
 def test_ensure_h264_is_a_noop_for_already_h264(monkeypatch):
     jobs_module.jobs["j-h264"] = {"cancelled": False, "text": "", "status": "running"}
-    monkeypatch.setattr(server_module, "detect_video_codec", lambda path, ff: "h264")
+    monkeypatch.setattr(download_module, "detect_video_codec", lambda path, ff: "h264")
 
     def fail(*a, **k):
         raise AssertionError("must not re-encode an already-h264 file")
 
-    monkeypatch.setattr(server_module.subprocess, "Popen", fail)
+    monkeypatch.setattr(subprocess, "Popen", fail)
     ensure_h264("/tmp/some.mp4", "/ff", "j-h264")  # no exception = no re-encode
 
 
@@ -1354,7 +1364,7 @@ def test_ensure_h264_reencodes_vp9_in_place(monkeypatch, tmp_path):
     video = tmp_path / "clip.mp4"
     video.write_bytes(b"original-vp9-bytes")
     jobs_module.jobs["j-vp9"] = {"cancelled": False, "text": "", "status": "running"}
-    monkeypatch.setattr(server_module, "detect_video_codec", lambda path, ff: "vp9")
+    monkeypatch.setattr(download_module, "detect_video_codec", lambda path, ff: "vp9")
 
     class FakePopen:
         def __init__(self, cmd, stdout=None, stderr=None):
@@ -1366,7 +1376,7 @@ def test_ensure_h264_reencodes_vp9_in_place(monkeypatch, tmp_path):
         def poll(self):
             return 0
 
-    monkeypatch.setattr(server_module.subprocess, "Popen", FakePopen)
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
     ensure_h264(str(video), "/ff", "j-vp9")
     assert video.read_bytes() == b"reencoded-h264-bytes"
     assert not (tmp_path / "clip.mp4.h264.mp4").exists()  # temp cleaned up via replace
@@ -1376,7 +1386,7 @@ def test_ensure_h264_honors_cancel_mid_reencode(monkeypatch, tmp_path):
     video = tmp_path / "clip.mp4"
     video.write_bytes(b"original-vp9-bytes")
     jobs_module.jobs["j-cancel"] = {"cancelled": True, "text": "", "status": "running"}
-    monkeypatch.setattr(server_module, "detect_video_codec", lambda path, ff: "av01")
+    monkeypatch.setattr(download_module, "detect_video_codec", lambda path, ff: "av01")
 
     class FakePopenRunning:
         def __init__(self, cmd, stdout=None, stderr=None):
@@ -1397,8 +1407,8 @@ def test_ensure_h264_honors_cancel_mid_reencode(monkeypatch, tmp_path):
         def kill(self):
             pass
 
-    monkeypatch.setattr(server_module.subprocess, "Popen", FakePopenRunning)
-    with pytest.raises(server_module.yt_dlp.utils.DownloadCancelled):
+    monkeypatch.setattr(subprocess, "Popen", FakePopenRunning)
+    with pytest.raises(yt_dlp.utils.DownloadCancelled):
         ensure_h264(str(video), "/ff", "j-cancel")
     assert video.read_bytes() == b"original-vp9-bytes"  # original untouched
     assert not (tmp_path / "clip.mp4.h264.mp4").exists()  # partial temp removed
@@ -1565,8 +1575,8 @@ def test_extract_video_info_uses_flat_extraction_for_a_playlist(monkeypatch):
         def extract_info(self, url, download):
             return {"_type": "playlist", "entries": []}
 
-    monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYoutubeDL)
-    server_module.extract_video_info(classify.classify_url("https://www.youtube.com/playlist?list=PLxyz"))
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", FakeYoutubeDL)
+    extraction_module.extract_video_info(classify.classify_url("https://www.youtube.com/playlist?list=PLxyz"))
 
     opts = captured["opts"]
     assert opts["extract_flat"] == "in_playlist"
@@ -1590,8 +1600,8 @@ def test_extract_video_info_keeps_noplaylist_for_a_single_video(monkeypatch):
         def extract_info(self, url, download):
             return {"title": "ok"}
 
-    monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYoutubeDL)
-    server_module.extract_video_info(classify.classify_url("https://www.youtube.com/watch?v=abc"))
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", FakeYoutubeDL)
+    extraction_module.extract_video_info(classify.classify_url("https://www.youtube.com/watch?v=abc"))
     assert captured["opts"]["noplaylist"] is True
     assert "extract_flat" not in captured["opts"]
 
@@ -1609,7 +1619,7 @@ def test_check_link_youtube_playlist_returns_items_with_urls(client, monkeypatch
             {"id": "v2", "title": "Second", "url": "https://youtube.com/watch?v=v2", "duration": 30},
         ],
     }
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: info)
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: info)
     resp = client.post("/api/check", json={"url": "https://www.youtube.com/playlist?list=PLxyz"})
     assert resp.status_code == 200
     body = resp.get_json()
@@ -1662,8 +1672,8 @@ def test_extract_video_info_passes_canonical_playlist_url_to_ytdlp(monkeypatch):
             seen["url"] = url
             return {"_type": "playlist", "title": "PL", "entries": []}
 
-    monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYDL)
-    server_module.extract_video_info(
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", FakeYDL)
+    extraction_module.extract_video_info(
         classify.classify_url("https://www.youtube.com/watch?v=-It5L-gC6nA&list=PLIILL6veL783kKkdiIybbxARNY9bAVQYe")
     )
     assert seen["url"] == "https://www.youtube.com/playlist?list=PLIILL6veL783kKkdiIybbxARNY9bAVQYe"
@@ -1679,7 +1689,7 @@ def test_check_link_single_item_playlist_is_not_numbered(client, monkeypatch):
         "title": "One video channel",
         "entries": [{"id": "solo", "title": "Only Video", "url": "https://youtube.com/watch?v=solo", "duration": 42}],
     }
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: info)
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: info)
     resp = client.post("/api/check", json={"url": "https://www.youtube.com/@onevid"})
     body = resp.get_json()
     assert len(body["items"]) == 1
@@ -1699,7 +1709,7 @@ def test_check_link_youtube_playlist_flags_dead_videos_as_unavailable(client, mo
             {"id": "ok2", "title": "Good Two", "url": "https://youtube.com/watch?v=ok2", "duration": 50},
         ],
     }
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: info)
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: info)
     resp = client.post("/api/check", json={"url": "https://www.youtube.com/playlist?list=PLxyz"})
     body = resp.get_json()
     # Dead videos are KEPT (so numbering stays true) but flagged unavailable.
@@ -1714,7 +1724,7 @@ def test_check_link_youtube_playlist_flags_dead_videos_as_unavailable(client, mo
 def test_check_link_youtube_playlist_flags_truncation_at_the_cap(client, monkeypatch):
     entries = [{"id": f"v{i}", "title": f"V{i}", "url": f"https://youtube.com/watch?v=v{i}", "duration": 60}
                for i in range(classify.PLAYLIST_ITEM_CAP)]
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: {"_type": "playlist", "title": "Big", "entries": entries})
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: {"_type": "playlist", "title": "Big", "entries": entries})
     resp = client.post("/api/check", json={"url": "https://www.youtube.com/@somechannel"})
     body = resp.get_json()
     assert body["truncated"] is True
@@ -1736,7 +1746,7 @@ def test_check_link_instagram_story_playlist_carries_original_entry_index(client
             {"id": "c", "title": "Vid2", "formats": [{"height": 1080}], "duration": 8},
         ],
     }
-    monkeypatch.setattr(server_module, "extract_video_info", lambda url: info)
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: info)
     resp = client.post("/api/check", json={"url": "https://www.instagram.com/stories/someone/1/"})
     body = resp.get_json()
     assert [i["entry_index"] for i in body["items"]] == [2, 3]
@@ -1764,7 +1774,7 @@ def test_start_batch_download_rejected_when_remote(client):
 def test_start_batch_download_schedules_and_reports_total(client, monkeypatch, tmp_path):
     monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path)})
     monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
-    monkeypatch.setattr(server_module.threading, "Thread", _NoOpThread)
+    monkeypatch.setattr(threading, "Thread", _NoOpThread)
     resp = client.post(
         "/api/download-batch",
         json={
@@ -1796,7 +1806,7 @@ def test_start_batch_download_downloads_all_items_in_parallel(client, monkeypatc
             f.write(b"x")
         return out
 
-    monkeypatch.setattr(server_module, "download_one_video", fake_download_one)
+    monkeypatch.setattr(download_module, "download_one_video", fake_download_one)
 
     resp = client.post(
         "/api/download-batch",
@@ -1835,13 +1845,13 @@ def test_start_batch_download_skips_a_failing_item_and_keeps_going(client, monke
 
     def fake_download_one(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
         if title == "B":
-            raise server_module.yt_dlp.utils.DownloadError("boom")
+            raise yt_dlp.utils.DownloadError("boom")
         out = os.path.join(save_dir, f"{title}.mp4")
         with open(out, "wb") as f:
             f.write(b"x")
         return out
 
-    monkeypatch.setattr(server_module, "download_one_video", fake_download_one)
+    monkeypatch.setattr(download_module, "download_one_video", fake_download_one)
 
     resp = client.post(
         "/api/download-batch",
