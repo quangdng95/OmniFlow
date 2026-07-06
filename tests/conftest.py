@@ -6,6 +6,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest
 
 import server as server_module
+from backend import config as config_module
+from backend import jobs as jobs_module
 
 
 @pytest.fixture
@@ -17,15 +19,17 @@ def client():
 @pytest.fixture(autouse=True)
 def isolated_config(tmp_path, monkeypatch):
     config_file = tmp_path / "config.json"
-    monkeypatch.setattr(server_module, "CONFIG_FILE", str(config_file))
+    monkeypatch.setattr(config_module, "CONFIG_FILE", str(config_file))
     return config_file
 
 
 @pytest.fixture(autouse=True)
 def clear_jobs():
-    server_module.jobs.clear()
+    # Clear IN PLACE - the jobs dict's identity is shared across modules and
+    # must never be rebound (see backend/jobs.py).
+    jobs_module.jobs.clear()
     yield
-    server_module.jobs.clear()
+    jobs_module.jobs.clear()
 
 
 @pytest.fixture(autouse=True)

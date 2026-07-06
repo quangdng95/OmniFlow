@@ -8,34 +8,37 @@ from types import SimpleNamespace
 import pytest
 
 import server as server_module
-from backend import classify, paths
+from backend import classify, config, paths
+from backend import jobs as jobs_module
 from backend.classify import (
     get_platform_info,
     instagram_shortcode_from_url,
     is_playlist_url,
+)
+from backend.config import (
+    cookies_file_has_instagram_session,
+    cookies_status_for,
+    get_cookies_path,
+    load_session,
+    resolve_save_dir,
+    save_session,
 )
 from server import (
     InstagramAuthError,
     apply_progress_update,
     build_download_options,
     combined_download_percent,
-    cookies_file_has_instagram_session,
-    cookies_status_for,
     describe_extraction_error,
     detect_video_codec,
     ensure_h264,
     format_duration,
-    get_cookies_path,
     get_unique_filename,
     instagram_check_response,
     instagram_media_id_from_shortcode,
     is_local_request,
-    load_session,
     qualities_for,
-    resolve_save_dir,
     resolve_thumbnail,
     sanitize_filename,
-    save_session,
 )
 
 
@@ -935,11 +938,11 @@ class _NoOpThread:
 
 def test_start_download_falls_back_when_configured_folder_is_missing(client, monkeypatch, tmp_path):
     monkeypatch.setattr(
-        server_module,
+        config,
         "load_session",
         lambda: {"path": "/this/path/does/not/exist"},
     )
-    monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(server_module.threading, "Thread", _NoOpThread)
     resp = client.post(
         "/api/download",
@@ -950,7 +953,7 @@ def test_start_download_falls_back_when_configured_folder_is_missing(client, mon
 
 
 def test_start_download_errors_when_no_folder_is_writable_anywhere(client, monkeypatch):
-    monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: None)
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: None)
     resp = client.post(
         "/api/download",
         json={"url": "https://youtube.com/watch?v=abc", "title": "Video", "quality": "720p"},
@@ -963,8 +966,8 @@ def test_start_download_of_watch_list_url_downloads_the_watch_url_not_the_playli
     # R5 pin: for watch?v=X&list=PL… the user picked video X, so the download
     # engine must receive the WATCH url. Only /api/check widens to the whole
     # playlist (classification carries the two URLs separately for exactly this).
-    monkeypatch.setattr(server_module, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
-    monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
     monkeypatch.setattr(server_module, "ensure_h264", lambda *a, **k: None)
 
@@ -1003,7 +1006,7 @@ def test_start_download_of_watch_list_url_downloads_the_watch_url_not_the_playli
 
 def test_start_download_missing_ffmpeg(client, monkeypatch, tmp_path):
     monkeypatch.setattr(
-        server_module, "load_session", lambda: {"path": str(tmp_path)}
+        config, "load_session", lambda: {"path": str(tmp_path)}
     )
     monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: None)
     resp = client.post(
@@ -1028,7 +1031,7 @@ def test_cancel_unknown_job(client):
 
 
 def test_cancel_marks_job_as_cancelled(client):
-    server_module.jobs["job-1"] = {
+    jobs_module.jobs["job-1"] = {
         "status": "running",
         "percent": 10,
         "text": "Downloading...",
@@ -1037,7 +1040,7 @@ def test_cancel_marks_job_as_cancelled(client):
     }
     resp = client.post("/api/cancel/job-1")
     assert resp.status_code == 200
-    assert server_module.jobs["job-1"]["cancelled"] is True
+    assert jobs_module.jobs["job-1"]["cancelled"] is True
 
 
 # ---- is_local_request ----
@@ -1126,7 +1129,7 @@ def test_start_download_remote_uses_a_temp_dir_not_the_configured_folder(client,
     )
     assert resp.status_code == 200
     job_id = resp.get_json()["job_id"]
-    filepath = server_module.jobs[job_id]["filepath"]
+    filepath = jobs_module.jobs[job_id]["filepath"]
     assert os.path.dirname(filepath) != os.path.expanduser("~/Downloads")
     assert os.path.basename(os.path.dirname(filepath)).startswith("omniflow-")
 
@@ -1134,7 +1137,7 @@ def test_start_download_remote_uses_a_temp_dir_not_the_configured_folder(client,
 def test_start_download_instagram_no_cookies_succeeds_scheduling_and_fails_async(client, monkeypatch, tmp_path):
     # With no valid cookies configured, the Instagram download branch falls through
     # to the standard yt-dlp path and schedules a background job (status code 200).
-    monkeypatch.setattr(server_module, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
     
     # Mock yt_dlp to fail with a login/empty media response error
     class MockYoutubeDL:
@@ -1157,12 +1160,12 @@ def test_start_download_instagram_no_cookies_succeeds_scheduling_and_fails_async
     job_id = resp.get_json()["job_id"]
     
     for _ in range(50):
-        if server_module.jobs[job_id]["status"] != "running":
+        if jobs_module.jobs[job_id]["status"] != "running":
             break
         time.sleep(0.05)
         
-    assert server_module.jobs[job_id]["status"] == "error"
-    assert "Không thể tải video từ tài khoản Private" in server_module.jobs[job_id]["text"]
+    assert jobs_module.jobs[job_id]["status"] == "error"
+    assert "Không thể tải video từ tài khoản Private" in jobs_module.jobs[job_id]["text"]
 
 
 def test_start_download_instagram_resolver_error_maps_to_friendly_message(client, monkeypatch, tmp_path):
@@ -1185,19 +1188,19 @@ def test_start_download_instagram_resolver_error_maps_to_friendly_message(client
     job_id = resp.get_json()["job_id"]
 
     for _ in range(50):
-        if server_module.jobs[job_id]["status"] != "running":
+        if jobs_module.jobs[job_id]["status"] != "running":
             break
         time.sleep(0.05)
 
-    assert server_module.jobs[job_id]["status"] == "error"
-    assert "Không thể tải video từ tài khoản Private" in server_module.jobs[job_id]["text"]
+    assert jobs_module.jobs[job_id]["status"] == "error"
+    assert "Không thể tải video từ tài khoản Private" in jobs_module.jobs[job_id]["text"]
 
 
 def test_start_download_instagram_image_writes_a_jpg(client, monkeypatch, tmp_path):
     cookies_file = tmp_path / "cookies.txt"
     cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
     save_session(str(tmp_path), str(cookies_file))
-    monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(
         server_module,
         "fetch_instagram_media",
@@ -1217,11 +1220,11 @@ def test_start_download_instagram_image_writes_a_jpg(client, monkeypatch, tmp_pa
     job_id = resp.get_json()["job_id"]
 
     for _ in range(50):
-        if server_module.jobs[job_id]["status"] != "running":
+        if jobs_module.jobs[job_id]["status"] != "running":
             break
         time.sleep(0.05)
 
-    job = server_module.jobs[job_id]
+    job = jobs_module.jobs[job_id]
     assert job["status"] == "done"
     assert job["filename"].endswith(".jpg")
     assert os.path.exists(job["filepath"])
@@ -1231,7 +1234,7 @@ def test_start_download_instagram_entry_index_picks_that_carousel_item(client, m
     cookies_file = tmp_path / "cookies.txt"
     cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
     save_session(str(tmp_path), str(cookies_file))
-    monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(
         server_module,
         "fetch_instagram_media",
@@ -1261,11 +1264,11 @@ def test_start_download_instagram_entry_index_picks_that_carousel_item(client, m
     job_id = resp.get_json()["job_id"]
 
     for _ in range(50):
-        if server_module.jobs[job_id]["status"] != "running":
+        if jobs_module.jobs[job_id]["status"] != "running":
             break
         time.sleep(0.05)
 
-    job = server_module.jobs[job_id]
+    job = jobs_module.jobs[job_id]
     assert job["status"] == "done"
     assert captured["url"] == "http://cdn/clip.mp4"
     assert job["filename"].endswith(".mp4")
@@ -1277,7 +1280,7 @@ def test_start_download_instagram_entry_index_picks_that_carousel_item(client, m
 def test_download_file_rejected_when_local(client, tmp_path):
     video = tmp_path / "clip.mp4"
     video.write_text("fake video bytes")
-    server_module.jobs["job-remote-1"] = {"status": "done", "filename": "clip.mp4", "filepath": str(video)}
+    jobs_module.jobs["job-remote-1"] = {"status": "done", "filename": "clip.mp4", "filepath": str(video)}
     resp = client.get("/api/download-file/job-remote-1")
     assert resp.status_code == 403
 
@@ -1288,7 +1291,7 @@ def test_download_file_404_for_unknown_job(client):
 
 
 def test_download_file_404_when_job_not_done(client):
-    server_module.jobs["job-remote-2"] = {"status": "running", "filename": None, "filepath": None}
+    jobs_module.jobs["job-remote-2"] = {"status": "running", "filename": None, "filepath": None}
     resp = client.get("/api/download-file/job-remote-2", headers={"Host": "example.com"})
     assert resp.status_code == 404
 
@@ -1298,7 +1301,7 @@ def test_download_file_serves_and_cleans_up(client, tmp_path):
     job_dir.mkdir()
     video = job_dir / "clip.mp4"
     video.write_bytes(b"fake video bytes")
-    server_module.jobs["job-remote-3"] = {"status": "done", "filename": "clip.mp4", "filepath": str(video)}
+    jobs_module.jobs["job-remote-3"] = {"status": "done", "filename": "clip.mp4", "filepath": str(video)}
 
     resp = client.get("/api/download-file/job-remote-3", headers={"Host": "example.com"})
 
@@ -1333,7 +1336,7 @@ def test_detect_video_codec_returns_none_when_ffmpeg_unavailable(monkeypatch):
 
 
 def test_ensure_h264_is_a_noop_for_already_h264(monkeypatch):
-    server_module.jobs["j-h264"] = {"cancelled": False, "text": "", "status": "running"}
+    jobs_module.jobs["j-h264"] = {"cancelled": False, "text": "", "status": "running"}
     monkeypatch.setattr(server_module, "detect_video_codec", lambda path, ff: "h264")
 
     def fail(*a, **k):
@@ -1346,7 +1349,7 @@ def test_ensure_h264_is_a_noop_for_already_h264(monkeypatch):
 def test_ensure_h264_reencodes_vp9_in_place(monkeypatch, tmp_path):
     video = tmp_path / "clip.mp4"
     video.write_bytes(b"original-vp9-bytes")
-    server_module.jobs["j-vp9"] = {"cancelled": False, "text": "", "status": "running"}
+    jobs_module.jobs["j-vp9"] = {"cancelled": False, "text": "", "status": "running"}
     monkeypatch.setattr(server_module, "detect_video_codec", lambda path, ff: "vp9")
 
     class FakePopen:
@@ -1368,7 +1371,7 @@ def test_ensure_h264_reencodes_vp9_in_place(monkeypatch, tmp_path):
 def test_ensure_h264_honors_cancel_mid_reencode(monkeypatch, tmp_path):
     video = tmp_path / "clip.mp4"
     video.write_bytes(b"original-vp9-bytes")
-    server_module.jobs["j-cancel"] = {"cancelled": True, "text": "", "status": "running"}
+    jobs_module.jobs["j-cancel"] = {"cancelled": True, "text": "", "status": "running"}
     monkeypatch.setattr(server_module, "detect_video_codec", lambda path, ff: "av01")
 
     class FakePopenRunning:
@@ -1755,8 +1758,8 @@ def test_start_batch_download_rejected_when_remote(client):
 
 
 def test_start_batch_download_schedules_and_reports_total(client, monkeypatch, tmp_path):
-    monkeypatch.setattr(server_module, "load_session", lambda: {"path": str(tmp_path)})
-    monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path)})
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(server_module.threading, "Thread", _NoOpThread)
     resp = client.post(
         "/api/download-batch",
@@ -1768,12 +1771,12 @@ def test_start_batch_download_schedules_and_reports_total(client, monkeypatch, t
     )
     assert resp.status_code == 200
     job_id = resp.get_json()["job_id"]
-    assert server_module.jobs[job_id]["total"] == 2
+    assert jobs_module.jobs[job_id]["total"] == 2
 
 
 def test_start_batch_download_downloads_all_items_in_parallel(client, monkeypatch, tmp_path):
-    monkeypatch.setattr(server_module, "load_session", lambda: {"path": str(tmp_path)})
-    monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path)})
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
 
     downloaded = []
@@ -1804,11 +1807,11 @@ def test_start_batch_download_downloads_all_items_in_parallel(client, monkeypatc
     )
     job_id = resp.get_json()["job_id"]
     for _ in range(50):
-        if server_module.jobs[job_id]["status"] != "running":
+        if jobs_module.jobs[job_id]["status"] != "running":
             break
         time.sleep(0.05)
 
-    job = server_module.jobs[job_id]
+    job = jobs_module.jobs[job_id]
     assert job["status"] == "done"
     assert job["saved_count"] == 2
     # Parallel -> order isn't guaranteed, so compare as a set.
@@ -1822,8 +1825,8 @@ def test_start_batch_download_downloads_all_items_in_parallel(client, monkeypatc
 
 
 def test_start_batch_download_skips_a_failing_item_and_keeps_going(client, monkeypatch, tmp_path):
-    monkeypatch.setattr(server_module, "load_session", lambda: {"path": str(tmp_path)})
-    monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path)})
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
 
     def fake_download_one(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
@@ -1846,11 +1849,11 @@ def test_start_batch_download_skips_a_failing_item_and_keeps_going(client, monke
     )
     job_id = resp.get_json()["job_id"]
     for _ in range(50):
-        if server_module.jobs[job_id]["status"] != "running":
+        if jobs_module.jobs[job_id]["status"] != "running":
             break
         time.sleep(0.05)
 
-    job = server_module.jobs[job_id]
+    job = jobs_module.jobs[job_id]
     # One item failed, the other two still downloaded - the batch finishes "done".
     assert job["status"] == "done"
     assert job["saved_count"] == 2

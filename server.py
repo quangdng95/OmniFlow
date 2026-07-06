@@ -5,20 +5,9 @@ import yt_dlp
 import instaloader
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, paths
-
-# config.json must be writable at runtime: next to the source in dev, but the
-# frozen .app bundle is read-only, so fall back to a per-user app-support dir.
-if getattr(sys, "frozen", False):
-    _config_dir = os.path.join(os.path.expanduser("~/Library/Application Support"), "OmniFlow")
-    os.makedirs(_config_dir, exist_ok=True)
-    CONFIG_FILE = os.path.join(_config_dir, "config.json")
-else:
-    CONFIG_FILE = os.path.join(paths.BASE_DIR, "config.json")
+from backend import classify, config, jobs, paths
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
-
-jobs = {}
 
 LOCAL_HOSTNAMES = {"127.0.0.1", "localhost", "::1"}
 
@@ -261,98 +250,6 @@ def combined_download_percent(stream_index, raw_percent, total_streams):
     return min(100.0, (stream_index * 100 + raw_percent) / total_streams)
 
 
-def resolve_save_dir(configured_path, fallback_dir=None):
-    if os.path.isdir(configured_path) and os.access(configured_path, os.W_OK):
-        return configured_path
-
-    if fallback_dir is None:
-        fallback_dir = os.path.expanduser("~/Downloads")
-    try:
-        os.makedirs(fallback_dir, exist_ok=True)
-    except OSError:
-        pass
-    if os.path.isdir(fallback_dir) and os.access(fallback_dir, os.W_OK):
-        return fallback_dir
-    return None
-
-
-def load_session():
-    default_path = os.path.expanduser("~/Downloads")
-    path_val = default_path
-    cookies_path_val = ""
-    browser_val = "chrome"
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, "r") as f:
-                data = json.load(f)
-                path_val = data.get("path", default_path)
-                cookies_path_val = data.get("cookies_path", "")
-                browser_val = data.get("browser", "chrome")
-        except Exception:
-            pass
-
-    # Always prioritize the user's real Downloads folder: a configured path that
-    # no longer exists/isn't writable (stale config from another machine, deleted
-    # folder, etc.) is silently corrected back to it instead of persisting a dead path.
-    if not (os.path.isdir(path_val) and os.access(path_val, os.W_OK)):
-        path_val = default_path
-        try:
-            os.makedirs(default_path, exist_ok=True)
-        except OSError:
-            pass
-        save_session(path_val, cookies_path_val, browser_val)
-
-    return {"path": path_val, "cookies_path": cookies_path_val, "browser": browser_val}
-
-
-def save_session(path_val, cookies_path_val="", browser_val="chrome"):
-    with open(CONFIG_FILE, "w") as f:
-        json.dump({"path": path_val, "cookies_path": cookies_path_val, "browser": browser_val}, f)
-
-
-def get_cookies_path():
-    cookies_path = load_session().get("cookies_path")
-    if cookies_path and os.path.isfile(cookies_path):
-        return cookies_path
-    return None
-
-
-def cookies_file_has_instagram_session(path):
-    # Soft diagnostic only - a false negative here never blocks the file from
-    # being used as yt-dlp's real cookiefile, it only affects which hint is
-    # shown to the user. Netscape cookie jar format: 7 tab-separated fields
-    # per line (domain, includeSubdomains, path, secure, expiry, name, value);
-    # lines starting with "#" are comments, except "#HttpOnly_"-prefixed lines,
-    # which are real cookie rows with an HttpOnly marker baked into the domain
-    # field by convention.
-    try:
-        with open(path, "r", errors="ignore") as f:
-            lines = f.readlines()
-    except OSError:
-        return False
-    for line in lines:
-        line = line.rstrip("\n")
-        if not line.strip():
-            continue
-        if line.startswith("#"):
-            if not line.startswith("#HttpOnly_"):
-                continue
-            line = line[len("#HttpOnly_"):]
-        fields = line.split("\t")
-        if len(fields) < 7:
-            continue
-        domain, name = fields[0], fields[5]
-        if "instagram.com" in domain and name == "sessionid":
-            return True
-    return False
-
-
-def cookies_status_for(cookies_path):
-    if not cookies_path or not os.path.isfile(cookies_path):
-        return "none"
-    return "valid" if cookies_file_has_instagram_session(cookies_path) else "no_session"
-
-
 @app.get("/")
 def index():
     return send_from_directory(paths.WEB_DIR, "index.html")
@@ -360,23 +257,23 @@ def index():
 
 @app.get("/api/settings")
 def get_settings():
-    session = load_session()
-    return jsonify({**session, "cookies_status": cookies_status_for(session["cookies_path"])})
+    session = config.load_session()
+    return jsonify({**session, "cookies_status": config.cookies_status_for(session["cookies_path"])})
 
 
 @app.post("/api/settings")
 def update_settings():
     data = request.get_json(force=True) or {}
-    session = load_session()
+    session = config.load_session()
     path_val = data.get("path", session["path"])
     cookies_path_val = data.get("cookies_path", session["cookies_path"])
     browser_val = data.get("browser", session.get("browser", "chrome"))
-    save_session(path_val, cookies_path_val, browser_val)
+    config.save_session(path_val, cookies_path_val, browser_val)
     return jsonify({
         "path": path_val,
         "cookies_path": cookies_path_val,
         "browser": browser_val,
-        "cookies_status": cookies_status_for(cookies_path_val),
+        "cookies_status": config.cookies_status_for(cookies_path_val),
     })
 
 
@@ -433,7 +330,7 @@ def browse_file():
     path = result.stdout.strip()
     if result.returncode != 0 or not path:
         return jsonify({"error": "cancelled"}), 400
-    return jsonify({"path": path, "cookies_status": cookies_status_for(path)})
+    return jsonify({"path": path, "cookies_status": config.cookies_status_for(path)})
 
 
 # macOS user-data directories for the Chromium-family browsers. yt-dlp's
@@ -474,10 +371,10 @@ def extract_video_info(cls):
         if not username:
             raise Exception("Cannot extract Instagram username from URL")
             
-        cookies_path = get_cookies_path()
+        cookies_path = config.get_cookies_path()
         auto_cookiefile = None
         # Fall back to auto browser cookies extraction if manual cookies settings not valid/empty
-        if not (cookies_path and cookies_status_for(cookies_path) == "valid"):
+        if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
             candidates = instagram_cookiefile_candidates()
             if candidates:
                 auto_cookiefile = candidates[0]
@@ -541,7 +438,7 @@ def extract_video_info(cls):
     else:
         ydl_opts["noplaylist"] = True
 
-    cookies_path = get_cookies_path()
+    cookies_path = config.get_cookies_path()
     auto_cookiefile = None
 
     if "instagram" in url.lower():
@@ -551,7 +448,7 @@ def extract_video_info(cls):
             "Referer": "https://www.instagram.com/",
         }
         # Fall back to auto browser cookies extraction if manual cookies settings not valid/empty
-        if not (cookies_path and cookies_status_for(cookies_path) == "valid"):
+        if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
             candidates = instagram_cookiefile_candidates()
             if candidates:
                 auto_cookiefile = candidates[0]
@@ -778,8 +675,8 @@ def instagram_cookiefile_candidates():
     # Return manual Settings file if valid, else fallback to auto-extracted browser cookies.
     # This allows public Instagram carousels and images to fetch session cookies automatically.
     candidates = []
-    manual = get_cookies_path()
-    if manual and cookies_status_for(manual) == "valid":
+    manual = config.get_cookies_path()
+    if manual and config.cookies_status_for(manual) == "valid":
         candidates.append(manual)
     candidates.extend(cookiefiles_from_browsers("instagram.com"))
     return candidates
@@ -992,7 +889,7 @@ def download_direct_url(cdn_url, output_path, job_id, chunk_size=131072, on_prog
         downloaded = 0
         with open(output_path, "wb") as out:
             while True:
-                if jobs[job_id]["cancelled"]:
+                if jobs.jobs[job_id]["cancelled"]:
                     raise yt_dlp.utils.DownloadCancelled("cancelled by user")
                 chunk = resp.read(chunk_size)
                 if not chunk:
@@ -1004,10 +901,10 @@ def download_direct_url(cdn_url, output_path, job_id, chunk_size=131072, on_prog
                     if on_progress:
                         on_progress(percent)
                     else:
-                        jobs[job_id]["percent"] = percent
-                        jobs[job_id]["text"] = f"Downloading... ({percent:.1f}%)"
+                        jobs.jobs[job_id]["percent"] = percent
+                        jobs.jobs[job_id]["text"] = f"Downloading... ({percent:.1f}%)"
                 elif not on_progress:
-                    jobs[job_id]["text"] = "Downloading..."
+                    jobs.jobs[job_id]["text"] = "Downloading..."
 
 
 # ---------------------------------------------------------------------------
@@ -1133,7 +1030,7 @@ def check_link():
     try:
         info = extract_video_info(cls)
     except yt_dlp.utils.DownloadError as e:
-        return jsonify({"error": describe_extraction_error(url, e, get_cookies_path())}), 400
+        return jsonify({"error": describe_extraction_error(url, e, config.get_cookies_path())}), 400
     except Exception:
         return jsonify({"error": "Invalid link or private video"}), 400
 
@@ -1279,7 +1176,7 @@ def ensure_h264(path, ffmpeg_bin, job_id):
     codec = detect_video_codec(path, ffmpeg_bin)
     if not codec or not any(codec.startswith(bad) for bad in MACOS_INCOMPATIBLE_VCODECS):
         return
-    jobs[job_id]["text"] = "Converting to H.264 for macOS..."
+    jobs.jobs[job_id]["text"] = "Converting to H.264 for macOS..."
     tmp_out = path + ".h264.mp4"
     cmd = [
         ffmpeg_bin, "-y", "-i", path,
@@ -1292,7 +1189,7 @@ def ensure_h264(path, ffmpeg_bin, job_id):
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     while proc.poll() is None:
-        if jobs[job_id]["cancelled"]:
+        if jobs.jobs[job_id]["cancelled"]:
             proc.terminate()
             try:
                 proc.wait(timeout=5)
@@ -1353,22 +1250,11 @@ def cleanup_partial_download(output_path_no_ext):
         pass
 
 
-def _remove_job_file(job_id):
-    # Delete a job's partially-written output file (used when an Instagram
-    # direct download is cancelled or errors out mid-stream).
-    filepath = jobs.get(job_id, {}).get("filepath")
-    if filepath and os.path.exists(filepath):
-        try:
-            os.remove(filepath)
-        except OSError:
-            pass
-
-
 def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
     # Download a single video URL into save_dir via yt-dlp and return the saved
     # path. Used by the batch runner - the single-video /api/download route keeps
     # its own copy so this can't destabilize that tested path. Honors
-    # jobs[job_id]['cancelled'] (raising DownloadCancelled), applies the H.264
+    # jobs.jobs[job_id]['cancelled'] (raising DownloadCancelled), applies the H.264
     # safety net, and reports THIS item's own 0-100 percent via on_progress(pct)
     # so the caller can fold it into an overall bar. Raises yt-dlp errors to the
     # caller so the batch loop can record/skip a failed item and keep going.
@@ -1379,19 +1265,19 @@ def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_
     state = {"stream_index": 0, "scratch": {}}
 
     def progress_hook(d):
-        if jobs[job_id]["cancelled"]:
+        if jobs.jobs[job_id]["cancelled"]:
             raise yt_dlp.utils.DownloadCancelled("cancelled by user")
         state["stream_index"] = apply_progress_update(state["scratch"], d, state["stream_index"], total_streams)
         if on_progress and "percent" in state["scratch"]:
             on_progress(state["scratch"]["percent"])
 
     def postprocessor_hook(d):
-        if jobs[job_id]["cancelled"]:
+        if jobs.jobs[job_id]["cancelled"]:
             raise yt_dlp.utils.DownloadCancelled("cancelled by user")
 
-    cookies_path = get_cookies_path()
+    cookies_path = config.get_cookies_path()
     if url and "instagram" in url.lower():
-        if not (cookies_path and cookies_status_for(cookies_path) == "valid"):
+        if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
             candidates = instagram_cookiefile_candidates()
             if candidates:
                 cookies_path = candidates[0]
@@ -1430,8 +1316,8 @@ def start_download():
 
     remote_temp_dir = None
     if is_local_request():
-        session = load_session()
-        save_dir = resolve_save_dir(session["path"])
+        session = config.load_session()
+        save_dir = config.resolve_save_dir(session["path"])
         if save_dir is None:
             return jsonify({"error": "Download folder not writable"}), 400
     else:
@@ -1451,7 +1337,7 @@ def start_download():
     if ig_candidates:
 
         job_id = uuid.uuid4().hex
-        jobs[job_id] = {
+        jobs.jobs[job_id] = {
             "status": "running", "percent": 0, "text": "Starting...",
             "filename": None, "filepath": None, "cancelled": False,
         }
@@ -1469,35 +1355,35 @@ def start_download():
                     raise ValueError("No downloadable media found")
                 ext = "jpg" if item["kind"] == "image" else "mp4"
                 final_output_path = get_unique_filename(save_dir, title, ext)
-                jobs[job_id]["filename"] = os.path.basename(final_output_path)
-                jobs[job_id]["filepath"] = final_output_path
+                jobs.jobs[job_id]["filename"] = os.path.basename(final_output_path)
+                jobs.jobs[job_id]["filepath"] = final_output_path
                 download_direct_url(cdn_url, final_output_path, job_id)
             # In every terminal branch the final text/percent is written BEFORE
             # flipping status off "running", so any observer keying on status
             # (the frontend poll, tests) always reads a fully-updated job.
             except yt_dlp.utils.DownloadCancelled:
-                _remove_job_file(job_id)
-                jobs[job_id]["text"] = "Cancelled"
-                jobs[job_id]["status"] = "cancelled"
+                jobs._remove_job_file(job_id)
+                jobs.jobs[job_id]["text"] = "Cancelled"
+                jobs.jobs[job_id]["status"] = "cancelled"
                 return
             except InstagramAuthError as e:
-                _remove_job_file(job_id)
-                jobs[job_id]["text"] = describe_extraction_error(url, e, ig_candidates[0])
-                jobs[job_id]["status"] = "error"
+                jobs._remove_job_file(job_id)
+                jobs.jobs[job_id]["text"] = describe_extraction_error(url, e, ig_candidates[0])
+                jobs.jobs[job_id]["status"] = "error"
                 return
             except Exception as e:
                 print(f"[download] job {job_id} (instagram) failed: {e}")
-                _remove_job_file(job_id)
-                jobs[job_id]["text"] = str(e) or "Download failed"
-                jobs[job_id]["status"] = "error"
+                jobs._remove_job_file(job_id)
+                jobs.jobs[job_id]["text"] = str(e) or "Download failed"
+                jobs.jobs[job_id]["status"] = "error"
                 return
             finally:
                 # Media is already resolved (and the CDN download needs no cookies),
                 # so the temp session files can go regardless of outcome.
                 _cleanup_temp_cookiefiles(ig_candidates)
-            jobs[job_id]["percent"] = 100
-            jobs[job_id]["text"] = f"Saved: {jobs[job_id]['filename']}"
-            jobs[job_id]["status"] = "done"
+            jobs.jobs[job_id]["percent"] = 100
+            jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
+            jobs.jobs[job_id]["status"] = "done"
 
         threading.Thread(target=run_instagram, daemon=True).start()
         return jsonify({"job_id": job_id})
@@ -1512,7 +1398,7 @@ def start_download():
     output_path_no_ext = os.path.splitext(final_output_path)[0]
 
     job_id = uuid.uuid4().hex
-    jobs[job_id] = {
+    jobs.jobs[job_id] = {
         "status": "running",
         "percent": 0,
         "text": "Starting...",
@@ -1526,19 +1412,19 @@ def start_download():
         state = {"stream_index": 0}
 
         def progress_hook(d):
-            if jobs[job_id]["cancelled"]:
+            if jobs.jobs[job_id]["cancelled"]:
                 raise yt_dlp.utils.DownloadCancelled("cancelled by user")
-            state["stream_index"] = apply_progress_update(jobs[job_id], d, state["stream_index"], total_streams)
+            state["stream_index"] = apply_progress_update(jobs.jobs[job_id], d, state["stream_index"], total_streams)
 
         def postprocessor_hook(d):
-            if jobs[job_id]["cancelled"]:
+            if jobs.jobs[job_id]["cancelled"]:
                 raise yt_dlp.utils.DownloadCancelled("cancelled by user")
             if d.get("status") == "started":
-                jobs[job_id]["text"] = "Finalizing..."
+                jobs.jobs[job_id]["text"] = "Finalizing..."
 
-        cookies_path = get_cookies_path()
+        cookies_path = config.get_cookies_path()
         if url and "instagram" in url.lower():
-            if not (cookies_path and cookies_status_for(cookies_path) == "valid"):
+            if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
                 candidates = instagram_cookiefile_candidates()
                 if candidates:
                     cookies_path = candidates[0]
@@ -1559,8 +1445,8 @@ def start_download():
             if "Audio" not in quality:
                 ensure_h264(final_output_path, ffmpeg_bin, job_id)
         except yt_dlp.utils.DownloadCancelled:
-            jobs[job_id]["status"] = "cancelled"
-            jobs[job_id]["text"] = "Cancelled"
+            jobs.jobs[job_id]["status"] = "cancelled"
+            jobs.jobs[job_id]["text"] = "Cancelled"
             cleanup_partial_download(output_path_no_ext)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
@@ -1571,16 +1457,16 @@ def start_download():
             # (--cookies-from-browser, GitHub issue templates) instead of the
             # plain explanation check_link() already gives for the same error.
             print(f"[download] job {job_id} failed: {e}")
-            jobs[job_id]["status"] = "error"
-            jobs[job_id]["text"] = describe_extraction_error(url, e, cookies_path)
+            jobs.jobs[job_id]["status"] = "error"
+            jobs.jobs[job_id]["text"] = describe_extraction_error(url, e, cookies_path)
             cleanup_partial_download(output_path_no_ext)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
         except Exception as e:
             print(f"[download] job {job_id} failed: {e}")
-            jobs[job_id]["status"] = "error"
-            jobs[job_id]["text"] = str(e) or "Download failed"
+            jobs.jobs[job_id]["status"] = "error"
+            jobs.jobs[job_id]["text"] = str(e) or "Download failed"
             cleanup_partial_download(output_path_no_ext)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
@@ -1590,9 +1476,9 @@ def start_download():
             # Instagram, it's served its purpose once the download call returns.
             _cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
 
-        jobs[job_id]["status"] = "done"
-        jobs[job_id]["percent"] = 100
-        jobs[job_id]["text"] = f"Saved: {final_filename}"
+        jobs.jobs[job_id]["status"] = "done"
+        jobs.jobs[job_id]["percent"] = 100
+        jobs.jobs[job_id]["text"] = f"Saved: {final_filename}"
 
     threading.Thread(target=run, daemon=True).start()
     return jsonify({"job_id": job_id})
@@ -1628,7 +1514,7 @@ def start_batch_download():
     if not is_local_request():
         return jsonify({"error": PLAYLIST_LOCAL_ONLY_ERROR}), 403
 
-    save_dir = resolve_save_dir(load_session()["path"])
+    save_dir = config.resolve_save_dir(config.load_session()["path"])
     if save_dir is None:
         return jsonify({"error": "Download folder not writable"}), 400
 
@@ -1640,7 +1526,7 @@ def start_batch_download():
 
     job_id = uuid.uuid4().hex
     total = len(items)
-    jobs[job_id] = {
+    jobs.jobs[job_id] = {
         "status": "running", "percent": 0, "text": "Starting...",
         "filename": None, "filepath": None, "cancelled": False,
         "item": 0, "total": total,
@@ -1652,7 +1538,7 @@ def start_batch_download():
     }
 
     def run_batch():
-        prog = jobs[job_id]["items_progress"]
+        prog = jobs.jobs[job_id]["items_progress"]
         state = {"saved": [], "failed": 0}
         media_holder = {"media": None}
         ig_candidates = []
@@ -1660,12 +1546,12 @@ def start_batch_download():
 
         def recompute_overall():
             # Overall bar = mean of every item's own percent; "item" = how many finished.
-            jobs[job_id]["percent"] = min(100.0, sum(p["percent"] for p in prog) / total)
-            jobs[job_id]["item"] = sum(1 for p in prog if p["status"] in ("done", "error"))
+            jobs.jobs[job_id]["percent"] = min(100.0, sum(p["percent"] for p in prog) / total)
+            jobs.jobs[job_id]["item"] = sum(1 for p in prog if p["status"] in ("done", "error"))
 
         def download_item(i, item):
             p = prog[i]
-            if jobs[job_id]["cancelled"]:
+            if jobs.jobs[job_id]["cancelled"]:
                 return
             p["status"] = "downloading"
             item_title = item.get("title") or f"Video {i + 1}"
@@ -1699,7 +1585,7 @@ def start_batch_download():
                 p["status"] = "done"
                 with lock:
                     state["saved"].append(os.path.basename(out))
-                    jobs[job_id]["filename"] = os.path.basename(out)
+                    jobs.jobs[job_id]["filename"] = os.path.basename(out)
             except yt_dlp.utils.DownloadCancelled:
                 p["status"] = "error"  # a cancel interrupts in-flight items
             except Exception as e:
@@ -1727,25 +1613,25 @@ def start_batch_download():
             # Only a pre-flight failure (e.g. Instagram auth before the pool starts).
             print(f"[batch] job {job_id} failed: {e}")
             _cleanup_temp_cookiefiles(ig_candidates)
-            jobs[job_id]["text"] = describe_extraction_error(url, e) if is_ig_carousel else (str(e) or "Download failed")
-            jobs[job_id]["status"] = "error"
+            jobs.jobs[job_id]["text"] = describe_extraction_error(url, e) if is_ig_carousel else (str(e) or "Download failed")
+            jobs.jobs[job_id]["status"] = "error"
             return
 
         _cleanup_temp_cookiefiles(ig_candidates)
         saved, failed = state["saved"], state["failed"]
-        if jobs[job_id]["cancelled"]:
-            jobs[job_id]["text"] = f"Cancelled (saved {len(saved)} of {total})"
-            jobs[job_id]["status"] = "cancelled"
+        if jobs.jobs[job_id]["cancelled"]:
+            jobs.jobs[job_id]["text"] = f"Cancelled (saved {len(saved)} of {total})"
+            jobs.jobs[job_id]["status"] = "cancelled"
             return
-        jobs[job_id]["percent"] = 100
-        jobs[job_id]["saved_count"] = len(saved)
+        jobs.jobs[job_id]["percent"] = 100
+        jobs.jobs[job_id]["saved_count"] = len(saved)
         if not saved:
-            jobs[job_id]["text"] = "Could not download any item"
-            jobs[job_id]["status"] = "error"
+            jobs.jobs[job_id]["text"] = "Could not download any item"
+            jobs.jobs[job_id]["status"] = "error"
             return
-        jobs[job_id]["filename"] = saved[-1]
-        jobs[job_id]["text"] = f"Saved {len(saved)} of {total} videos" + (f" ({failed} failed)" if failed else "")
-        jobs[job_id]["status"] = "done"
+        jobs.jobs[job_id]["filename"] = saved[-1]
+        jobs.jobs[job_id]["text"] = f"Saved {len(saved)} of {total} videos" + (f" ({failed} failed)" if failed else "")
+        jobs.jobs[job_id]["status"] = "done"
 
     threading.Thread(target=run_batch, daemon=True).start()
     return jsonify({"job_id": job_id})
@@ -1753,7 +1639,7 @@ def start_batch_download():
 
 @app.get("/api/progress/<job_id>")
 def progress(job_id):
-    job = jobs.get(job_id)
+    job = jobs.jobs.get(job_id)
     if not job:
         return jsonify({"error": "Unknown job"}), 404
     return jsonify({
@@ -1769,7 +1655,7 @@ def progress(job_id):
 
 @app.post("/api/cancel/<job_id>")
 def cancel(job_id):
-    job = jobs.get(job_id)
+    job = jobs.jobs.get(job_id)
     if not job:
         return jsonify({"error": "Unknown job"}), 404
     job["cancelled"] = True
@@ -1782,7 +1668,7 @@ def download_file(job_id):
     # finished file sitting in their own configured folder.
     if is_local_request():
         return jsonify({"error": "Not available in local mode"}), 403
-    job = jobs.get(job_id)
+    job = jobs.jobs.get(job_id)
     if not job or job["status"] != "done":
         return jsonify({"error": "File not ready"}), 404
     filepath = job.get("filepath")
@@ -1804,7 +1690,7 @@ def open_folder():
     # download location instead (see /api/download-file).
     if not is_local_request():
         return jsonify({"error": LOCAL_ONLY_ERROR}), 403
-    subprocess.run(["open", load_session()["path"]])
+    subprocess.run(["open", config.load_session()["path"]])
     return jsonify({"ok": True})
 
 
