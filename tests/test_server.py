@@ -8,6 +8,12 @@ from types import SimpleNamespace
 import pytest
 
 import server as server_module
+from backend import classify, paths
+from backend.classify import (
+    get_platform_info,
+    instagram_shortcode_from_url,
+    is_playlist_url,
+)
 from server import (
     InstagramAuthError,
     apply_progress_update,
@@ -20,13 +26,10 @@ from server import (
     ensure_h264,
     format_duration,
     get_cookies_path,
-    get_platform_info,
     get_unique_filename,
     instagram_check_response,
     instagram_media_id_from_shortcode,
-    instagram_shortcode_from_url,
     is_local_request,
-    is_playlist_url,
     load_session,
     qualities_for,
     resolve_save_dir,
@@ -881,7 +884,7 @@ def test_extract_video_info_uses_yt_dlp_in_process(monkeypatch):
             return {"title": "ok"}
 
     monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYoutubeDL)
-    result = server_module.extract_video_info("https://youtube.com/watch?v=abc")
+    result = server_module.extract_video_info(classify.classify_url("https://youtube.com/watch?v=abc"))
 
     assert result == {"title": "ok"}
     assert captured["url"] == "https://youtube.com/watch?v=abc"
@@ -956,11 +959,53 @@ def test_start_download_errors_when_no_folder_is_writable_anywhere(client, monke
     assert resp.get_json()["error"] == "Download folder not writable"
 
 
+def test_start_download_of_watch_list_url_downloads_the_watch_url_not_the_playlist(client, monkeypatch, tmp_path):
+    # R5 pin: for watch?v=X&list=PL… the user picked video X, so the download
+    # engine must receive the WATCH url. Only /api/check widens to the whole
+    # playlist (classification carries the two URLs separately for exactly this).
+    monkeypatch.setattr(server_module, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+    monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
+    monkeypatch.setattr(server_module, "ensure_h264", lambda *a, **k: None)
+
+    seen = {}
+
+    class FakeYDL:
+        def __init__(self, opts):
+            seen["opts"] = opts
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def download(self, urls):
+            seen["urls"] = urls
+
+    monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYDL)
+
+    class SyncThread:
+        # Runs the download worker inline so the assertion sees its yt-dlp call.
+        def __init__(self, target=None, daemon=None):
+            self._target = target
+
+        def start(self):
+            self._target()
+
+    monkeypatch.setattr(server_module.threading, "Thread", SyncThread)
+
+    watch_url = "https://www.youtube.com/watch?v=-It5L-gC6nA&list=PLIILL6veL783kKkdiIybbxARNY9bAVQYe"
+    resp = client.post("/api/download", json={"url": watch_url, "title": "V", "quality": "720p"})
+    assert resp.status_code == 200
+    assert seen["urls"] == [watch_url]  # the watch URL - NOT playlist?list=…
+
+
 def test_start_download_missing_ffmpeg(client, monkeypatch, tmp_path):
     monkeypatch.setattr(
         server_module, "load_session", lambda: {"path": str(tmp_path)}
     )
-    monkeypatch.setattr(server_module, "get_ffmpeg_path", lambda: None)
+    monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: None)
     resp = client.post(
         "/api/download",
         json={"url": "https://youtube.com/watch?v=abc", "title": "Video", "quality": "720p"},
@@ -1474,7 +1519,7 @@ def test_is_playlist_url_treats_a_plain_video_as_a_single_video():
 
 
 def test_is_instagram_profile_url():
-    from server import is_instagram_profile_url
+    from backend.classify import is_instagram_profile_url
     assert is_instagram_profile_url("https://www.instagram.com/thexxlab_")
     assert is_instagram_profile_url("https://www.instagram.com/thexxlab_/")
     assert is_instagram_profile_url("https://www.instagram.com/thexxlab_/reels")
@@ -1487,7 +1532,7 @@ def test_is_instagram_profile_url():
 
 
 def test_instagram_username_from_url():
-    from server import instagram_username_from_url
+    from backend.classify import instagram_username_from_url
     assert instagram_username_from_url("https://www.instagram.com/thexxlab_") == "thexxlab_"
     assert instagram_username_from_url("https://www.instagram.com/thexxlab_/") == "thexxlab_"
     assert instagram_username_from_url("https://www.instagram.com/thexxlab_/reels/") == "thexxlab_"
@@ -1514,11 +1559,11 @@ def test_extract_video_info_uses_flat_extraction_for_a_playlist(monkeypatch):
             return {"_type": "playlist", "entries": []}
 
     monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYoutubeDL)
-    server_module.extract_video_info("https://www.youtube.com/playlist?list=PLxyz")
+    server_module.extract_video_info(classify.classify_url("https://www.youtube.com/playlist?list=PLxyz"))
 
     opts = captured["opts"]
     assert opts["extract_flat"] == "in_playlist"
-    assert opts["playlistend"] == server_module.PLAYLIST_ITEM_CAP
+    assert opts["playlistend"] == classify.PLAYLIST_ITEM_CAP
     assert opts["noplaylist"] is False
 
 
@@ -1539,7 +1584,7 @@ def test_extract_video_info_keeps_noplaylist_for_a_single_video(monkeypatch):
             return {"title": "ok"}
 
     monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYoutubeDL)
-    server_module.extract_video_info("https://www.youtube.com/watch?v=abc")
+    server_module.extract_video_info(classify.classify_url("https://www.youtube.com/watch?v=abc"))
     assert captured["opts"]["noplaylist"] is True
     assert "extract_flat" not in captured["opts"]
 
@@ -1573,12 +1618,12 @@ def test_check_link_youtube_playlist_returns_items_with_urls(client, monkeypatch
     assert [i["position"] for i in body["items"]] == [1, 2]
     assert all(i["is_available"] for i in body["items"])
     assert body["items"][0]["duration"] == "01:05"
-    assert body["items"][0]["qualities"] == server_module.PLAYLIST_QUALITIES
+    assert body["items"][0]["qualities"] == classify.PLAYLIST_QUALITIES
     assert body["truncated"] is False
 
 
 def test_normalize_youtube_playlist_url_rewrites_watch_to_playlist():
-    norm = server_module.normalize_youtube_playlist_url
+    norm = classify.normalize_youtube_playlist_url
     # The owner's exact test case: watch?v=...&list=... MUST become playlist?list=...
     assert norm("https://www.youtube.com/watch?v=-It5L-gC6nA&list=PLIILL6veL783kKkdiIybbxARNY9bAVQYe") == (
         "https://www.youtube.com/playlist?list=PLIILL6veL783kKkdiIybbxARNY9bAVQYe"
@@ -1612,7 +1657,7 @@ def test_extract_video_info_passes_canonical_playlist_url_to_ytdlp(monkeypatch):
 
     monkeypatch.setattr(server_module.yt_dlp, "YoutubeDL", FakeYDL)
     server_module.extract_video_info(
-        "https://www.youtube.com/watch?v=-It5L-gC6nA&list=PLIILL6veL783kKkdiIybbxARNY9bAVQYe"
+        classify.classify_url("https://www.youtube.com/watch?v=-It5L-gC6nA&list=PLIILL6veL783kKkdiIybbxARNY9bAVQYe")
     )
     assert seen["url"] == "https://www.youtube.com/playlist?list=PLIILL6veL783kKkdiIybbxARNY9bAVQYe"
     assert seen["opts"]["noplaylist"] is False  # i.e. --yes-playlist
@@ -1661,12 +1706,12 @@ def test_check_link_youtube_playlist_flags_dead_videos_as_unavailable(client, mo
 
 def test_check_link_youtube_playlist_flags_truncation_at_the_cap(client, monkeypatch):
     entries = [{"id": f"v{i}", "title": f"V{i}", "url": f"https://youtube.com/watch?v=v{i}", "duration": 60}
-               for i in range(server_module.PLAYLIST_ITEM_CAP)]
+               for i in range(classify.PLAYLIST_ITEM_CAP)]
     monkeypatch.setattr(server_module, "extract_video_info", lambda url: {"_type": "playlist", "title": "Big", "entries": entries})
     resp = client.post("/api/check", json={"url": "https://www.youtube.com/@somechannel"})
     body = resp.get_json()
     assert body["truncated"] is True
-    assert len(body["items"]) == server_module.PLAYLIST_ITEM_CAP
+    assert len(body["items"]) == classify.PLAYLIST_ITEM_CAP
     # Title stays clean; position carries the ordering (the frontend zero-pads it).
     assert body["items"][0]["title"] == "V0"
     assert body["items"][0]["position"] == 1
@@ -1729,7 +1774,7 @@ def test_start_batch_download_schedules_and_reports_total(client, monkeypatch, t
 def test_start_batch_download_downloads_all_items_in_parallel(client, monkeypatch, tmp_path):
     monkeypatch.setattr(server_module, "load_session", lambda: {"path": str(tmp_path)})
     monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
-    monkeypatch.setattr(server_module, "get_ffmpeg_path", lambda: "/ff")
+    monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
 
     downloaded = []
     lock = __import__("threading").Lock()
@@ -1779,7 +1824,7 @@ def test_start_batch_download_downloads_all_items_in_parallel(client, monkeypatc
 def test_start_batch_download_skips_a_failing_item_and_keeps_going(client, monkeypatch, tmp_path):
     monkeypatch.setattr(server_module, "load_session", lambda: {"path": str(tmp_path)})
     monkeypatch.setattr(server_module, "resolve_save_dir", lambda path: str(tmp_path))
-    monkeypatch.setattr(server_module, "get_ffmpeg_path", lambda: "/ff")
+    monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
 
     def fake_download_one(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
         if title == "B":

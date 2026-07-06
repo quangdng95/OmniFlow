@@ -5,12 +5,7 @@ import yt_dlp
 import instaloader
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# When packaged with PyInstaller, bundled read-only resources (the built
-# frontend and the vendored ffmpeg) live under sys._MEIPASS, not next to this
-# source file. In dev this is just BASE_DIR, so nothing changes there.
-RESOURCE_BASE = getattr(sys, "_MEIPASS", BASE_DIR)
-WEB_DIR = os.path.join(RESOURCE_BASE, "frontend", "dist")
+from backend import classify, paths
 
 # config.json must be writable at runtime: next to the source in dev, but the
 # frozen .app bundle is read-only, so fall back to a per-user app-support dir.
@@ -19,9 +14,9 @@ if getattr(sys, "frozen", False):
     os.makedirs(_config_dir, exist_ok=True)
     CONFIG_FILE = os.path.join(_config_dir, "config.json")
 else:
-    CONFIG_FILE = os.path.join(BASE_DIR, "config.json")
+    CONFIG_FILE = os.path.join(paths.BASE_DIR, "config.json")
 
-app = Flask(__name__, static_folder=WEB_DIR, static_url_path="")
+app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
 jobs = {}
 
@@ -47,25 +42,6 @@ def is_local_request():
     return hostname in LOCAL_HOSTNAMES
 
 
-def resource_path(relative_path):
-    return os.path.join(RESOURCE_BASE, relative_path)
-
-
-def get_ffmpeg_path():
-    local_ffmpeg = resource_path("ffmpeg")
-    if os.path.exists(local_ffmpeg):
-        # A bundled ffmpeg can lose its +x bit when unpacked from the .app, so
-        # restore it before trusting it (no-op in dev, where it's already +x).
-        if not os.access(local_ffmpeg, os.X_OK):
-            try:
-                os.chmod(local_ffmpeg, 0o755)
-            except OSError:
-                pass
-        if os.access(local_ffmpeg, os.X_OK):
-            return local_ffmpeg
-    return shutil.which("ffmpeg")
-
-
 def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>|]', "", name).strip()
 
@@ -78,117 +54,6 @@ def get_unique_filename(directory, filename, extension):
         full_path = os.path.join(directory, f"{base_name} ({counter}).{extension}")
         counter += 1
     return full_path
-
-
-def normalize_rednote_url(url):
-    if not url:
-        return url
-    if "rednote.com/explore/" in url:
-        return url.replace("rednote.com/explore/", "xiaohongshu.com/discovery/item/")
-    return url
-
-
-def normalize_youtube_playlist_url(url):
-    # A `youtube.com/watch?v=...&list=...` URL is a video that happens to sit in a
-    # playlist. yt-dlp routes the `/watch` path to its VIDEO extractor and hands
-    # back a single video (even with noplaylist=False) - so the whole list is never
-    # listed. Rewrite it to the canonical `/playlist?list=<id>` URL, which routes
-    # to the playlist (tab) extractor and lists every entry.
-    # Exception: a Mix/Radio playlist (`list=RD...`) is auto-generated around a seed
-    # video and only resolves via the watch URL, so leave those untouched.
-    if not url:
-        return url
-    try:
-        parsed = urllib.parse.urlparse(url)
-    except Exception:
-        return url
-    host = (parsed.hostname or "").lower()
-    if not (host == "youtu.be" or host.endswith("youtube.com")):
-        return url
-    list_ids = urllib.parse.parse_qs(parsed.query).get("list")
-    if not list_ids or not list_ids[0]:
-        return url
-    list_id = list_ids[0]
-    if list_id.upper().startswith("RD"):
-        return url  # Mix/Radio needs the seed video -> keep the watch URL
-    return f"https://www.youtube.com/playlist?list={list_id}"
-
-
-def get_platform_info(url):
-    url = normalize_rednote_url(url)
-    url_lower = url.lower()
-    if "youtube" in url_lower or "youtu.be" in url_lower: return "YouTube"
-    if "instagram" in url_lower: return "Instagram"
-    if "tiktok" in url_lower: return "TikTok"
-    if "facebook.com" in url_lower or "fb.watch" in url_lower: return "Facebook"
-    # "RedNote" is Xiaohongshu's international rebrand - links can come from
-    # either the classic domains or the newer rednote.com one.
-    if "xiaohongshu" in url_lower or "xhslink" in url_lower or "rednote" in url_lower: return "RedNote"
-    return "Link"
-
-
-# Cap how many entries we pull from a playlist/channel. A channel can have
-# thousands of videos; listing them all would make yt-dlp slow and the UI heavy.
-PLAYLIST_ITEM_CAP = 200
-
-# Flat playlist extraction can't know each entry's real available formats without
-# a full per-video fetch, so a batch download offers one shared quality ladder
-# applied to every selected item (build_download_options maps these the same way
-# it does for a single video).
-PLAYLIST_QUALITIES = ["Best", "1080p", "720p", "480p", "Audio Only"]
-
-# Explicit playlist/channel/handle shapes route to flat playlist extraction.
-# Any YouTube URL carrying a list= param (INCLUDING watch?v=...&list=...) is also
-# treated as a playlist - extract the whole list, not just the single video
-# (reverses the earlier "watch stays single" choice per owner direction; see
-# MISTAKES.md 2026-07-06).
-_PLAYLIST_URL_RE = re.compile(r"youtube\.com/(?:playlist\?|(?:c|channel|user)/|@)", re.IGNORECASE)
-
-
-def is_instagram_profile_url(url):
-    url_lower = url.lower()
-    if "instagram.com" not in url_lower:
-        return False
-    try:
-        parsed_url = urllib.parse.urlparse(url)
-        path = parsed_url.path.strip("/")
-        parts = [p for p in path.split("/") if p]
-        if not parts:
-            return False
-        # Ignore common non-profile endpoints/paths
-        if parts[0] in ("p", "reel", "reels", "tv", "stories", "api", "accounts", "explore", "developer", "static"):
-            return False
-        if len(parts) == 1:
-            return True
-        if len(parts) == 2 and parts[1] == "reels":
-            return True
-        return False
-    except Exception:
-        return False
-
-
-def is_playlist_url(url):
-    u = (url or "").lower()
-    # A YouTube URL with a list= param is a playlist, even as watch?v=...&list=...
-    # This is what makes yt-dlp drop --no-playlist and add --yes-playlist +
-    # --flat-playlist (see extract_video_info) so it lists the whole playlist.
-    if ("youtube.com" in u or "youtu.be" in u) and "list=" in u:
-        return True
-    if is_instagram_profile_url(url):
-        return True
-    return bool(_PLAYLIST_URL_RE.search(url or ""))
-
-
-def instagram_username_from_url(url):
-    try:
-        parsed_url = urllib.parse.urlparse(url)
-        path = parsed_url.path.strip("/")
-        parts = [p for p in path.split("/") if p]
-        if parts:
-            return parts[0]
-    except Exception:
-        pass
-    return None
 
 
 def fetch_instagram_profile_instaloader(username, cookiefile_path=None):
@@ -490,7 +355,7 @@ def cookies_status_for(cookies_path):
 
 @app.get("/")
 def index():
-    return send_from_directory(WEB_DIR, "index.html")
+    return send_from_directory(paths.WEB_DIR, "index.html")
 
 
 @app.get("/api/settings")
@@ -597,14 +462,15 @@ def _profile_cookie_db(profile_dir):
     return None
 
 
-def extract_video_info(url):
-    url = normalize_rednote_url(url)
-    # A watch?v=...&list=... URL must become playlist?list=... BEFORE it reaches
-    # yt-dlp, or yt-dlp's /watch video extractor returns just the one video.
-    url = normalize_youtube_playlist_url(url)
-    if is_instagram_profile_url(url):
+def extract_video_info(cls):
+    # `cls` is a classify.Classification - what the link IS was already decided
+    # by classify.classify_url() (owner core capability #4); this function only
+    # executes the extraction that classification dictates. It never re-derives
+    # platform/kind from the URL string.
+    url = cls.extraction_url
+    if cls.kind == classify.LinkKind.INSTAGRAM_PROFILE:
         # Use our Custom Instagram Profile/Reels Resolver to bypass Meta blocks
-        username = instagram_username_from_url(url)
+        username = cls.username
         if not username:
             raise Exception("Cannot extract Instagram username from URL")
             
@@ -663,17 +529,15 @@ def extract_video_info(url):
         "skip_download": True,
         "socket_timeout": 30,
     }
-    if is_playlist_url(url):
+    if cls.is_multi:
         # Flat extraction: list each entry's id/title/url/duration/thumbnail
         # WITHOUT fetching every video's full metadata - a channel with thousands
         # of videos would otherwise hang the app. playlistend caps the count as a
-        # second guard on top of the flat (metadata-free) listing.
+        # second guard on top of the flat (metadata-free) listing; the classifier
+        # already picked the cap (50 for an endless Mix, 200 otherwise).
         ydl_opts["noplaylist"] = False
         ydl_opts["extract_flat"] = "in_playlist"
-        if "list=rd" in url.lower():
-            ydl_opts["playlistend"] = 50
-        else:
-            ydl_opts["playlistend"] = PLAYLIST_ITEM_CAP
+        ydl_opts["playlistend"] = cls.playlist_cap or classify.PLAYLIST_ITEM_CAP
     else:
         ydl_opts["noplaylist"] = True
 
@@ -714,7 +578,7 @@ def describe_extraction_error(url, error, cookies_path=None):
     lower = message.lower()
     
     # Instagram profile / user failures
-    is_ig_profile = is_instagram_profile_url(url)
+    is_ig_profile = classify.is_instagram_profile_url(url)
     if is_ig_profile or "instagram:user" in lower or "instagram:profile" in lower or ("unable to extract data" in lower and "instagram" in url.lower()):
         return "❌ Lỗi: Không thể lấy danh sách từ tài khoản Instagram này do giới hạn bảo mật. Vui lòng tải từng bài viết (Post/Reel) hoặc kiểm tra lại Cookies trong Settings."
 
@@ -944,14 +808,6 @@ def fetch_instagram_media_any(url, cookiefiles):
     raise InstagramAuthError("Instagram requires a logged-in session (cookies).")
 
 
-def instagram_shortcode_from_url(url):
-    # Only post/reel/tv shapes carry a media shortcode resolvable via the
-    # private media-info endpoint. Stories (/stories/<user>/<id>/) are a
-    # different shape handled by the existing yt-dlp path, so they return None.
-    m = re.search(r"instagram\.com/(?:[^/]+/)?(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)", url)
-    return m.group(1) if m else None
-
-
 def instagram_media_id_from_shortcode(shortcode):
     # An Instagram shortcode is the media's numeric primary key encoded in a
     # url-safe base64 alphabet. Decoding it locally avoids an extra network
@@ -1034,7 +890,7 @@ def fetch_instagram_media(url, cookies_path):
     # A single post -> one item; a carousel -> one item per slide (photos and
     # videos mixed, in order). Raises InstagramAuthError when Instagram wants a
     # valid session.
-    shortcode = instagram_shortcode_from_url(url)
+    shortcode = classify.instagram_shortcode_from_url(url)
     if not shortcode:
         raise InstagramAuthError("Not an Instagram post or reel URL (cookies).")
     media_id = instagram_media_id_from_shortcode(shortcode)
@@ -1089,7 +945,7 @@ def instagram_check_response(url, media):
     # server-side at download time by /api/download.
     items = media["items"]
     title = media["title"]
-    platform = get_platform_info(url)
+    platform = classify.get_platform_info(url)
 
     def quality_label(kind):
         return ["Image"] if kind == "image" else ["Video"]
@@ -1176,13 +1032,77 @@ def format_duration(duration):
     return f"{minutes:02d}:{seconds:02d}"
 
 
+def flat_playlist_items(entries):
+    # Shape flat-extraction entries (YouTube playlist/channel, Instagram profile)
+    # into /api/check playlist items. The 1-based `position` is the video's TRUE
+    # spot in the list (kept even for hidden/removed videos) and is used for UI
+    # numbering ONLY - PRD §7: the number must never touch the physical filename,
+    # so `title` stays the raw video title (the batch download builds the saved
+    # file from it). A 1-item "playlist" gets position None - the frontend
+    # renders it as a plain single video.
+    number_items = len(entries) > 1
+    items = []
+    for pos, entry in enumerate(entries, start=1):
+        item_url = entry.get("url") or entry.get("webpage_url")
+        if not item_url and entry.get("id"):
+            item_url = f"https://www.youtube.com/watch?v={entry['id']}"
+        raw_title = entry.get("title") or "Video"
+        duration = entry.get("duration")
+        # A playlist routinely contains hidden/removed videos. yt-dlp lists
+        # them with a "[Private video]"/"[Deleted video]" title and no
+        # duration - flag those so the UI can disable/hide them and never
+        # let a batch queue a doomed download. Keep them in the list (not
+        # dropped) so the numbering stays true to the real playlist.
+        lower = raw_title.lower()
+        is_available = not (
+            "[private video]" in lower
+            or "[deleted video]" in lower
+            or "[unavailable video]" in lower
+            or duration is None
+            or not item_url
+        )
+        items.append({
+            "id": entry.get("id"),
+            "title": raw_title,
+            "position": pos if number_items else None,
+            "uploader": entry.get("uploader") or entry.get("channel") or "",
+            "thumbnail": resolve_thumbnail(entry),
+            "duration": format_duration(duration),
+            "url": item_url,
+            "qualities": classify.PLAYLIST_QUALITIES,
+            "is_available": is_available,
+        })
+    return items
+
+
+def story_playlist_items(entries):
+    # Shape a full (non-flat) yt-dlp playlist - an Instagram Story - into
+    # /api/check playlist items: keep only the actual videos (photo entries
+    # carry no formats) but remember each one's ORIGINAL 1-based position so
+    # download targets the right entry even after photos are filtered out.
+    items = []
+    for original_index, entry in enumerate(entries, start=1):
+        if not entry.get("formats"):
+            continue
+        items.append({
+            "id": entry.get("id"),
+            "title": entry.get("title") or "Video",
+            "thumbnail": resolve_thumbnail(entry),
+            "duration": format_duration(entry.get("duration")),
+            "entry_index": original_index,
+            "qualities": qualities_for(entry),
+        })
+    return items
+
+
 @app.post("/api/check")
 def check_link():
     data = request.get_json(force=True) or {}
-    url = (data.get("url") or "").strip()
-    url = normalize_rednote_url(url)
-    if not url:
+    raw_url = (data.get("url") or "").strip()
+    if not raw_url:
         return jsonify({"error": "Missing url"}), 400
+    cls = classify.classify_url(raw_url)
+    url = cls.url
 
     # Instagram only works with a cookies.txt file configured in Settings, and
     # that config is a single, machine-wide setting (see get_cookies_path) -
@@ -1191,13 +1111,13 @@ def check_link():
     # session, burning their account's rate limits/ban risk on a stranger's
     # request. Reject it outright instead of letting it "just fail" on its
     # own, since it might not fail at all if the owner has cookies configured.
-    if get_platform_info(url) == "Instagram" and not is_local_request():
+    if cls.platform == "Instagram" and not is_local_request():
         return jsonify({"error": INSTAGRAM_LOCAL_ONLY_ERROR}), 403
 
     # Instagram posts/reels/tv go through our own resolver (so photos and
     # carousels work at all) ONLY if we have a valid cookies file.
     # Otherwise (or if custom resolver fails), we fall through to yt-dlp.
-    if get_platform_info(url) == "Instagram" and instagram_shortcode_from_url(url):
+    if cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL:
         candidates = instagram_cookiefile_candidates()
         if candidates:
             try:
@@ -1211,7 +1131,7 @@ def check_link():
                 _cleanup_temp_cookiefiles(candidates)
 
     try:
-        info = extract_video_info(url)
+        info = extract_video_info(cls)
     except yt_dlp.utils.DownloadError as e:
         return jsonify({"error": describe_extraction_error(url, e, get_cookies_path())}), 400
     except Exception:
@@ -1221,74 +1141,23 @@ def check_link():
         return jsonify({"error": "Invalid link or private video"}), 400
 
     # Two kinds of playlist resolve here:
-    #  - a YouTube playlist/channel (flat extraction): entries carry no per-item
-    #    formats, so each item carries its own video URL + the shared quality
-    #    ladder, and batch download hits each URL directly.
+    #  - a YouTube playlist/channel or Instagram profile (flat/resolver listing):
+    #    entries carry no per-item formats, so each item carries its own video
+    #    URL + the shared quality ladder, and batch download hits each URL.
     #  - an Instagram Story (full yt-dlp playlist): entries carry formats; keep
     #    only the actual videos (photo items have none) but remember each one's
     #    ORIGINAL 1-based position so download targets the right entry even after
     #    photo entries are filtered out.
     if info.get("_type") == "playlist" or "entries" in info:
         entries = [e for e in (info.get("entries") or []) if e]
-        is_flat = is_playlist_url(url)
-        items = []
-        if is_flat:
-            # Zero-pad the index to the playlist's own width so titles (and the
-            # resulting filenames) sort in order: "01."/"02." for <=99 items,
-            # A playlist routinely contains hidden/removed videos, so the 1-based
-            # `position` is the video's TRUE spot in the list (not its index among
-            # visible rows) and is used for UI numbering ONLY. PRD §7: the number
-            # must never touch the physical filename, so `title` stays the raw
-            # video title - the batch download builds the saved file from it.
-            number_items = len(entries) > 1
-            for pos, entry in enumerate(entries, start=1):
-                item_url = entry.get("url") or entry.get("webpage_url")
-                if not item_url and entry.get("id"):
-                    item_url = f"https://www.youtube.com/watch?v={entry['id']}"
-                raw_title = entry.get("title") or "Video"
-                duration = entry.get("duration")
-                # A playlist routinely contains hidden/removed videos. yt-dlp lists
-                # them with a "[Private video]"/"[Deleted video]" title and no
-                # duration - flag those so the UI can disable/hide them and never
-                # let a batch queue a doomed download. Keep them in the list (not
-                # dropped) so the numbering stays true to the real playlist.
-                lower = raw_title.lower()
-                is_available = not (
-                    "[private video]" in lower
-                    or "[deleted video]" in lower
-                    or "[unavailable video]" in lower
-                    or duration is None
-                    or not item_url
-                )
-                items.append({
-                    "id": entry.get("id"),
-                    "title": raw_title,
-                    "position": pos if number_items else None,
-                    "uploader": entry.get("uploader") or entry.get("channel") or "",
-                    "thumbnail": resolve_thumbnail(entry),
-                    "duration": format_duration(duration),
-                    "url": item_url,
-                    "qualities": PLAYLIST_QUALITIES,
-                    "is_available": is_available,
-                })
-        else:
-            for original_index, entry in enumerate(entries, start=1):
-                if not entry.get("formats"):
-                    continue
-                items.append({
-                    "id": entry.get("id"),
-                    "title": entry.get("title") or "Video",
-                    "thumbnail": resolve_thumbnail(entry),
-                    "duration": format_duration(entry.get("duration")),
-                    "entry_index": original_index,
-                    "qualities": qualities_for(entry),
-                })
+        is_flat = cls.is_multi
+        items = flat_playlist_items(entries) if is_flat else story_playlist_items(entries)
         return jsonify({
             "type": "playlist",
-            "platform": get_platform_info(url),
+            "platform": cls.platform,
             "title": info.get("title") or ("Playlist" if is_flat else "Story"),
             "items": items,
-            "truncated": is_flat and len(entries) >= PLAYLIST_ITEM_CAP,
+            "truncated": is_flat and len(entries) >= classify.PLAYLIST_ITEM_CAP,
         })
 
     return jsonify({
@@ -1296,7 +1165,7 @@ def check_link():
         "title": info.get("title", "Video"),
         "uploader": info.get("uploader", ""),
         "thumbnail": resolve_thumbnail(info),
-        "platform": get_platform_info(url),
+        "platform": cls.platform,
         "qualities": qualities_for(info),
         "duration": format_duration(info.get("duration")),
     })
@@ -1544,23 +1413,19 @@ def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_
 @app.post("/api/download")
 def start_download():
     data = request.get_json(force=True) or {}
-    url = (data.get("url") or "").strip()
-    url = normalize_rednote_url(url)
+    raw_url = (data.get("url") or "").strip()
+    if not raw_url:
+        return jsonify({"error": "Missing url"}), 400
+    cls = classify.classify_url(raw_url)
+    # Always download cls.url (the pasted link, RedNote-normalized) - NEVER
+    # cls.extraction_url: for a watch?v=X&list=PL… link the user picked video X,
+    # while extraction_url deliberately widens to the whole playlist for /api/check.
+    url = cls.url
     title = data.get("title") or "Video"
     quality = data.get("quality") or "Best"
-    entry_index = data.get("entry_index")
-    if not entry_index:
-        try:
-            parsed_url = urllib.parse.urlparse(url)
-            params = urllib.parse.parse_qs(parsed_url.query)
-            if "img_index" in params:
-                entry_index = int(params["img_index"][0])
-        except Exception:
-            pass
-    if not url:
-        return jsonify({"error": "Missing url"}), 400
+    entry_index = data.get("entry_index") or classify.entry_index_from_url(url)
 
-    if get_platform_info(url) == "Instagram" and not is_local_request():
+    if cls.platform == "Instagram" and not is_local_request():
         return jsonify({"error": INSTAGRAM_LOCAL_ONLY_ERROR}), 403
 
     remote_temp_dir = None
@@ -1581,7 +1446,7 @@ def start_download():
     # ONLY if we have a valid manual cookies file.
     # Otherwise, let it fall through to the standard yt-dlp download pipeline.
     ig_candidates = []
-    if get_platform_info(url) == "Instagram" and instagram_shortcode_from_url(url):
+    if cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL:
         ig_candidates = instagram_cookiefile_candidates()
     if ig_candidates:
 
@@ -1637,7 +1502,7 @@ def start_download():
         threading.Thread(target=run_instagram, daemon=True).start()
         return jsonify({"job_id": job_id})
 
-    ffmpeg_bin = get_ffmpeg_path()
+    ffmpeg_bin = paths.get_ffmpeg_path()
     if not ffmpeg_bin:
         return jsonify({"error": "FFmpeg missing! Run 'brew install ffmpeg'"}), 400
 
@@ -1750,7 +1615,8 @@ def start_batch_download():
     # (YouTube) or an "entry_index" into the original `url` (Instagram carousel
     # via the resolver, or a Story via yt-dlp playlist_items).
     data = request.get_json(force=True) or {}
-    url = (data.get("url") or "").strip()
+    cls = classify.classify_url((data.get("url") or "").strip())
+    url = cls.url
     quality = data.get("quality") or "Best"
     items = data.get("items") or []
     if not items:
@@ -1766,11 +1632,11 @@ def start_batch_download():
     if save_dir is None:
         return jsonify({"error": "Download folder not writable"}), 400
 
-    ffmpeg_bin = get_ffmpeg_path()
+    ffmpeg_bin = paths.get_ffmpeg_path()
     if not ffmpeg_bin:
         return jsonify({"error": "FFmpeg missing! Run 'brew install ffmpeg'"}), 400
 
-    is_ig_carousel = get_platform_info(url) == "Instagram" and instagram_shortcode_from_url(url)
+    is_ig_carousel = cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL
 
     job_id = uuid.uuid4().hex
     total = len(items)
