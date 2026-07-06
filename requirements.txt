@@ -1,16 +1,21 @@
-# Web app (server.py, desktop_app.py) — primary entry points
+# Web app (server.py facade + backend/, desktop_app.py) — primary entry points
 flask
 pywebview
-# Used in-process for both /api/check and /api/download (see server.py's
-# extract_video_info / build_download_options) - the vendored ./yt-dlp binary
+# Used in-process for both /api/check and /api/download (see
+# backend/extraction.py / backend/download.py) - the vendored ./yt-dlp binary
 # is no longer used by any code path.
 yt-dlp
 
+# Primary resolver for Instagram profile/reels listings (yt-dlp's
+# instagram:user extractor is blocked by Meta) - see backend/instagram.py.
+instaloader
+
 # Auto-extracts a logged-in Instagram sessionid straight from the local
 # browsers' cookie DBs (decrypts the macOS Keychain itself) so users don't have
-# to export cookies.txt by hand - see server.py's cookiefiles_from_browsers().
-# A separate implementation from yt-dlp's --cookies-from-browser, used as a
-# more-reliable primary path plus a fallback when Keychain blocks yt-dlp.
+# to export cookies.txt by hand - see backend/cookies.py's
+# cookiefiles_from_browsers(). A separate implementation from yt-dlp's
+# --cookies-from-browser, used as a more-reliable primary path plus a fallback
+# when Keychain blocks yt-dlp.
 browser_cookie3
 
 # Legacy Tkinter desktop app (main.py, ui.py)
