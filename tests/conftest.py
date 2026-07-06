@@ -7,6 +7,7 @@ import pytest
 
 import server as server_module
 from backend import config as config_module
+from backend import cookies as cookies_module
 from backend import jobs as jobs_module
 
 
@@ -40,6 +41,6 @@ def no_browser_cookie_scan(monkeypatch):
     # live Instagram session in Chrome. Stub it out by default so every test sees
     # "no browser session found". The fixture returns the real function so the few
     # tests that specifically exercise it can call it directly.
-    original = server_module.cookiefiles_from_browsers
-    monkeypatch.setattr(server_module, "cookiefiles_from_browsers", lambda domain="instagram.com": [])
+    original = cookies_module.cookiefiles_from_browsers
+    monkeypatch.setattr(cookies_module, "cookiefiles_from_browsers", lambda domain="instagram.com": [])
     return original

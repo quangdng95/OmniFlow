@@ -5,7 +5,7 @@ import yt_dlp
 import instaloader
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, config, jobs, paths
+from backend import classify, config, cookies, jobs, paths
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
@@ -101,36 +101,8 @@ def fetch_instagram_profile_instaloader(username, cookiefile_path=None):
         
     return entries
 
-def parse_cookies_from_file(cookies_path):
-    cookies = {}
-    if not cookies_path:
-        return cookies
-    try:
-        cj = http.cookiejar.MozillaCookieJar(cookies_path)
-        cj.load(ignore_discard=True, ignore_expires=True)
-        for cookie in cj:
-            cookies[cookie.name] = cookie.value
-    except Exception as e:
-        print(f"[debug] Failed to parse cookies from MozillaCookieJar: {e}", flush=True)
-        # Fall back to manual parsing
-        try:
-            with open(cookies_path, "r", errors="ignore") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith("#"):
-                        continue
-                    parts = line.split("\t")
-                    if len(parts) >= 7:
-                        name = parts[5]
-                        value = parts[6]
-                        cookies[name] = value
-        except Exception as e2:
-            print(f"[debug] Manual cookie parse failed: {e2}", flush=True)
-    return cookies
-
-
 def fetch_instagram_profile_info(username, cookiefile_path=None):
-    cookies_dict = parse_cookies_from_file(cookiefile_path)
+    cookies_dict = cookies.parse_cookies_from_file(cookiefile_path)
     session = requests.Session()
     session.cookies.update(cookies_dict)
     
@@ -152,7 +124,7 @@ def fetch_instagram_profile_info(username, cookiefile_path=None):
 
 
 def fetch_instagram_profile_info_fallback(username, cookiefile_path=None):
-    cookies_dict = parse_cookies_from_file(cookiefile_path)
+    cookies_dict = cookies.parse_cookies_from_file(cookiefile_path)
     session = requests.Session()
     session.cookies.update(cookies_dict)
     
@@ -333,32 +305,6 @@ def browse_file():
     return jsonify({"path": path, "cookies_status": config.cookies_status_for(path)})
 
 
-# macOS user-data directories for the Chromium-family browsers. yt-dlp's
-# --cookies-from-browser (and browser_cookie3) default to a browser's *Default*
-# profile only - but a user who is logged into Instagram in "Profile 1" has no
-# session in Default, so the default scan silently reads an account-less profile
-# and "auto cookies" appears to fail. We enumerate the real profile folders on
-# disk instead and try each exact one.
-CHROMIUM_BROWSER_DIRS = {
-    "chrome": "~/Library/Application Support/Google/Chrome",
-    "brave": "~/Library/Application Support/BraveSoftware/Brave-Browser",
-    "edge": "~/Library/Application Support/Microsoft Edge",
-    "chromium": "~/Library/Application Support/Chromium",
-    "vivaldi": "~/Library/Application Support/Vivaldi",
-    "opera": "~/Library/Application Support/com.operasoftware.Opera",
-}
-
-
-def _profile_cookie_db(profile_dir):
-    # Newer Chrome moved the cookies DB to <profile>/Network/Cookies; older
-    # builds keep it at <profile>/Cookies. Return whichever exists, else None.
-    for rel in (os.path.join("Network", "Cookies"), "Cookies"):
-        candidate = os.path.join(profile_dir, rel)
-        if os.path.isfile(candidate):
-            return candidate
-    return None
-
-
 def extract_video_info(cls):
     # `cls` is a classify.Classification - what the link IS was already decided
     # by classify.classify_url() (owner core capability #4); this function only
@@ -375,10 +321,10 @@ def extract_video_info(cls):
         auto_cookiefile = None
         # Fall back to auto browser cookies extraction if manual cookies settings not valid/empty
         if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
-            candidates = instagram_cookiefile_candidates()
+            candidates = cookies.instagram_cookiefile_candidates()
             if candidates:
                 auto_cookiefile = candidates[0]
-                _cleanup_temp_cookiefiles(candidates[1:])
+                cookies._cleanup_temp_cookiefiles(candidates[1:])
                 cookies_path = auto_cookiefile
                 
         try:
@@ -411,7 +357,7 @@ def extract_video_info(cls):
             }
         finally:
             if auto_cookiefile:
-                _cleanup_temp_cookiefiles([auto_cookiefile])
+                cookies._cleanup_temp_cookiefiles([auto_cookiefile])
 
     # Runs in-process via the yt-dlp Python package instead of spawning the
     # vendored PyInstaller-frozen ./yt-dlp binary: that binary self-extracts
@@ -449,11 +395,11 @@ def extract_video_info(cls):
         }
         # Fall back to auto browser cookies extraction if manual cookies settings not valid/empty
         if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
-            candidates = instagram_cookiefile_candidates()
+            candidates = cookies.instagram_cookiefile_candidates()
             if candidates:
                 auto_cookiefile = candidates[0]
                 # Cleanup candidates list we won't use
-                _cleanup_temp_cookiefiles(candidates[1:])
+                cookies._cleanup_temp_cookiefiles(candidates[1:])
                 cookies_path = auto_cookiefile
 
     if cookies_path:
@@ -467,7 +413,7 @@ def extract_video_info(cls):
         raise
     finally:
         if auto_cookiefile:
-            _cleanup_temp_cookiefiles([auto_cookiefile])
+            cookies._cleanup_temp_cookiefiles([auto_cookiefile])
 
 
 def describe_extraction_error(url, error, cookies_path=None):
@@ -534,152 +480,6 @@ class InstagramAuthError(Exception):
     ("cookies"/"empty media response"), so both /api/check and /api/download map
     it to the same friendly cookies guidance the yt-dlp path already produces.
     """
-
-
-def _write_cookies_txt(cookie_map, domain="instagram.com"):
-    # Serialize a {name: value} cookie dict into a Netscape cookies.txt temp file
-    # that both yt-dlp (cookiefile) and our own resolver/_parse_instagram_cookies
-    # can read. Left for the OS to reap - the same accepted minor-orphan tradeoff
-    # as the remote temp-dir download path.
-    fd, path = tempfile.mkstemp(prefix="omniflow-cookies-", suffix=".txt")
-    dot_domain = domain if domain.startswith(".") else "." + domain
-    far_future = "2147483647"
-    with os.fdopen(fd, "w") as f:
-        f.write("# Netscape HTTP Cookie File\n")
-        for name, value in cookie_map.items():
-            f.write("\t".join([dot_domain, "TRUE", "/", "TRUE", far_future, name, value]) + "\n")
-    return path
-
-
-def _cleanup_temp_cookiefiles(paths):
-    # Delete only the temp cookiefiles WE generated from browser cookies - they
-    # carry a live session token, so they shouldn't linger in /tmp once used. The
-    # "omniflow-cookies-" prefix guard means this never touches the user's own
-    # manually-configured cookies.txt even if it's mixed into the same list.
-    for p in paths or []:
-        if p and os.path.basename(p).startswith("omniflow-cookies-"):
-            try:
-                os.remove(p)
-            except OSError:
-                pass
-
-
-def cookiefiles_from_browsers(domain="instagram.com"):
-    # Auto-auth: use browser_cookie3 to read `domain` cookies from EVERY installed
-    # browser/profile that carries a live-looking sessionid, writing each account
-    # to its own cookies.txt. To bypass SQLite locks when the browsers are running,
-    # we copy the cookie database to a temporary location before reading it.
-    try:
-        import browser_cookie3
-        import shutil
-        import tempfile
-    except ImportError:
-        return []
-
-    # Enumerate all target cookies database paths we want to read
-    # Each entry is a tuple: (browser_name, source_db_path)
-    db_paths = []
-
-    # 1. Chromium family profiles
-    for browser, base in CHROMIUM_BROWSER_DIRS.items():
-        base_dir = os.path.expanduser(base)
-        if not os.path.isdir(base_dir):
-            continue
-        # For Opera, cookies are sometimes stored directly in the base dir
-        if browser == "opera":
-            candidate = os.path.join(base_dir, "Cookies")
-            if os.path.isfile(candidate):
-                db_paths.append(("opera", candidate))
-        try:
-            entries = os.listdir(base_dir)
-        except OSError:
-            continue
-        for name in entries:
-            if name != "Default" and not name.startswith("Profile "):
-                continue
-            profile_dir = os.path.join(base_dir, name)
-            if os.path.isdir(profile_dir):
-                db_file = _profile_cookie_db(profile_dir)
-                if db_file:
-                    db_paths.append((browser, db_file))
-
-    # 2. Firefox profiles
-    firefox_base = os.path.expanduser("~/Library/Application Support/Firefox/Profiles")
-    if os.path.isdir(firefox_base):
-        try:
-            for name in os.listdir(firefox_base):
-                p_path = os.path.join(firefox_base, name)
-                if os.path.isdir(p_path):
-                    candidate = os.path.join(p_path, "cookies.sqlite")
-                    if os.path.isfile(candidate):
-                        db_paths.append(("firefox", candidate))
-        except OSError:
-            pass
-
-    # 3. Safari (special case: binarycookies file, not SQLite database, but let's list it so we can try loading it)
-    safari_cookie_file = os.path.expanduser("~/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies")
-    if os.path.isfile(safari_cookie_file):
-        db_paths.append(("safari", safari_cookie_file))
-
-    cookiefiles = []
-    seen_sessions = set()
-
-    for browser, src_path in db_paths:
-        temp_path = None
-        try:
-            # Copy file to temp location to bypass SQLite database locks
-            fd, temp_path = tempfile.mkstemp(prefix=f"omniflow-raw-{browser}-", suffix=".db")
-            os.close(fd)
-            shutil.copy2(src_path, temp_path)
-            
-            fn = getattr(browser_cookie3, browser, None)
-            if not fn:
-                continue
-                
-            # browser_cookie3 decrypts the macOS Keychain "Chrome Safe Storage" key itself
-            # - a wholly separate implementation from yt-dlp's --cookies-from-browser.
-            jar = fn(cookie_file=temp_path, domain_name=domain)
-            cookie_map = {c.name: c.value for c in jar if domain in (c.domain or "")}
-            session = cookie_map.get("sessionid")
-            if session and session not in seen_sessions:
-                seen_sessions.add(session)
-                cookiefiles.append(_write_cookies_txt(cookie_map, domain))
-        except Exception as e:
-            # Gracefully ignore failures for specific profiles/browsers
-            pass
-        finally:
-            if temp_path and os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except OSError:
-                    pass
-
-    # Fallback to browser defaults if no profiles could be read or to cover other setups
-    for name in ("chrome", "brave", "edge", "chromium", "vivaldi", "opera", "safari", "firefox"):
-        try:
-            fn = getattr(browser_cookie3, name, None)
-            if fn:
-                jar = fn(domain_name=domain)
-                cookie_map = {c.name: c.value for c in jar if domain in (c.domain or "")}
-                session = cookie_map.get("sessionid")
-                if session and session not in seen_sessions:
-                    seen_sessions.add(session)
-                    cookiefiles.append(_write_cookies_txt(cookie_map, domain))
-        except Exception:
-            pass
-
-    return cookiefiles
-
-
-def instagram_cookiefile_candidates():
-    # Return manual Settings file if valid, else fallback to auto-extracted browser cookies.
-    # This allows public Instagram carousels and images to fetch session cookies automatically.
-    candidates = []
-    manual = config.get_cookies_path()
-    if manual and config.cookies_status_for(manual) == "valid":
-        candidates.append(manual)
-    candidates.extend(cookiefiles_from_browsers("instagram.com"))
-    return candidates
 
 
 def fetch_instagram_media_any(url, cookiefiles):
@@ -1015,7 +815,7 @@ def check_link():
     # carousels work at all) ONLY if we have a valid cookies file.
     # Otherwise (or if custom resolver fails), we fall through to yt-dlp.
     if cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL:
-        candidates = instagram_cookiefile_candidates()
+        candidates = cookies.instagram_cookiefile_candidates()
         if candidates:
             try:
                 media = fetch_instagram_media_any(url, candidates)
@@ -1025,7 +825,7 @@ def check_link():
                 print(f"Custom resolver failed: {e}. Falling through to yt-dlp.")
                 pass
             finally:
-                _cleanup_temp_cookiefiles(candidates)
+                cookies._cleanup_temp_cookiefiles(candidates)
 
     try:
         info = extract_video_info(cls)
@@ -1278,10 +1078,10 @@ def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_
     cookies_path = config.get_cookies_path()
     if url and "instagram" in url.lower():
         if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
-            candidates = instagram_cookiefile_candidates()
+            candidates = cookies.instagram_cookiefile_candidates()
             if candidates:
                 cookies_path = candidates[0]
-                _cleanup_temp_cookiefiles(candidates[1:])
+                cookies._cleanup_temp_cookiefiles(candidates[1:])
 
     ydl_opts = build_download_options(
         quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookies_path, entry_index, url
@@ -1292,7 +1092,7 @@ def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_
         if "Audio" not in quality:
             ensure_h264(final_output_path, ffmpeg_bin, job_id)
     finally:
-        _cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
+        cookies._cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
     return final_output_path
 
 
@@ -1333,7 +1133,7 @@ def start_download():
     # Otherwise, let it fall through to the standard yt-dlp download pipeline.
     ig_candidates = []
     if cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL:
-        ig_candidates = instagram_cookiefile_candidates()
+        ig_candidates = cookies.instagram_cookiefile_candidates()
     if ig_candidates:
 
         job_id = uuid.uuid4().hex
@@ -1380,7 +1180,7 @@ def start_download():
             finally:
                 # Media is already resolved (and the CDN download needs no cookies),
                 # so the temp session files can go regardless of outcome.
-                _cleanup_temp_cookiefiles(ig_candidates)
+                cookies._cleanup_temp_cookiefiles(ig_candidates)
             jobs.jobs[job_id]["percent"] = 100
             jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
             jobs.jobs[job_id]["status"] = "done"
@@ -1425,11 +1225,11 @@ def start_download():
         cookies_path = config.get_cookies_path()
         if url and "instagram" in url.lower():
             if not (cookies_path and config.cookies_status_for(cookies_path) == "valid"):
-                candidates = instagram_cookiefile_candidates()
+                candidates = cookies.instagram_cookiefile_candidates()
                 if candidates:
                     cookies_path = candidates[0]
                     # Clean up other temporary files immediately
-                    _cleanup_temp_cookiefiles(candidates[1:])
+                    cookies._cleanup_temp_cookiefiles(candidates[1:])
 
         ydl_opts = build_download_options(
             quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookies_path, entry_index, url
@@ -1474,7 +1274,7 @@ def start_download():
         finally:
             # If build_download_options auto-extracted a browser cookies.txt for
             # Instagram, it's served its purpose once the download call returns.
-            _cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
+            cookies._cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
 
         jobs.jobs[job_id]["status"] = "done"
         jobs.jobs[job_id]["percent"] = 100
@@ -1598,7 +1398,7 @@ def start_batch_download():
         try:
             if is_ig_carousel:
                 # Resolve the carousel's CDN urls once, reuse across selected slides.
-                ig_candidates = instagram_cookiefile_candidates()
+                ig_candidates = cookies.instagram_cookiefile_candidates()
                 if not ig_candidates:
                     raise InstagramAuthError("Instagram requires a logged-in session (cookies).")
                 media_holder["media"] = fetch_instagram_media_any(url, ig_candidates)
@@ -1612,12 +1412,12 @@ def start_batch_download():
         except Exception as e:
             # Only a pre-flight failure (e.g. Instagram auth before the pool starts).
             print(f"[batch] job {job_id} failed: {e}")
-            _cleanup_temp_cookiefiles(ig_candidates)
+            cookies._cleanup_temp_cookiefiles(ig_candidates)
             jobs.jobs[job_id]["text"] = describe_extraction_error(url, e) if is_ig_carousel else (str(e) or "Download failed")
             jobs.jobs[job_id]["status"] = "error"
             return
 
-        _cleanup_temp_cookiefiles(ig_candidates)
+        cookies._cleanup_temp_cookiefiles(ig_candidates)
         saved, failed = state["saved"], state["failed"]
         if jobs.jobs[job_id]["cancelled"]:
             jobs.jobs[job_id]["text"] = f"Cancelled (saved {len(saved)} of {total})"

@@ -9,6 +9,7 @@ import pytest
 
 import server as server_module
 from backend import classify, config, paths
+from backend import cookies as cookies_module
 from backend import jobs as jobs_module
 from backend.classify import (
     get_platform_info,
@@ -1406,15 +1407,15 @@ def test_ensure_h264_honors_cancel_mid_reencode(monkeypatch, tmp_path):
 def test_cleanup_temp_cookiefiles_only_removes_our_temp_files(tmp_path):
     manual = tmp_path / "my-cookies.txt"
     manual.write_text("keep me")
-    temp = server_module._write_cookies_txt({"sessionid": "x"})
+    temp = cookies_module._write_cookies_txt({"sessionid": "x"})
     assert os.path.exists(temp)
-    server_module._cleanup_temp_cookiefiles([str(manual), temp, None])
+    cookies_module._cleanup_temp_cookiefiles([str(manual), temp, None])
     assert not os.path.exists(temp)  # our temp file is gone
     assert manual.exists()  # the user's own file is untouched
 
 
 def test_write_cookies_txt_produces_a_valid_session_file(tmp_path):
-    path = server_module._write_cookies_txt({"sessionid": "live123", "csrftoken": "csrf1"})
+    path = cookies_module._write_cookies_txt({"sessionid": "live123", "csrftoken": "csrf1"})
     try:
         assert cookies_file_has_instagram_session(path)
         parsed = server_module._parse_instagram_cookies(path)
@@ -1429,8 +1430,8 @@ def test_cookiefiles_from_browsers_writes_a_file_per_logged_in_account(no_browse
     # otherwise stubs it to []); exercise it against a fake browser_cookie3 with
     # two different logged-in accounts across profiles.
     real = no_browser_cookie_scan
-    monkeypatch.setattr(server_module, "_profile_cookie_db", lambda profile_dir: "/fake/Cookies")
-    monkeypatch.setattr(server_module, "CHROMIUM_BROWSER_DIRS", {"chrome": "/fake"})
+    monkeypatch.setattr(cookies_module, "_profile_cookie_db", lambda profile_dir: "/fake/Cookies")
+    monkeypatch.setattr(cookies_module, "CHROMIUM_BROWSER_DIRS", {"chrome": "/fake"})
 
     def fake_chrome(cookie_file=None, domain_name=""):
         # Two distinct accounts keyed on which profile DB path was requested;
