@@ -9,6 +9,7 @@ import pytest
 
 import server as server_module
 from backend import classify, config, paths
+from backend import instagram as instagram_module
 from backend import cookies as cookies_module
 from backend import jobs as jobs_module
 from backend.classify import (
@@ -24,8 +25,12 @@ from backend.config import (
     resolve_save_dir,
     save_session,
 )
-from server import (
+from backend.instagram import (
     InstagramAuthError,
+    instagram_check_response,
+    instagram_media_id_from_shortcode,
+)
+from server import (
     apply_progress_update,
     build_download_options,
     combined_download_percent,
@@ -34,8 +39,6 @@ from server import (
     ensure_h264,
     format_duration,
     get_unique_filename,
-    instagram_check_response,
-    instagram_media_id_from_shortcode,
     is_local_request,
     qualities_for,
     resolve_thumbnail,
@@ -588,7 +591,7 @@ def test_check_link_instagram_with_expired_session_cookies_suggests_refreshing(c
     def raise_error(url, cookies_path):
         raise InstagramAuthError("Instagram sent an empty media response.")
 
-    monkeypatch.setattr(server_module, "fetch_instagram_media", raise_error)
+    monkeypatch.setattr(instagram_module, "fetch_instagram_media", raise_error)
     resp = client.post("/api/check", json={"url": "https://www.instagram.com/p/abc/"})
     assert resp.status_code == 400
     assert "Không thể tải video từ tài khoản Private" in resp.get_json()["error"]
@@ -633,7 +636,7 @@ def test_parse_instagram_cookies_reads_values_without_a_magic_header(tmp_path):
         ".instagram.com\tTRUE\t/\tTRUE\t1799999999\tcsrftoken\tcsrf456\n"
         ".youtube.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tignoreme\n"
     )
-    cookies = server_module._parse_instagram_cookies(str(cookies_file))
+    cookies = instagram_module._parse_instagram_cookies(str(cookies_file))
     assert cookies["csrftoken"] == "csrf456"
     assert cookies["sessionid"] == "sess123"
 
@@ -650,7 +653,7 @@ def test_fetch_instagram_media_maps_login_redirect_to_auth_error(tmp_path, monke
 
     monkeypatch.setattr(server_module.urllib.request, "urlopen", raise_302)
     with pytest.raises(InstagramAuthError):
-        server_module.fetch_instagram_media("https://www.instagram.com/p/abc/", str(cookies_file))
+        instagram_module.fetch_instagram_media("https://www.instagram.com/p/abc/", str(cookies_file))
 
 
 def test_instagram_check_response_single_image_is_a_video_typed_image_kind():
@@ -687,7 +690,7 @@ def test_check_link_instagram_single_photo_end_to_end(client, monkeypatch, tmp_p
     cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
     save_session(os.path.expanduser("~/Downloads"), str(cookies_file))
     monkeypatch.setattr(
-        server_module,
+        instagram_module,
         "fetch_instagram_media",
         lambda url, cookies_path: {"title": "A photo", "items": [{"kind": "image", "url": "http://cdn/p.jpg", "thumbnail": "http://cdn/p.jpg"}]},
     )
@@ -703,7 +706,7 @@ def test_check_link_instagram_carousel_end_to_end(client, monkeypatch, tmp_path)
     cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
     save_session(os.path.expanduser("~/Downloads"), str(cookies_file))
     monkeypatch.setattr(
-        server_module,
+        instagram_module,
         "fetch_instagram_media",
         lambda url, cookies_path: {
             "title": "Album",
@@ -1100,7 +1103,7 @@ def test_check_link_instagram_not_blocked_when_local(client, monkeypatch, tmp_pa
     cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
     save_session(os.path.expanduser("~/Downloads"), str(cookies_file))
     monkeypatch.setattr(
-        server_module,
+        instagram_module,
         "fetch_instagram_media",
         lambda url, cookies_path: {"title": "A reel", "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": None}]},
     )
@@ -1180,7 +1183,7 @@ def test_start_download_instagram_resolver_error_maps_to_friendly_message(client
     def raise_error(url, cookies_path):
         raise InstagramAuthError("Instagram sent an empty media response.")
 
-    monkeypatch.setattr(server_module, "fetch_instagram_media", raise_error)
+    monkeypatch.setattr(instagram_module, "fetch_instagram_media", raise_error)
 
     resp = client.post(
         "/api/download",
@@ -1203,7 +1206,7 @@ def test_start_download_instagram_image_writes_a_jpg(client, monkeypatch, tmp_pa
     save_session(str(tmp_path), str(cookies_file))
     monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(
-        server_module,
+        instagram_module,
         "fetch_instagram_media",
         lambda url, cookies_path: {"title": "A photo", "items": [{"kind": "image", "url": "http://cdn/pic.jpg", "thumbnail": "http://cdn/pic.jpg"}]},
     )
@@ -1237,7 +1240,7 @@ def test_start_download_instagram_entry_index_picks_that_carousel_item(client, m
     save_session(str(tmp_path), str(cookies_file))
     monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
     monkeypatch.setattr(
-        server_module,
+        instagram_module,
         "fetch_instagram_media",
         lambda url, cookies_path: {
             "title": "Carousel",
@@ -1418,7 +1421,7 @@ def test_write_cookies_txt_produces_a_valid_session_file(tmp_path):
     path = cookies_module._write_cookies_txt({"sessionid": "live123", "csrftoken": "csrf1"})
     try:
         assert cookies_file_has_instagram_session(path)
-        parsed = server_module._parse_instagram_cookies(path)
+        parsed = instagram_module._parse_instagram_cookies(path)
         assert parsed["sessionid"] == "live123"
         assert parsed["csrftoken"] == "csrf1"
     finally:
@@ -1451,7 +1454,7 @@ def test_cookiefiles_from_browsers_writes_a_file_per_logged_in_account(no_browse
         # Same sessionid across all loaders -> deduped to a single cookiefile.
         assert len(paths) == 1
         assert cookies_file_has_instagram_session(paths[0])
-        assert server_module._parse_instagram_cookies(paths[0])["sessionid"] == "accountA"
+        assert instagram_module._parse_instagram_cookies(paths[0])["sessionid"] == "accountA"
     finally:
         for p in paths:
             os.remove(p)
@@ -1478,8 +1481,8 @@ def test_fetch_instagram_media_any_returns_first_account_that_works(monkeypatch)
             raise InstagramAuthError("Instagram requires a logged-in session (cookies).")
         return {"title": "Private", "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": None}]}
 
-    monkeypatch.setattr(server_module, "fetch_instagram_media", fake_fetch)
-    media = server_module.fetch_instagram_media_any("https://www.instagram.com/p/abc/", ["/acctA.txt", "/acctB.txt"])
+    monkeypatch.setattr(instagram_module, "fetch_instagram_media", fake_fetch)
+    media = instagram_module.fetch_instagram_media_any("https://www.instagram.com/p/abc/", ["/acctA.txt", "/acctB.txt"])
     assert media["title"] == "Private"
     assert calls == ["/acctA.txt", "/acctB.txt"]  # tried A, then B
 
@@ -1488,9 +1491,9 @@ def test_fetch_instagram_media_any_raises_auth_error_when_all_unauthorized(monke
     def always_auth(url, cf):
         raise InstagramAuthError("Instagram requires a logged-in session (cookies).")
 
-    monkeypatch.setattr(server_module, "fetch_instagram_media", always_auth)
+    monkeypatch.setattr(instagram_module, "fetch_instagram_media", always_auth)
     with pytest.raises(InstagramAuthError):
-        server_module.fetch_instagram_media_any("https://www.instagram.com/p/abc/", ["/a.txt", "/b.txt"])
+        instagram_module.fetch_instagram_media_any("https://www.instagram.com/p/abc/", ["/a.txt", "/b.txt"])
 
 
 # ---- is_playlist_url ----

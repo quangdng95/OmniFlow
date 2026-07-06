@@ -5,7 +5,7 @@ import yt_dlp
 import instaloader
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, config, cookies, jobs, paths
+from backend import classify, config, cookies, instagram, jobs, paths
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
@@ -43,163 +43,6 @@ def get_unique_filename(directory, filename, extension):
         full_path = os.path.join(directory, f"{base_name} ({counter}).{extension}")
         counter += 1
     return full_path
-
-
-def fetch_instagram_profile_instaloader(username, cookiefile_path=None):
-    L = instaloader.Instaloader(
-        download_pictures=False,
-        download_videos=False,
-        download_video_thumbnails=False,
-        download_geotags=False,
-        download_comments=False,
-        save_metadata=False,
-        compress_metadata=False
-    )
-    
-    if cookiefile_path:
-        try:
-            cj = http.cookiejar.MozillaCookieJar(cookiefile_path)
-            cj.load(ignore_discard=True, ignore_expires=True)
-            L.context._session.cookies.update(cj)
-            print(f"[debug] Loaded cookies into instaloader session from {cookiefile_path}", flush=True)
-        except Exception as e:
-            print(f"[debug] Instaloader failed to load cookiefile: {e}", flush=True)
-            
-    L.context._session.headers.update({
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    })
-    
-    print(f"[debug] Fetching instaloader profile for {username}...", flush=True)
-    profile = instaloader.Profile.from_username(L.context, username)
-    
-    entries = []
-    posts = profile.get_posts()
-    
-    count = 0
-    for post in posts:
-        if count >= 30:
-            break
-            
-        if not post.is_video:
-            continue
-            
-        shortcode = post.shortcode
-        title = post.caption or f"Instagram Reel {shortcode}"
-        thumbnail = post.url
-        
-        entries.append({
-            "id": shortcode,
-            "title": title,
-            "url": f"https://www.instagram.com/reel/{shortcode}/",
-            "thumbnail": thumbnail,
-            "duration": post.video_duration,
-            "kind": "video",
-            "_type": "url",
-            "ie_key": "Instagram",
-        })
-        count += 1
-        
-    return entries
-
-def fetch_instagram_profile_info(username, cookiefile_path=None):
-    cookies_dict = cookies.parse_cookies_from_file(cookiefile_path)
-    session = requests.Session()
-    session.cookies.update(cookies_dict)
-    
-    headers = {
-        "x-ig-app-id": "936619743392459",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0",
-        "Referer": f"https://www.instagram.com/{username}/",
-        "Accept": "*/*",
-    }
-    
-    api_url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
-    resp = session.get(api_url, headers=headers, timeout=15)
-    
-    if resp.status_code != 200:
-        print(f"[debug] Instagram Web Profile API failed with status code {resp.status_code}. Response: {resp.text[:500]}", flush=True)
-        raise Exception(f"Instagram API returned status {resp.status_code}")
-        
-    return resp.json()
-
-
-def fetch_instagram_profile_info_fallback(username, cookiefile_path=None):
-    cookies_dict = cookies.parse_cookies_from_file(cookiefile_path)
-    session = requests.Session()
-    session.cookies.update(cookies_dict)
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/120.0.0.0",
-        "Referer": f"https://www.instagram.com/{username}/",
-        "Accept": "*/*",
-    }
-    
-    api_url = f"https://www.instagram.com/{username}/?__a=1&__d=dis"
-    resp = session.get(api_url, headers=headers, timeout=15)
-    if resp.status_code == 200:
-        return resp.json()
-    raise Exception(f"Fallback Instagram API returned status {resp.status_code}")
-
-
-def parse_instagram_profile_json(data, username):
-    user_data = None
-    if "data" in data and "user" in data["data"]:
-        user_data = data["data"]["user"]
-    elif "graphql" in data and "user" in data["graphql"]:
-        user_data = data["graphql"]["user"]
-    elif "user" in data:
-        user_data = data["user"]
-        
-    if not user_data:
-        return []
-        
-    edges = []
-    # Combine posts/timeline media and reels/felix video timeline
-    for key in ("edge_owner_to_timeline_media", "edge_felix_video_timeline"):
-        if key in user_data and "edges" in user_data[key]:
-            edges.extend(user_data[key]["edges"])
-            
-    parsed_entries = []
-    seen_shortcodes = set()
-    
-    for edge in edges:
-        node = edge.get("node")
-        if not node:
-            continue
-        shortcode = node.get("shortcode")
-        if not shortcode or shortcode in seen_shortcodes:
-            continue
-            
-        # Only take video posts as requested!
-        is_video = node.get("is_video", False)
-        if not is_video:
-            continue
-            
-        seen_shortcodes.add(shortcode)
-        
-        # Extract title/caption
-        title = ""
-        caption_edges = node.get("edge_media_to_caption", {}).get("edges", [])
-        if caption_edges:
-            title = caption_edges[0].get("node", {}).get("text", "")
-            
-        if not title:
-            title = f"Instagram Post {shortcode}"
-            
-        thumbnail = node.get("display_url") or node.get("thumbnail_src")
-        
-        parsed_entries.append({
-            "id": shortcode,
-            "title": title,
-            "url": f"https://www.instagram.com/reel/{shortcode}/",
-            "thumbnail": thumbnail,
-            "duration": node.get("video_duration") or None,
-            "kind": "video",
-            "_type": "url",
-            "ie_key": "Instagram",
-        })
-        
-    return parsed_entries
 
 
 def resolve_thumbnail(info):
@@ -332,20 +175,20 @@ def extract_video_info(cls):
             entries = []
             try:
                 # Primary method: instaloader
-                entries = fetch_instagram_profile_instaloader(username, cookies_path)
+                entries = instagram.fetch_instagram_profile_instaloader(username, cookies_path)
             except Exception as e_insta:
                 print(f"[debug] Instaloader profile fetch failed: {e_insta}. Trying Web Profile API fallback...", flush=True)
                 data = None
                 try:
-                    data = fetch_instagram_profile_info(username, cookies_path)
+                    data = instagram.fetch_instagram_profile_info(username, cookies_path)
                 except Exception as e1:
                     print(f"[debug] fetch_instagram_profile_info failed: {e1}. Trying Graph API fallback...", flush=True)
                     try:
-                        data = fetch_instagram_profile_info_fallback(username, cookies_path)
+                        data = instagram.fetch_instagram_profile_info_fallback(username, cookies_path)
                     except Exception as e2:
                         print(f"[debug] Instagram fallback profile fetch also failed: {e2}", flush=True)
                         raise Exception(f"Failed to fetch Instagram profile: {e_insta} / {e1} / {e2}")
-                entries = parse_instagram_profile_json(data, username)
+                entries = instagram.parse_instagram_profile_json(data, username)
             
             # Format as playlist/entries
             return {
@@ -458,223 +301,6 @@ def describe_extraction_error(url, error, cookies_path=None):
 
 INSTAGRAM_LOCAL_ONLY_ERROR = "Instagram downloads are only available when running OmniFlow locally on your own machine."
 
-# --- Instagram photo/carousel resolver -------------------------------------
-# yt-dlp cannot download Instagram photos at all (it only ever builds formats
-# from video_versions/DASH), so for Instagram posts/reels we resolve the media
-# ourselves through Instagram's own private media-info endpoint using the same
-# cookies.txt already configured in Settings. This is the only way to reach
-# single photos and carousel photos. Stories (/stories/...) keep the existing
-# yt-dlp path - they resolve to a playlist there and don't carry a shortcode.
-INSTAGRAM_APP_ID = "936619743392459"  # public web app id, sent as X-IG-App-ID
-INSTAGRAM_UA = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-)
-INSTAGRAM_B64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
-
-
-class InstagramAuthError(Exception):
-    """Instagram rejected the request for want of a valid logged-in session.
-
-    Its message always contains a substring describe_extraction_error() keys on
-    ("cookies"/"empty media response"), so both /api/check and /api/download map
-    it to the same friendly cookies guidance the yt-dlp path already produces.
-    """
-
-
-def fetch_instagram_media_any(url, cookiefiles):
-    # Try each candidate account until Instagram actually returns the media. The
-    # private post may only be visible to the specific logged-in account that
-    # follows its owner, which needn't be the first profile found - so a single
-    # cookiefile isn't enough. Surface the auth error (the user-actionable "fix
-    # your login" case) when every account is unauthorized; otherwise re-raise the
-    # last concrete failure.
-    last_auth_error = None
-    last_error = None
-    for cf in cookiefiles:
-        try:
-            return fetch_instagram_media(url, cf)
-        except InstagramAuthError as e:
-            last_auth_error = e
-        except Exception as e:
-            last_error = e
-    if last_auth_error:
-        raise last_auth_error
-    if last_error:
-        raise last_error
-    raise InstagramAuthError("Instagram requires a logged-in session (cookies).")
-
-
-def instagram_media_id_from_shortcode(shortcode):
-    # An Instagram shortcode is the media's numeric primary key encoded in a
-    # url-safe base64 alphabet. Decoding it locally avoids an extra network
-    # round-trip just to learn the id the /media/<id>/info/ endpoint needs.
-    media_id = 0
-    for ch in shortcode:
-        media_id = media_id * 64 + INSTAGRAM_B64_ALPHABET.index(ch)
-    return media_id
-
-
-def _parse_instagram_cookies(cookies_path):
-    # Returns {name: value} for instagram.com cookies. Parsed by hand (mirroring
-    # cookies_file_has_instagram_session) rather than via MozillaCookieJar, which
-    # hard-rejects any jar file missing its "# Netscape HTTP Cookie File" magic
-    # header - a real-world variation across browser cookie exporters.
-    cookies = {}
-    try:
-        with open(cookies_path, "r", errors="ignore") as f:
-            lines = f.readlines()
-    except OSError:
-        return cookies
-    for line in lines:
-        line = line.rstrip("\n")
-        if not line.strip():
-            continue
-        if line.startswith("#"):
-            if not line.startswith("#HttpOnly_"):
-                continue
-            line = line[len("#HttpOnly_"):]
-        fields = line.split("\t")
-        if len(fields) < 7:
-            continue
-        domain, name, value = fields[0], fields[5], fields[6]
-        if "instagram.com" in domain:
-            cookies[name] = value
-    return cookies
-
-
-def _instagram_best_image(node):
-    candidates = (node.get("image_versions2") or {}).get("candidates") or []
-    # Instagram orders candidates largest-first.
-    return candidates[0] if candidates else None
-
-
-def _instagram_item(node):
-    videos = node.get("video_versions") or []
-    image = _instagram_best_image(node)
-    thumbnail = image.get("url") if image else None
-    if videos:
-        best = videos[0]
-        return {
-            "kind": "video",
-            "url": best.get("url"),
-            "thumbnail": thumbnail,
-            "width": best.get("width"),
-            "height": best.get("height"),
-        }
-    return {
-        "kind": "image",
-        "url": image.get("url") if image else None,
-        "thumbnail": thumbnail,
-        "width": image.get("width") if image else None,
-        "height": image.get("height") if image else None,
-    }
-
-
-def _instagram_title(media, shortcode):
-    caption = media.get("caption")
-    text = caption.get("text") if isinstance(caption, dict) else ""
-    if text:
-        first_line = text.strip().splitlines()[0].strip()
-        if first_line:
-            return first_line[:60]
-    return shortcode
-
-
-def fetch_instagram_media(url, cookies_path):
-    # Returns {"title": str, "items": [normalized item, ...]} where each item is
-    # {"kind": "image"|"video", "url": <cdn>, "thumbnail", "width", "height"}.
-    # A single post -> one item; a carousel -> one item per slide (photos and
-    # videos mixed, in order). Raises InstagramAuthError when Instagram wants a
-    # valid session.
-    shortcode = classify.instagram_shortcode_from_url(url)
-    if not shortcode:
-        raise InstagramAuthError("Not an Instagram post or reel URL (cookies).")
-    media_id = instagram_media_id_from_shortcode(shortcode)
-
-    cookies = _parse_instagram_cookies(cookies_path)
-    cookie_header = "; ".join(f"{name}={value}" for name, value in cookies.items())
-    api_url = f"https://www.instagram.com/api/v1/media/{media_id}/info/"
-    req = urllib.request.Request(
-        api_url,
-        headers={
-            "User-Agent": INSTAGRAM_UA,
-            "X-IG-App-ID": INSTAGRAM_APP_ID,
-            "X-CSRFToken": cookies.get("csrftoken", ""),
-            "Referer": "https://www.instagram.com/",
-            "Accept": "*/*",
-            "Cookie": cookie_header,
-        },
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            body = resp.read().decode("utf-8", "replace")
-        payload = json.loads(body)
-    except urllib.error.HTTPError as e:
-        # A bad/expired session redirects to the login page (301/302) or is
-        # rejected outright (401/403) - confirmed live: an invalid sessionid
-        # returns 302, not 401. Map all of these to the friendly cookies
-        # guidance instead of a generic "invalid link" error.
-        if e.code in (301, 302, 401, 403):
-            raise InstagramAuthError("Instagram requires a logged-in session (cookies).") from e
-        raise
-    except urllib.error.URLError as e:
-        raise InstagramAuthError("Could not reach Instagram to fetch this media (cookies).") from e
-    except json.JSONDecodeError as e:
-        # A followed login redirect returns HTML, not JSON - also a session
-        # problem, so surface the same cookies guidance.
-        raise InstagramAuthError("Instagram requires a logged-in session (cookies).") from e
-
-    items = payload.get("items") or []
-    if not items:
-        raise InstagramAuthError("Instagram sent an empty media response.")
-    media = items[0]
-    title = _instagram_title(media, shortcode)
-    nodes = media.get("carousel_media") or [media]
-    return {"title": title, "items": [_instagram_item(node) for node in nodes]}
-
-
-def instagram_check_response(url, media):
-    # Maps fetch_instagram_media()'s normalized media into the same /api/check
-    # response shapes the frontend already understands (single "video" vs
-    # "playlist"), adding a "kind" discriminator and a nominal quality label.
-    # The raw CDN url is intentionally NOT sent to the client - it's re-resolved
-    # server-side at download time by /api/download.
-    items = media["items"]
-    title = media["title"]
-    platform = classify.get_platform_info(url)
-
-    def quality_label(kind):
-        return ["Image"] if kind == "image" else ["Video"]
-
-    if len(items) == 1:
-        item = items[0]
-        return {
-            "type": "video",
-            "title": title,
-            "uploader": "",
-            "thumbnail": item.get("thumbnail"),
-            "platform": platform,
-            "kind": item["kind"],
-            "qualities": quality_label(item["kind"]),
-            "duration": None,
-        }
-    entries = []
-    for i, item in enumerate(items, start=1):
-        entries.append({
-            "id": str(i),
-            "title": f"{title} ({i})",
-            "thumbnail": item.get("thumbnail"),
-            "duration": None,
-            "kind": item["kind"],
-            # 1-based carousel slide index - download re-resolves the media and
-            # picks items[entry_index-1] (same basis the single-download path uses).
-            "entry_index": i,
-            "qualities": quality_label(item["kind"]),
-        })
-    return {"type": "playlist", "platform": platform, "title": title, "items": entries}
-
-
 def download_direct_url(cdn_url, output_path, job_id, chunk_size=131072, on_progress=None):
     # Streams a resolved Instagram CDN url (image or video) to disk, driving the
     # same jobs-dict progress model and honoring the same cooperative cancel
@@ -682,7 +308,7 @@ def download_direct_url(cdn_url, output_path, job_id, chunk_size=131072, on_prog
     # browser-like User-Agent is needed (no cookies). When on_progress is given
     # (batch mode) it reports this item's own 0-100 percent instead of writing
     # the shared job percent/text, so per-item bars stay independent.
-    req = urllib.request.Request(cdn_url, headers={"User-Agent": INSTAGRAM_UA})
+    req = urllib.request.Request(cdn_url, headers={"User-Agent": instagram.INSTAGRAM_UA})
     with urllib.request.urlopen(req, timeout=30) as resp:
         raw_total = resp.headers.get("Content-Length")
         total = int(raw_total) if raw_total and raw_total.isdigit() else 0
@@ -818,8 +444,8 @@ def check_link():
         candidates = cookies.instagram_cookiefile_candidates()
         if candidates:
             try:
-                media = fetch_instagram_media_any(url, candidates)
-                return jsonify(instagram_check_response(url, media))
+                media = instagram.fetch_instagram_media_any(url, candidates)
+                return jsonify(instagram.instagram_check_response(url, media))
             except Exception as e:
                 # Fall through to yt-dlp path below
                 print(f"Custom resolver failed: {e}. Falling through to yt-dlp.")
@@ -905,7 +531,7 @@ def build_download_options(
         
     is_ig = url and "instagram" in url.lower()
     if is_ig:
-        opts["http_headers"] = {"User-Agent": INSTAGRAM_UA}
+        opts["http_headers"] = {"User-Agent": instagram.INSTAGRAM_UA}
     if cookies_path:
         opts["cookiefile"] = cookies_path
             
@@ -1144,7 +770,7 @@ def start_download():
 
         def run_instagram():
             try:
-                media = fetch_instagram_media_any(url, ig_candidates)
+                media = instagram.fetch_instagram_media_any(url, ig_candidates)
                 items = media["items"]
                 idx = (entry_index - 1) if entry_index else 0
                 if idx < 0 or idx >= len(items):
@@ -1166,7 +792,7 @@ def start_download():
                 jobs.jobs[job_id]["text"] = "Cancelled"
                 jobs.jobs[job_id]["status"] = "cancelled"
                 return
-            except InstagramAuthError as e:
+            except instagram.InstagramAuthError as e:
                 jobs._remove_job_file(job_id)
                 jobs.jobs[job_id]["text"] = describe_extraction_error(url, e, ig_candidates[0])
                 jobs.jobs[job_id]["status"] = "error"
@@ -1400,8 +1026,8 @@ def start_batch_download():
                 # Resolve the carousel's CDN urls once, reuse across selected slides.
                 ig_candidates = cookies.instagram_cookiefile_candidates()
                 if not ig_candidates:
-                    raise InstagramAuthError("Instagram requires a logged-in session (cookies).")
-                media_holder["media"] = fetch_instagram_media_any(url, ig_candidates)
+                    raise instagram.InstagramAuthError("Instagram requires a logged-in session (cookies).")
+                media_holder["media"] = instagram.fetch_instagram_media_any(url, ig_candidates)
 
             # Download BATCH_CONCURRENCY items at once. download_item swallows its
             # own per-item errors, so a future never raises here.
