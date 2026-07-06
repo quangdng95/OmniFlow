@@ -6,6 +6,13 @@ pywebview
 # is no longer used by any code path.
 yt-dlp
 
+# Auto-extracts a logged-in Instagram sessionid straight from the local
+# browsers' cookie DBs (decrypts the macOS Keychain itself) so users don't have
+# to export cookies.txt by hand - see server.py's cookiefiles_from_browsers().
+# A separate implementation from yt-dlp's --cookies-from-browser, used as a
+# more-reliable primary path plus a fallback when Keychain blocks yt-dlp.
+browser_cookie3
+
 # Legacy Tkinter desktop app (main.py, ui.py)
 # Currently broken — see MISTAKES.md / rules/known-issues.md — kept for reference only.
 customtkinter
@@ -15,3 +22,7 @@ cairosvg
 
 # Testing (tests/test_server.py)
 pytest
+
+# Packaging the standalone macOS .app (see OmniFlow.spec / rules/packaging.md).
+# Build-time only — not needed to run server.py/desktop_app.py from source.
+pyinstaller

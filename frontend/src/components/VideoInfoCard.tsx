@@ -16,6 +16,7 @@ const VideoInfoCard = ({ info }: VideoInfoCardProps) => {
           <img
             className="omniflow-thumb"
             src={info.thumbnail}
+            referrerPolicy="no-referrer"
             alt={info.title}
             style={{
               aspectRatio: "280 / 158",

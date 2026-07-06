@@ -5,7 +5,7 @@ import HomePage from "./HomePage";
 import { api } from "../api";
 import { LanguageProvider } from "../i18n/LanguageContext";
 import type { Page } from "../components/Header";
-import type { JobProgress, VideoInfo } from "../types";
+import type { JobProgress, PlaylistCheckResult, VideoInfo } from "../types";
 
 const renderHomePage = (onNavigate: (page: Page) => void = vi.fn()) =>
   render(
@@ -21,6 +21,7 @@ vi.mock("../api", () => ({
     browseFolder: vi.fn(),
     checkLink: vi.fn(),
     startDownload: vi.fn(),
+    startBatchDownload: vi.fn(),
     getProgress: vi.fn(),
     cancelJob: vi.fn(),
     openFolder: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock("../api", () => ({
 const mockedApi = vi.mocked(api, true);
 
 const VIDEO_A: VideoInfo = {
+  type: "video",
   title: "Video A",
   uploader: "Uploader A",
   thumbnail: null,
@@ -40,6 +42,7 @@ const VIDEO_A: VideoInfo = {
 };
 
 const VIDEO_B: VideoInfo = {
+  type: "video",
   title: "Video B",
   uploader: "Uploader B",
   thumbnail: null,
@@ -53,6 +56,80 @@ const RUNNING_PROGRESS: JobProgress = {
   percent: 10,
   text: "Downloading... (10%)",
   filename: null,
+};
+
+const PLAYLIST_RESULT: PlaylistCheckResult = {
+  type: "playlist",
+  platform: "Instagram",
+  title: "Story by someone",
+  items: [
+    { id: "item1", title: "Story item 1", thumbnail: null, duration: "00:15", entry_index: 1, qualities: ["720p", "Best", "Audio Only"] },
+    { id: "item2", title: "Story item 2", thumbnail: null, duration: "00:08", entry_index: 2, qualities: ["Best", "Audio Only"] },
+  ],
+};
+
+const YT_PLAYLIST: PlaylistCheckResult = {
+  type: "playlist",
+  platform: "YouTube",
+  title: "My Playlist",
+  truncated: false,
+  items: [
+    { id: "v1", title: "Playlist Video 1", thumbnail: null, duration: "03:00", url: "https://youtube.com/watch?v=v1", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"] },
+    { id: "v2", title: "Playlist Video 2", thumbnail: null, duration: "04:00", url: "https://youtube.com/watch?v=v2", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"] },
+  ],
+};
+
+const PL_Q = ["Best", "1080p", "720p", "480p", "Audio Only"];
+
+const YT_PLAYLIST_SINGLE: PlaylistCheckResult = {
+  type: "playlist",
+  platform: "YouTube",
+  title: "One video",
+  items: [
+    { id: "s", title: "Solo Video", thumbnail: null, duration: "02:00", url: "https://youtube.com/watch?v=solo", qualities: PL_Q, is_available: true },
+  ],
+};
+
+const YT_PLAYLIST_WITH_DEAD: PlaylistCheckResult = {
+  type: "playlist",
+  platform: "YouTube",
+  title: "Mixed Playlist",
+  items: [
+    { id: "a", title: "Good One", position: 1, thumbnail: null, duration: "03:00", url: "u1", qualities: PL_Q, is_available: true },
+    { id: "b", title: "[Private video]", position: 2, thumbnail: null, duration: null, url: "u2", qualities: PL_Q, is_available: false },
+    { id: "c", title: "Good Two", position: 3, thumbnail: null, duration: "04:00", url: "u3", qualities: PL_Q, is_available: true },
+  ],
+};
+
+const IG_PHOTO: VideoInfo = {
+  type: "video",
+  title: "A nice photo",
+  uploader: "",
+  thumbnail: null,
+  platform: "Instagram",
+  qualities: ["Image"],
+  duration: null,
+  kind: "image",
+};
+
+const IG_CAROUSEL: PlaylistCheckResult = {
+  type: "playlist",
+  platform: "Instagram",
+  title: "An album",
+  items: [
+    { id: "1", title: "Slide 1", thumbnail: null, duration: null, entry_index: 1, qualities: ["Image"], kind: "image" },
+    { id: "2", title: "Slide 2", thumbnail: null, duration: null, entry_index: 2, qualities: ["Video"], kind: "video" },
+  ],
+};
+
+const BATCH_RUNNING: JobProgress = {
+  status: "running",
+  percent: 20,
+  text: "Downloading item 1 of 2...",
+  filename: null,
+  item: 1,
+  total: 2,
+  saved_count: 0,
 };
 
 describe("HomePage", () => {
@@ -253,5 +330,225 @@ describe("HomePage in remote mode (non-local hostname)", () => {
     const downloadLink = await screen.findByText("Download");
     expect(downloadLink.closest("a")).toHaveAttribute("href", "/api/download-file/job-789");
     expect(screen.queryByText("Open Folder")).not.toBeInTheDocument();
+  });
+});
+
+describe("HomePage with a playlist result", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedApi.cancelJob.mockResolvedValue({ ok: true });
+  });
+
+  it("batch-downloads every item via Download All, showing per-row status inline", async () => {
+    mockedApi.checkLink.mockResolvedValue(YT_PLAYLIST);
+    mockedApi.startBatchDownload.mockResolvedValue({ job_id: "job-pl" });
+    mockedApi.getProgress.mockResolvedValue({
+      status: "running",
+      percent: 70,
+      text: "",
+      filename: null,
+      item: 1,
+      total: 2,
+      saved_count: 1,
+      items_progress: [
+        { title: "Playlist Video 1", status: "downloading", percent: 40 },
+        { title: "Playlist Video 2", status: "done", percent: 100 },
+      ],
+    });
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+
+    const input = screen.getByPlaceholderText("Copy and Paste your url");
+    await user.type(input, "https://youtube.com/playlist?list=PLxyz");
+
+    await screen.findByText("Playlist Video 1", undefined, { timeout: 3000 });
+    expect(screen.getByText(/total items/i)).toBeInTheDocument();
+
+    // "Download All" grabs every available, not-yet-downloaded item.
+    await user.click(screen.getByRole("button", { name: /download all/i }));
+
+    await waitFor(() =>
+      expect(mockedApi.startBatchDownload).toHaveBeenCalledWith("https://youtube.com/playlist?list=PLxyz", "Best", [
+        { title: "Playlist Video 1", url: "https://youtube.com/watch?v=v1", entryIndex: undefined },
+        { title: "Playlist Video 2", url: "https://youtube.com/watch?v=v2", entryIndex: undefined },
+      ])
+    );
+
+    // Per-row status shows inline in the list from the poll.
+    await screen.findByText(/40% Downloading/i); // row 1
+    await screen.findByText(/✅ Downloaded/); // row 2
+    // While a batch runs, the global footer shows overall progress + Cancel Download.
+    expect(screen.getByText(/1\/2 Downloaded/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /cancel download/i })).toBeInTheDocument();
+  });
+
+  it("downloads a single row via its own inline download button", async () => {
+    mockedApi.checkLink.mockResolvedValue(YT_PLAYLIST);
+    mockedApi.startBatchDownload.mockResolvedValue({ job_id: "job-one" });
+    mockedApi.getProgress.mockResolvedValue({
+      status: "running", percent: 10, text: "", filename: null, item: 0, total: 1, saved_count: 0,
+      items_progress: [{ title: "Playlist Video 2", status: "downloading", percent: 10 }],
+    });
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+
+    const input = screen.getByPlaceholderText("Copy and Paste your url");
+    await user.type(input, "https://youtube.com/playlist?list=PLxyz");
+    await screen.findByText("Playlist Video 1", undefined, { timeout: 3000 });
+
+    // Each row has its own download button; clicking one downloads just that item.
+    const rowButtons = screen.getAllByLabelText("download-item");
+    expect(rowButtons).toHaveLength(2);
+    await user.click(rowButtons[1]);
+
+    await waitFor(() =>
+      expect(mockedApi.startBatchDownload).toHaveBeenCalledWith("https://youtube.com/playlist?list=PLxyz", "Best", [
+        { title: "Playlist Video 2", url: "https://youtube.com/watch?v=v2", entryIndex: undefined },
+      ])
+    );
+  });
+
+  it("renders a 1-item playlist as a plain single video and downloads that item's URL", async () => {
+    mockedApi.checkLink.mockResolvedValue(YT_PLAYLIST_SINGLE);
+    mockedApi.startDownload.mockResolvedValue({ job_id: "job-solo" });
+    mockedApi.getProgress.mockResolvedValue(RUNNING_PROGRESS);
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+
+    const input = screen.getByPlaceholderText("Copy and Paste your url");
+    await user.type(input, "https://youtube.com/playlist?list=PLsolo");
+    await screen.findByText("Solo Video", undefined, { timeout: 3000 });
+
+    // Rendered as a plain single video, not the playlist list (no "Total Items").
+    expect(screen.queryByText(/total items/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /start download/i }));
+    await waitFor(() =>
+      expect(mockedApi.startDownload).toHaveBeenCalledWith("https://youtube.com/watch?v=solo", "Solo Video", "Best", undefined)
+    );
+  });
+
+  it("hides unavailable videos, reveals them via the filter, and Download All skips them", async () => {
+    mockedApi.checkLink.mockResolvedValue(YT_PLAYLIST_WITH_DEAD);
+    mockedApi.startBatchDownload.mockResolvedValue({ job_id: "job-dead" });
+    mockedApi.getProgress.mockResolvedValue(BATCH_RUNNING);
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+
+    const input = screen.getByPlaceholderText("Copy and Paste your url");
+    await user.type(input, "https://youtube.com/playlist?list=PLdead");
+
+    await screen.findByText("Good One", undefined, { timeout: 3000 });
+    // The [Private video] is hidden by default; the other available one shows.
+    expect(screen.queryByText("[Private video]")).not.toBeInTheDocument();
+    expect(screen.getByText("Good Two")).toBeInTheDocument();
+
+    // Flip the "Show unavailable videos" filter -> the dead video appears (still unselectable).
+    await user.click(screen.getByRole("switch"));
+    expect(screen.getByText("[Private video]")).toBeInTheDocument();
+
+    // Download All targets ONLY the 2 available videos (skips the dead one).
+    await user.click(screen.getByRole("button", { name: /download all/i }));
+    await waitFor(() =>
+      expect(mockedApi.startBatchDownload).toHaveBeenCalledWith("https://youtube.com/playlist?list=PLdead", "Best", [
+        { title: "Good One", url: "u1", entryIndex: undefined },
+        { title: "Good Two", url: "u3", entryIndex: undefined },
+      ])
+    );
+  });
+
+  it("batch-downloads Instagram Story items by their entry index", async () => {
+    mockedApi.checkLink.mockResolvedValue(PLAYLIST_RESULT);
+    mockedApi.startBatchDownload.mockResolvedValue({ job_id: "job-story" });
+    mockedApi.getProgress.mockResolvedValue(BATCH_RUNNING);
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+
+    const input = screen.getByPlaceholderText("Copy and Paste your url");
+    await user.type(input, "https://www.instagram.com/stories/someone/1/");
+
+    await screen.findByText("Story item 1", undefined, { timeout: 3000 });
+    await user.click(screen.getByRole("button", { name: /download all/i }));
+
+    await waitFor(() =>
+      expect(mockedApi.startBatchDownload).toHaveBeenCalledWith("https://www.instagram.com/stories/someone/1/", "720p", [
+        { title: "Story item 1", url: undefined, entryIndex: 1 },
+        { title: "Story item 2", url: undefined, entryIndex: 2 },
+      ])
+    );
+  });
+
+  it("shows the empty-state message when the playlist has no video items", async () => {
+    mockedApi.checkLink.mockResolvedValue({ ...PLAYLIST_RESULT, items: [] });
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+
+    const input = screen.getByPlaceholderText("Copy and Paste your url");
+    await user.type(input, "https://www.instagram.com/stories/someone/1/");
+
+    await screen.findByText(/no downloadable video/i, undefined, { timeout: 3000 });
+  });
+});
+
+describe("HomePage with Instagram photos", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedApi.cancelJob.mockResolvedValue({ ok: true });
+  });
+
+  it("downloads a single photo with no quality picker shown", async () => {
+    mockedApi.checkLink.mockResolvedValue(IG_PHOTO);
+    mockedApi.startDownload.mockResolvedValue({ job_id: "job-photo" });
+    mockedApi.getProgress.mockResolvedValue(RUNNING_PROGRESS);
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+
+    const input = screen.getByPlaceholderText("Copy and Paste your url");
+    await user.type(input, "https://www.instagram.com/p/abc/");
+    await screen.findByText("A nice photo", undefined, { timeout: 3000 });
+
+    // A single "Image" quality has nothing to choose - no segmented picker.
+    expect(document.querySelector(".ant-segmented")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /start download/i }));
+
+    await waitFor(() =>
+      expect(mockedApi.startDownload).toHaveBeenCalledWith("https://www.instagram.com/p/abc/", "A nice photo", "Image", undefined)
+    );
+  });
+
+  it("shows photo/video badges and batch-downloads the selected carousel slides", async () => {
+    mockedApi.checkLink.mockResolvedValue(IG_CAROUSEL);
+    mockedApi.startBatchDownload.mockResolvedValue({ job_id: "job-slide" });
+    mockedApi.getProgress.mockResolvedValue({ ...BATCH_RUNNING, total: 1 });
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+
+    const input = screen.getByPlaceholderText("Copy and Paste your url");
+    await user.type(input, "https://www.instagram.com/p/abc/");
+
+    await screen.findByText("Slide 1", undefined, { timeout: 3000 });
+    expect(screen.getByText("Photo")).toBeInTheDocument();
+    expect(screen.getByText("Video")).toBeInTheDocument();
+    // A mixed image/video carousel has single-option qualities -> no quality picker.
+    expect(document.querySelector(".ant-segmented")).not.toBeInTheDocument();
+
+    // Ticking a row (its title) surfaces the manual "Download Items Selected" button.
+    await user.click(screen.getByText("Slide 2"));
+    await user.click(screen.getByRole("button", { name: /download items selected/i }));
+
+    await waitFor(() =>
+      expect(mockedApi.startBatchDownload).toHaveBeenCalledWith("https://www.instagram.com/p/abc/", "Best", [
+        { title: "Slide 2", url: undefined, entryIndex: 2 },
+      ])
+    );
   });
 });

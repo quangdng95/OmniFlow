@@ -26,7 +26,7 @@ const UrlInputCard = forwardRef<InputRef, UrlInputCardProps>(
           <LoadingOutlined spin /> {t.urlInput.checking}
         </span>
       );
-    } else if (status === "result") {
+    } else if (value !== "") {
       suffix = (
         <button
           type="button"

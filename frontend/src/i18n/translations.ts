@@ -18,6 +18,36 @@ export interface Translations {
   };
   checkingStatus: { checkingLink: string; cancel: string };
   videoInfo: { titleLabel: string; authorLabel: string; timeLabel: string };
+  playlist: {
+    heading: string;
+    empty: string;
+    back: string;
+    photo: string;
+    video: string;
+    selectAll: string;
+    downloadSelected: string; // "Download {n} selected"
+    truncated: string; // "Showing the first {n} videos only."
+    itemProgress: string; // "Downloading item {i} of {n}…"
+    batchDone: string; // "Saved {saved} of {total} videos"
+    batchProgress: string; // "Downloading… ({done}/{n} done)"
+    queued: string; // per-item: waiting
+    failed: string; // per-item: errored
+    showUnavailable: string; // filter toggle label
+    unavailable: string; // per-item: hidden/removed video badge
+    downloading: string; // per-row status
+    downloaded: string; // per-row status (success)
+    retry: string; // per-row action after a failure
+    downloadAgain: string; // per-row action after success
+    cancel: string; // stop the running batch
+    totalItems: string; // "Total Items:"
+    downloadAll: string; // header bulk button
+    orSelect: string; // "Or you can select items to download"
+    download: string; // per-row idle action button
+    downloadItemsSelected: string; // bulk button for a manual selection
+    percentDownloading: string; // per-row: "{p}% Downloading"
+    downloadedProgress: string; // global: "{done}/{total} Downloaded"
+    savedItems: string; // global: "Saved: {n} items"
+  };
   qualityAction: {
     videoQuality: string;
     startDownload: string;
@@ -89,6 +119,36 @@ const en: Translations = {
   },
   checkingStatus: { checkingLink: "Checking Link…", cancel: "Cancel" },
   videoInfo: { titleLabel: "Title:", authorLabel: "Author:", timeLabel: "Time:" },
+  playlist: {
+    heading: "Select items to download",
+    empty: "This story has no downloadable video content.",
+    back: "Back to list",
+    photo: "Photo",
+    video: "Video",
+    selectAll: "Select all",
+    downloadSelected: "Download {n} selected",
+    truncated: "Large playlist/channel — showing the first {n} videos only.",
+    itemProgress: "Downloading item {i} of {n}…",
+    batchDone: "Saved {saved} of {total} videos",
+    batchProgress: "Downloading… ({done}/{n} done)",
+    queued: "Queued",
+    failed: "Failed",
+    showUnavailable: "Show unavailable videos",
+    unavailable: "Unavailable",
+    downloading: "Downloading…",
+    downloaded: "Downloaded",
+    retry: "Retry",
+    downloadAgain: "Download again",
+    cancel: "Cancel",
+    totalItems: "Total Items:",
+    downloadAll: "Download All",
+    orSelect: "Or you can select items to download",
+    download: "Download",
+    downloadItemsSelected: "Download Items Selected",
+    percentDownloading: "{p}% Downloading",
+    downloadedProgress: "{done}/{total} Downloaded",
+    savedItems: "Saved: {n} items",
+  },
   qualityAction: {
     videoQuality: "Video Quality:",
     startDownload: "Start Download",
@@ -222,6 +282,36 @@ const vi: Translations = {
   },
   checkingStatus: { checkingLink: "Đang kiểm tra đường dẫn…", cancel: "Huỷ" },
   videoInfo: { titleLabel: "Tiêu đề:", authorLabel: "Tác giả:", timeLabel: "Thời lượng:" },
+  playlist: {
+    heading: "Chọn các mục để tải",
+    empty: "Story này không có video nào để tải.",
+    back: "Quay lại danh sách",
+    photo: "Ảnh",
+    video: "Video",
+    selectAll: "Chọn tất cả",
+    downloadSelected: "Tải {n} mục đã chọn",
+    truncated: "Playlist/kênh lớn — chỉ hiển thị {n} video đầu tiên.",
+    itemProgress: "Đang tải mục {i}/{n}…",
+    batchDone: "Đã tải {saved}/{total} video",
+    batchProgress: "Đang tải… (xong {done}/{n})",
+    queued: "Đang chờ",
+    failed: "Lỗi",
+    showUnavailable: "Hiện video không khả dụng",
+    unavailable: "Không khả dụng",
+    downloading: "Đang tải…",
+    downloaded: "Đã tải",
+    retry: "Thử lại",
+    downloadAgain: "Tải lại",
+    cancel: "Huỷ",
+    totalItems: "Tổng số mục:",
+    downloadAll: "Tải tất cả",
+    orSelect: "Hoặc bạn có thể chọn từng mục để tải",
+    download: "Tải",
+    downloadItemsSelected: "Tải các mục đã chọn",
+    percentDownloading: "{p}% Đang tải",
+    downloadedProgress: "Đã tải {done}/{total}",
+    savedItems: "Đã lưu: {n} mục",
+  },
   qualityAction: {
     videoQuality: "Chất lượng video:",
     startDownload: "Bắt đầu tải xuống",

@@ -36,17 +36,23 @@ const QualityActionCard = ({ qualities, value, onChange, actionState, onAction }
     );
   }
 
+  // A single option (Instagram photos -> ["Image"], Instagram videos ->
+  // ["Video"]) has nothing to choose between, so skip the selector entirely.
+  const showQualityPicker = qualities.length > 1;
+
   return (
     <SectionCard>
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12 }}>{t.qualityAction.videoQuality}</span>
-        <Segmented
-          options={qualities}
-          value={value}
-          onChange={(v) => onChange(v as string)}
-          disabled={actionState === "downloading"}
-        />
-      </div>
+      {showQualityPicker && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12 }}>{t.qualityAction.videoQuality}</span>
+          <Segmented
+            options={qualities}
+            value={value}
+            onChange={(v) => onChange(v as string)}
+            disabled={actionState === "downloading"}
+          />
+        </div>
+      )}
       {button}
     </SectionCard>
   );

@@ -1,4 +1,4 @@
-import type { CookiesStatus, JobProgress, Settings, VideoInfo } from "./types";
+import type { BatchItem, CheckResult, CookiesStatus, JobProgress, Settings } from "./types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
@@ -29,12 +29,23 @@ export const api = {
     request<{ path: string; cookies_status: CookiesStatus }>("/api/browse-file", { method: "POST" }),
 
   checkLink: (url: string) =>
-    request<VideoInfo>("/api/check", { method: "POST", body: JSON.stringify({ url }) }),
+    request<CheckResult>("/api/check", { method: "POST", body: JSON.stringify({ url }) }),
 
-  startDownload: (url: string, title: string, quality: string) =>
+  startDownload: (url: string, title: string, quality: string, entryIndex?: number) =>
     request<{ job_id: string }>("/api/download", {
       method: "POST",
-      body: JSON.stringify({ url, title, quality }),
+      body: JSON.stringify({ url, title, quality, entry_index: entryIndex }),
+    }),
+
+  // Batch-download several selected playlist/carousel items in one job.
+  startBatchDownload: (url: string, quality: string, items: BatchItem[]) =>
+    request<{ job_id: string }>("/api/download-batch", {
+      method: "POST",
+      body: JSON.stringify({
+        url,
+        quality,
+        items: items.map((it) => ({ title: it.title, url: it.url, entry_index: it.entryIndex })),
+      }),
     }),
 
   getProgress: (jobId: string) => request<JobProgress>(`/api/progress/${jobId}`),

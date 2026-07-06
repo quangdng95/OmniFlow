@@ -4,3 +4,7 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 .claude/settings.local.json
+
+# PyInstaller packaging artifacts (see OmniFlow.spec / rules/packaging.md)
+build/
+dist/

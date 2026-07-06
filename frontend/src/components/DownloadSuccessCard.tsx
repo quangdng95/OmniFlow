@@ -7,16 +7,25 @@ interface DownloadSuccessCardProps {
   filename: string;
   onOpenFolder?: () => void;
   downloadUrl?: string;
+  // When set (batch downloads), replaces the "Saved: <filename>" line with a
+  // custom summary like "Saved 5 of 6 videos".
+  label?: string;
 }
 
-const DownloadSuccessCard = ({ filename, onOpenFolder, downloadUrl }: DownloadSuccessCardProps) => {
+const DownloadSuccessCard = ({ filename, onOpenFolder, downloadUrl, label }: DownloadSuccessCardProps) => {
   const { t } = useLanguage();
   return (
     <SectionCard>
       <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#0d9585", fontSize: 12 }}>
         <CheckCircleFilled />
-        <span>{t.downloadSuccess.saved}</span>
-        <span style={{ fontWeight: 500, wordBreak: "break-word" }}>{filename}</span>
+        {label ? (
+          <span style={{ fontWeight: 500, wordBreak: "break-word" }}>{label}</span>
+        ) : (
+          <>
+            <span>{t.downloadSuccess.saved}</span>
+            <span style={{ fontWeight: 500, wordBreak: "break-word" }}>{filename}</span>
+          </>
+        )}
       </div>
       {onOpenFolder && (
         <Button block type="primary" icon={<FolderOpenOutlined />} onClick={onOpenFolder}>

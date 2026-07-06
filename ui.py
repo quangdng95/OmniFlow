@@ -18,6 +18,14 @@ COLOR_RED_LIGHT = "#FEE2E2"
 COLOR_DISABLED = "#E5E7EB"
 COLOR_TEXT_DISABLED = "#9CA3AF"
 
+COLOR_ORANGE = "#F97316"
+COLOR_BLUE = "#3B82F6"
+COLOR_BTN_HOVER = "#0D7478"
+COLOR_TEXT = "#1F2937"
+COLOR_PURPLE = "#8B5CF6"
+COLOR_FB = "#1877F2"
+COLOR_REDNOTE = "#FF2442"
+
 class OmniFlowUI(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -112,8 +120,16 @@ class OmniFlowUI(ctk.CTk):
         
         self.nav_container = ctk.CTkFrame(self.header_frame, fg_color="transparent")
         self.nav_container.pack(pady=(32, 12), padx=32, anchor="w")
+        
+        self.nav_buttons = {}
         for name in ["Home", "Settings", "Terms of Use"]:
-            ctk.CTkButton(self.nav_container, text=name, font=("Inter", 14), text_color="white", fg_color="transparent", hover=False, width=1).pack(side="left", padx=(0, 24))
+            btn = ctk.CTkButton(
+                self.nav_container, text=name, font=("Inter", 14), 
+                text_color="white", fg_color="transparent", hover=False, width=1,
+                command=lambda n=name: self.show_page(n)
+            )
+            btn.pack(side="left", padx=(0, 24))
+            self.nav_buttons[name] = btn
 
         ctk.CTkFrame(self.header_frame, fg_color="#1E3F35", height=1).pack(fill="x", padx=32, pady=0)
         
@@ -128,9 +144,18 @@ class OmniFlowUI(ctk.CTk):
         ctk.CTkLabel(self.header_frame, text="Download videos and stories instantly with OmniFlow.\nIt's fast, free, and fully compatible with all your devices!", font=("Inter", 14), text_color=COLOR_TEXT_GREEN, justify="left", anchor="w").pack(fill="x", padx=32, pady=(0, 32))
 
         # ==========================================
-        # SECTION 1: URL BOX
+        # PAGE FRAMES
         # ==========================================
-        self.section1_url = ctk.CTkFrame(self.scroll_container, **BOX_KWARGS)
+        self.home_frame = ctk.CTkFrame(self.scroll_container, fg_color="transparent")
+        self.home_frame.pack(fill="both", expand=True)
+
+        self.settings_frame = ctk.CTkFrame(self.scroll_container, fg_color="transparent")
+        self.terms_frame = ctk.CTkFrame(self.scroll_container, fg_color="transparent")
+
+        # ==========================================
+        # HOME PAGE CONTENT
+        # ==========================================
+        self.section1_url = ctk.CTkFrame(self.home_frame, **BOX_KWARGS)
         self.section1_url.pack(pady=(24, 16), padx=PAD_X, fill="x")
 
         ctk.CTkLabel(self.section1_url, text="* Insert a video URL", font=("Inter", 14, "bold"), text_color=COLOR_TEXT_MAIN).pack(anchor="w", padx=16, pady=(16, 5))
@@ -142,7 +167,7 @@ class OmniFlowUI(ctk.CTk):
         self.btn_action = ctk.CTkButton(e_frame, text=" Paste", image=self.icons.get("paste"), compound="left", width=140, height=52, corner_radius=8, fg_color=COLOR_PRIMARY, font=("Inter", 15, "bold"))
         self.btn_action.pack(side="right")
 
-        self.content_stack = ctk.CTkFrame(self.scroll_container, fg_color="transparent")
+        self.content_stack = ctk.CTkFrame(self.home_frame, fg_color="transparent")
         self.content_stack.pack(fill="x", pady=0, padx=PAD_X)
 
         self.screen_instruction = ctk.CTkLabel(self.content_stack, text="OmniFlow allows you to easily download videos from YouTube, TikTok, Instagram, Facebook, or Rednote.\n\nThe service is completely free and requires no sign-up or additional software.\n\nBy using OmniFlow, you accept our Terms of Use.\n\nHow to download a video:\n• Copy the link: Go to YouTube, TikTok, Instagram, Facebook, or Rednote.\n• Paste & Choose Format: Paste the URL into the OmniFlow input box above.\n• Download: Click the “Convert” button once the processing is complete.", font=("Inter", 14), text_color=COLOR_TEXT_MAIN, justify="left", anchor="w")
@@ -152,8 +177,9 @@ class OmniFlowUI(ctk.CTk):
         # MÀN HÌNH CHECKING
         # ==========================================
         self.screen_checking = ctk.CTkFrame(self.content_stack, **BOX_KWARGS)
-        self.label_check_status = ctk.CTkLabel(self.screen_checking, text="Checking Link... (0s)", font=("Inter", 16, "bold"), text_color=COLOR_PRIMARY)
-        self.label_check_status.pack(pady=(16, 10), padx=16, anchor="w") 
+        self.label_status_check = ctk.CTkLabel(self.screen_checking, text="Checking Link... (0s)", font=("Inter", 16, "bold"), text_color=COLOR_PRIMARY)
+        self.label_status_check.pack(pady=(16, 10), padx=16, anchor="w") 
+        self.label_check_status = self.label_status_check # Alias for compatibility
         
         self.btn_cancel = ctk.CTkButton(self.screen_checking, text=" Cancel", image=self.icons.get("Cancel"), compound="left", height=48, corner_radius=8, fg_color=COLOR_RED_LIGHT, text_color=COLOR_RED, hover_color="#FECACA", font=("Inter", 15, "bold"))
         self.btn_cancel.pack(fill="x", padx=16, pady=(0, 16))
@@ -195,17 +221,33 @@ class OmniFlowUI(ctk.CTk):
         self.label_time_val.pack(side="left")
 
         # ==========================================
+        # SECTION: PLAYLIST ITEMS (CAROUSEL)
+        # ==========================================
+        self.section_playlist = ctk.CTkFrame(self.screen_result_container, **BOX_KWARGS)
+        
+        self.select_all_var = ctk.BooleanVar(value=True)
+        self.chk_select_all = ctk.CTkCheckBox(
+            self.section_playlist, text="Select All", variable=self.select_all_var,
+            font=("Inter", 14, "bold"), text_color=COLOR_TEXT_MAIN, fg_color=COLOR_PRIMARY
+        )
+        self.chk_select_all.pack(anchor="w", padx=16, pady=(16, 8))
+        
+        self.playlist_items_container = ctk.CTkFrame(self.section_playlist, fg_color="transparent")
+        self.playlist_items_container.pack(fill="x", padx=16, pady=(0, 16))
+
+        # ==========================================
         # SECTION 3: BOX OF QUALITY
         # ==========================================
         self.section3_quality = ctk.CTkFrame(self.screen_result_container, **BOX_KWARGS)
         self.section3_quality.pack(fill="x", pady=SPACE_BETWEEN_BOXES)
+        self.frame_quality = self.section3_quality
 
-        q_frame = ctk.CTkFrame(self.section3_quality, fg_color="transparent")
-        q_frame.pack(fill="x", padx=16, pady=(16, 8))
-        ctk.CTkLabel(q_frame, text="Video Quality:", font=("Inter", 14, "bold"), text_color=COLOR_TEXT_MAIN).pack(side="left", padx=(0, 12))
+        self.q_frame = ctk.CTkFrame(self.section3_quality, fg_color="transparent")
+        self.q_frame.pack(fill="x", padx=16, pady=(16, 8))
+        ctk.CTkLabel(self.q_frame, text="Video Quality:", font=("Inter", 14, "bold"), text_color=COLOR_TEXT_MAIN).pack(side="left", padx=(0, 12))
         
         self.seg_quality = ctk.CTkSegmentedButton(
-            q_frame, height=40, corner_radius=8,
+            self.q_frame, height=40, corner_radius=8,
             fg_color="#F3F4F6", selected_color="#FFFFFF", selected_hover_color="#FFFFFF",
             unselected_color="#F3F4F6", unselected_hover_color="#E5E7EB", text_color="#1F2937" 
         )
@@ -227,6 +269,7 @@ class OmniFlowUI(ctk.CTk):
         self.progressbar = ctk.CTkProgressBar(self.progress_view, height=10, fg_color=COLOR_BORDER, progress_color="#3B82F6")
         self.progressbar.pack(fill="x", padx=16, pady=(12, 16))
         self.progressbar.set(0)
+        self.progress_bar = self.progressbar  # Alias for main.py compatibility
         
         self.btn_cancel_dl = ctk.CTkButton(self.progress_view, text=" Cancel Download", image=self.icons.get("CancelDownload"), compound="left", height=48, corner_radius=8, fg_color=COLOR_RED, font=("Inter", 15, "bold"))
         self.btn_cancel_dl.pack(fill="x", padx=16, pady=(0, 16))
@@ -238,9 +281,92 @@ class OmniFlowUI(ctk.CTk):
         self.btn_open_folder = ctk.CTkButton(self.success_view, text=" Open Folder", image=self.icons.get("OpenFolder"), compound="left", height=48, corner_radius=8, fg_color=COLOR_PRIMARY, font=("Inter", 15, "bold"))
         self.btn_open_folder.pack(fill="x", padx=16, pady=(0, 16))
 
+        # ==========================================
+        # SETTINGS PAGE CONTENT
+        # ==========================================
+        settings_box = ctk.CTkFrame(self.settings_frame, **BOX_KWARGS)
+        settings_box.pack(pady=24, padx=PAD_X, fill="x")
+        
+        ctk.CTkLabel(settings_box, text="Settings", font=("Inter", 18, "bold"), text_color=COLOR_TEXT_MAIN).pack(anchor="w", padx=16, pady=(16, 12))
+        
+        # Save Folder row
+        ctk.CTkLabel(settings_box, text="Save Folder:", font=("Inter", 14, "bold"), text_color=COLOR_TEXT_MAIN).pack(anchor="w", padx=16, pady=(8, 4))
+        path_row = ctk.CTkFrame(settings_box, fg_color="transparent")
+        path_row.pack(fill="x", padx=16, pady=(0, 12))
+        self.path_var = ctk.StringVar()
+        self.entry_path = ctk.CTkEntry(path_row, textvariable=self.path_var, state="readonly", height=40, corner_radius=8)
+        self.entry_path.pack(side="left", fill="x", expand=True, padx=(0, 12))
+        self.btn_browse = ctk.CTkButton(path_row, text="Browse", image=self.icons.get("folder"), compound="left", width=100, height=40, corner_radius=8, fg_color=COLOR_PRIMARY)
+        self.btn_browse.pack(side="right")
+        
+        # Cookies File row
+        ctk.CTkLabel(settings_box, text="Instagram Cookies (.txt):", font=("Inter", 14, "bold"), text_color=COLOR_TEXT_MAIN).pack(anchor="w", padx=16, pady=(8, 4))
+        cookies_row = ctk.CTkFrame(settings_box, fg_color="transparent")
+        cookies_row.pack(fill="x", padx=16, pady=(0, 12))
+        self.cookies_var = ctk.StringVar()
+        self.entry_cookies = ctk.CTkEntry(cookies_row, textvariable=self.cookies_var, state="readonly", height=40, corner_radius=8)
+        self.entry_cookies.pack(side="left", fill="x", expand=True, padx=(0, 12))
+        self.btn_browse_cookies = ctk.CTkButton(cookies_row, text="Browse", image=self.icons.get("folder"), compound="left", width=100, height=40, corner_radius=8, fg_color=COLOR_PRIMARY)
+        self.btn_browse_cookies.pack(side="right")
+        
+        # Browser row
+        ctk.CTkLabel(settings_box, text="Preferred Browser for Auto Cookies:", font=("Inter", 14, "bold"), text_color=COLOR_TEXT_MAIN).pack(anchor="w", padx=16, pady=(8, 4))
+        browser_row = ctk.CTkFrame(settings_box, fg_color="transparent")
+        browser_row.pack(fill="x", padx=16, pady=(0, 12))
+        self.browser_var = ctk.StringVar(value="chrome")
+        self.opt_browser = ctk.CTkOptionMenu(
+            browser_row, variable=self.browser_var, 
+            values=["chrome", "safari", "edge", "brave", "firefox"],
+            height=40, corner_radius=8, fg_color=COLOR_PRIMARY, button_color=COLOR_PRIMARY
+        )
+        self.opt_browser.pack(side="left", fill="x", expand=True)
+        
+        # Notification row
+        self.notify_var = ctk.BooleanVar(value=True)
+        self.switch_notify = ctk.CTkSwitch(settings_box, text="Enable macOS Notification", variable=self.notify_var, onvalue=True, offvalue=False, font=("Inter", 14, "bold"), text_color=COLOR_TEXT_MAIN, progress_color=COLOR_PRIMARY)
+        self.switch_notify.pack(anchor="w", padx=16, pady=(12, 16))
+
+        # ==========================================
+        # TERMS OF USE PAGE CONTENT
+        # ==========================================
+        terms_box = ctk.CTkFrame(self.terms_frame, **BOX_KWARGS)
+        terms_box.pack(pady=24, padx=PAD_X, fill="both", expand=True)
+        
+        ctk.CTkLabel(terms_box, text="Terms of Use", font=("Inter", 18, "bold"), text_color=COLOR_TEXT_MAIN).pack(anchor="w", padx=16, pady=(16, 12))
+        
+        terms_text = (
+            "OmniFlow is provided as a utility tool for downloading content for personal, non-commercial use only.\n\n"
+            "By using this application, you agree that you are solely responsible for compliance with the terms of service of the third-party platforms (YouTube, Instagram, TikTok, Facebook, Rednote) and any copyright laws.\n\n"
+            "We do not host or distribute any content. Please respect the intellectual property rights of content creators."
+        )
+        self.label_terms = ctk.CTkLabel(terms_box, text=terms_text, font=("Inter", 14), text_color=COLOR_TEXT_MAIN, justify="left", anchor="w")
+        self.label_terms.pack(fill="both", expand=True, padx=16, pady=16)
+
+        # TabViewMock for main.py compatibility
+        class TabViewMock:
+            def set(self, val):
+                pass
+        self.tabview = TabViewMock()
+
+        # Hide other frames by default
+        self.settings_frame.pack_forget()
+        self.terms_frame.pack_forget()
+
         self.screen_checking.pack_forget()
         self.screen_result_container.pack_forget()
         self.section4_download.pack_forget()
+
+    def show_page(self, page_name):
+        self.home_frame.pack_forget()
+        self.settings_frame.pack_forget()
+        self.terms_frame.pack_forget()
+        
+        if page_name == "Home":
+            self.home_frame.pack(fill="both", expand=True)
+        elif page_name == "Settings":
+            self.settings_frame.pack(fill="both", expand=True)
+        elif page_name == "Terms of Use":
+            self.terms_frame.pack(fill="both", expand=True)
 
     def set_dl_ready(self):
         self.btn_download.configure(state="normal", text=" Start Download", fg_color=COLOR_PRIMARY, text_color="white", border_width=0, image=self.icons.get("download"))
@@ -266,7 +392,13 @@ class OmniFlowUI(ctk.CTk):
     def update_thumbnail(self, url):
         def _download():
             try:
-                res = requests.get(url, timeout=10)
+                headers = {}
+                if any(k in url.lower() for k in ("xiaohongshu", "xhslink", "rednote", "sns-img")):
+                    headers = {
+                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        "Referer": "https://www.xiaohongshu.com/",
+                    }
+                res = requests.get(url, headers=headers, timeout=10)
                 img = Image.open(BytesIO(res.content))
                 w, h = img.size
                 target_w = 140
