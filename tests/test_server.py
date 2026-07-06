@@ -17,10 +17,8 @@ from server import (
     cookies_status_for,
     describe_extraction_error,
     detect_video_codec,
-    discover_browser_profiles,
     ensure_h264,
     format_duration,
-    get_browsers_to_sweep,
     get_cookies_path,
     get_platform_info,
     get_unique_filename,
@@ -31,7 +29,6 @@ from server import (
     is_playlist_url,
     load_session,
     qualities_for,
-    resolve_instagram_cookiefile,
     resolve_save_dir,
     resolve_thumbnail,
     sanitize_filename,
@@ -1355,36 +1352,6 @@ def test_ensure_h264_honors_cancel_mid_reencode(monkeypatch, tmp_path):
     assert not (tmp_path / "clip.mp4.h264.mp4").exists()  # partial temp removed
 
 
-# ---- browser profile discovery / sweep ----
-
-
-def test_discover_browser_profiles_finds_real_profile_folders(monkeypatch, tmp_path):
-    chrome = tmp_path / "chrome"
-    (chrome / "Default" / "Network").mkdir(parents=True)
-    (chrome / "Default" / "Network" / "Cookies").write_text("db")
-    (chrome / "Profile 1").mkdir()
-    (chrome / "Profile 1" / "Cookies").write_text("db")  # older layout
-    (chrome / "Profile 9").mkdir()  # no cookies DB -> skipped
-    (chrome / "System Profile").mkdir()  # not Default/Profile N -> skipped
-    monkeypatch.setattr(server_module, "CHROMIUM_BROWSER_DIRS", {"chrome": str(chrome)})
-    assert discover_browser_profiles() == [("chrome", "Default"), ("chrome", "Profile 1")]
-
-
-def test_discover_browser_profiles_empty_when_no_browsers(monkeypatch, tmp_path):
-    monkeypatch.setattr(server_module, "CHROMIUM_BROWSER_DIRS", {"chrome": str(tmp_path / "nope")})
-    assert discover_browser_profiles() == []
-
-
-def test_get_browsers_to_sweep_prefers_explicit_then_discovered_then_defaults(monkeypatch):
-    monkeypatch.setattr(server_module, "discover_browser_profiles", lambda: [("chrome", "Profile 1")])
-    sweep = get_browsers_to_sweep("chrome:Profile 2")
-    assert sweep[0] == ("chrome", "Profile 2")  # explicit preference first
-    assert ("chrome", "Profile 1") in sweep  # discovered profile included
-    assert ("safari",) in sweep and ("chrome",) in sweep  # bare fallbacks present
-    # no duplicates
-    assert len(sweep) == len(set(sweep))
-
-
 # ---- auto cookie extraction (_write_cookies_txt / cookiefiles_from_browsers) ----
 
 
@@ -1414,10 +1381,6 @@ def test_cookiefiles_from_browsers_writes_a_file_per_logged_in_account(no_browse
     # otherwise stubs it to []); exercise it against a fake browser_cookie3 with
     # two different logged-in accounts across profiles.
     real = no_browser_cookie_scan
-    monkeypatch.setattr(
-        server_module, "discover_browser_profiles",
-        lambda: [("chrome", "Default"), ("chrome", "Profile 3")],
-    )
     monkeypatch.setattr(server_module, "_profile_cookie_db", lambda profile_dir: "/fake/Cookies")
     monkeypatch.setattr(server_module, "CHROMIUM_BROWSER_DIRS", {"chrome": "/fake"})
 
@@ -1447,7 +1410,6 @@ def test_cookiefiles_from_browsers_writes_a_file_per_logged_in_account(no_browse
 
 def test_cookiefiles_from_browsers_returns_empty_without_browser_cookie3(no_browser_cookie_scan, monkeypatch):
     real = no_browser_cookie_scan
-    monkeypatch.setattr(server_module, "discover_browser_profiles", lambda: [])
     # Simulate browser_cookie3 not being importable.
     monkeypatch.setitem(sys.modules, "browser_cookie3", None)
     assert real("instagram.com") == []
@@ -1480,31 +1442,6 @@ def test_fetch_instagram_media_any_raises_auth_error_when_all_unauthorized(monke
     monkeypatch.setattr(server_module, "fetch_instagram_media", always_auth)
     with pytest.raises(InstagramAuthError):
         server_module.fetch_instagram_media_any("https://www.instagram.com/p/abc/", ["/a.txt", "/b.txt"])
-
-
-# ---- resolve_instagram_cookiefile ----
-
-
-def test_resolve_instagram_cookiefile_prefers_manual_valid_file(isolated_config, tmp_path):
-    cookies_file = tmp_path / "cookies.txt"
-    cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
-    save_session(os.path.expanduser("~/Downloads"), str(cookies_file))
-    assert resolve_instagram_cookiefile() == str(cookies_file)
-
-
-def test_resolve_instagram_cookiefile_falls_back_to_browsers_when_no_manual(isolated_config, monkeypatch):
-    # No manual cookies configured -> delegates to the browser extractor and
-    # returns the first logged-in account's cookiefile.
-    monkeypatch.setattr(
-        server_module, "cookiefiles_from_browsers",
-        lambda domain="instagram.com": ["/tmp/auto-A.txt", "/tmp/auto-B.txt"],
-    )
-    assert resolve_instagram_cookiefile() == "/tmp/auto-A.txt"
-
-
-def test_resolve_instagram_cookiefile_none_when_nothing_available(isolated_config):
-    # Autouse no_browser_cookie_scan makes the browser extractor return None.
-    assert resolve_instagram_cookiefile() is None
 
 
 # ---- is_playlist_url ----

@@ -597,54 +597,6 @@ def _profile_cookie_db(profile_dir):
     return None
 
 
-def discover_browser_profiles():
-    # Scan every installed Chromium-family browser for real profile folders that
-    # actually hold a cookies DB. Returns [(browser, profile), ...] with Default
-    # first, so callers try the exact profile that holds the logged-in session
-    # rather than guessing.
-    found = []
-    for browser, base in CHROMIUM_BROWSER_DIRS.items():
-        base_dir = os.path.expanduser(base)
-        if not os.path.isdir(base_dir):
-            continue
-        try:
-            entries = sorted(os.listdir(base_dir))
-        except OSError:
-            continue
-        for name in entries:
-            if name != "Default" and not name.startswith("Profile "):
-                continue
-            profile_dir = os.path.join(base_dir, name)
-            if os.path.isdir(profile_dir) and _profile_cookie_db(profile_dir):
-                found.append((browser, name))
-    return found
-
-
-def get_browsers_to_sweep(pref_browser="chrome"):
-    sweep_list = []
-
-    # 1. An explicit user preference wins (may be "chrome:Profile 1").
-    if pref_browser:
-        if ":" in pref_browser:
-            b, p = pref_browser.split(":", 1)
-            sweep_list.append((b, p))
-        else:
-            sweep_list.append((pref_browser,))
-
-    # 2. Every real profile discovered on disk, as an exact browser+profile pair.
-    for spec in discover_browser_profiles():
-        if spec not in sweep_list:
-            sweep_list.append(spec)
-
-    # 3. Bare-browser fallbacks (their own default profile) + browsers we don't
-    #    enumerate per-profile (Safari/Firefox), for anything discovery missed.
-    for spec in [("chrome",), ("safari",), ("firefox",), ("brave",)]:
-        if spec not in sweep_list:
-            sweep_list.append(spec)
-
-    return sweep_list
-
-
 def extract_video_info(url):
     url = normalize_rednote_url(url)
     # A watch?v=...&list=... URL must become playlist?list=... BEFORE it reaches
@@ -967,19 +919,6 @@ def instagram_cookiefile_candidates():
         candidates.append(manual)
     candidates.extend(cookiefiles_from_browsers("instagram.com"))
     return candidates
-
-
-def resolve_instagram_cookiefile():
-    # First workable cookiefile (manual, else the first logged-in browser account).
-    # Used by the yt-dlp paths, which take a single cookiefile and run their own
-    # per-profile --cookies-from-browser sweep separately. Returns None if nothing
-    # yields a session. Any other candidate temp files this generated are cleaned
-    # up here so they don't orphan (only the returned one survives, for the caller).
-    candidates = instagram_cookiefile_candidates()
-    if not candidates:
-        return None
-    _cleanup_temp_cookiefiles(candidates[1:])
-    return candidates[0]
 
 
 def fetch_instagram_media_any(url, cookiefiles):
