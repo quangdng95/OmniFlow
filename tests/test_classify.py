@@ -10,7 +10,14 @@ updates that list.
 import pytest
 
 from backend import classify
-from backend.classify import LinkKind, classify_url, entry_index_from_url, is_playlist_url
+from backend.classify import (
+    LinkKind,
+    classify_url,
+    entry_index_from_url,
+    get_platform_info,
+    instagram_shortcode_from_url,
+    is_playlist_url,
+)
 
 
 # ---- the owner's 8 live test URLs (.claude/rules/test-urls.md), offline ----
@@ -188,3 +195,104 @@ def test_entry_index_from_url_reads_img_index():
 def test_entry_index_from_url_none_without_param_or_on_garbage():
     assert entry_index_from_url("https://www.instagram.com/p/abc/") is None
     assert entry_index_from_url("https://www.instagram.com/p/abc/?img_index=lol") is None
+# ---- get_platform_info ----
+
+
+def test_get_platform_info_youtube():
+    assert get_platform_info("https://www.youtube.com/watch?v=abc") == "YouTube"
+    assert get_platform_info("https://youtu.be/abc") == "YouTube"
+
+
+def test_get_platform_info_instagram():
+    assert get_platform_info("https://www.instagram.com/reel/abc") == "Instagram"
+
+
+def test_get_platform_info_tiktok():
+    assert get_platform_info("https://www.tiktok.com/@user/video/1") == "TikTok"
+
+
+def test_get_platform_info_facebook():
+    assert get_platform_info("https://www.facebook.com/watch/?v=1") == "Facebook"
+    assert get_platform_info("https://fb.watch/abc") == "Facebook"
+
+
+def test_get_platform_info_rednote():
+    assert get_platform_info("https://www.xiaohongshu.com/explore/abc") == "RedNote"
+    assert get_platform_info("https://xhslink.com/abc") == "RedNote"
+    # "RedNote" is Xiaohongshu's international rebrand and uses its own domain
+    assert get_platform_info("https://www.rednote.com/explore/abc") == "RedNote"
+
+
+def test_get_platform_info_unknown_falls_back_to_link():
+    assert get_platform_info("https://example.com/video") == "Link"
+
+
+def test_instagram_shortcode_from_url_post():
+    assert instagram_shortcode_from_url("https://www.instagram.com/p/DYTRs5Loe6A/") == "DYTRs5Loe6A"
+
+
+def test_instagram_shortcode_from_url_reel():
+    assert instagram_shortcode_from_url("https://www.instagram.com/reel/DUvAWWREkNIWX8/?x=1") == "DUvAWWREkNIWX8"
+
+
+def test_instagram_shortcode_from_url_tv():
+    assert instagram_shortcode_from_url("https://instagram.com/tv/ABC123_-/") == "ABC123_-"
+
+
+def test_instagram_shortcode_from_url_stories_returns_none():
+    # Stories keep the yt-dlp path - they carry no post shortcode.
+    assert instagram_shortcode_from_url("https://www.instagram.com/stories/someone/123/") is None
+
+
+def test_instagram_shortcode_from_url_non_instagram_returns_none():
+    assert instagram_shortcode_from_url("https://www.youtube.com/watch?v=abc") is None
+
+
+# ---- is_playlist_url ----
+
+
+def test_is_playlist_url_matches_playlist_channel_and_handle():
+    assert is_playlist_url("https://www.youtube.com/playlist?list=PLxyz")
+    assert is_playlist_url("https://www.youtube.com/channel/UCabc")
+    assert is_playlist_url("https://www.youtube.com/c/SomeChannel")
+    assert is_playlist_url("https://www.youtube.com/user/SomeUser")
+    assert is_playlist_url("https://www.youtube.com/@SomeHandle")
+    assert is_playlist_url("https://www.youtube.com/@SomeHandle/videos")
+
+
+def test_is_playlist_url_matches_a_youtube_url_carrying_a_list_param():
+    # A YouTube URL with a list= param is a playlist, even in watch?v=...&list=...
+    # form (extract the whole list, not just the one video).
+    assert is_playlist_url("https://www.youtube.com/watch?v=abc&list=PLxyz")
+    assert is_playlist_url("https://youtu.be/abc?list=PLxyz")
+
+
+def test_is_playlist_url_treats_a_plain_video_as_a_single_video():
+    # No list= param and not a channel/handle shape -> a single video.
+    assert not is_playlist_url("https://www.youtube.com/watch?v=abc")
+    assert not is_playlist_url("https://youtu.be/abc")
+    assert not is_playlist_url("https://www.tiktok.com/@user/video/1")
+
+
+# ---- Instagram profile detection ----
+
+
+def test_is_instagram_profile_url():
+    from backend.classify import is_instagram_profile_url
+    assert is_instagram_profile_url("https://www.instagram.com/thexxlab_")
+    assert is_instagram_profile_url("https://www.instagram.com/thexxlab_/")
+    assert is_instagram_profile_url("https://www.instagram.com/thexxlab_/reels")
+    assert is_instagram_profile_url("https://www.instagram.com/thexxlab_/reels/")
+    
+    # Exclude posts, stories, single reels
+    assert not is_instagram_profile_url("https://www.instagram.com/p/C-i9vJ2ST7C/")
+    assert not is_instagram_profile_url("https://www.instagram.com/reel/C-i9vJ2ST7C/")
+    assert not is_instagram_profile_url("https://www.instagram.com/stories/username/123/")
+
+
+def test_instagram_username_from_url():
+    from backend.classify import instagram_username_from_url
+    assert instagram_username_from_url("https://www.instagram.com/thexxlab_") == "thexxlab_"
+    assert instagram_username_from_url("https://www.instagram.com/thexxlab_/") == "thexxlab_"
+    assert instagram_username_from_url("https://www.instagram.com/thexxlab_/reels/") == "thexxlab_"
+    assert instagram_username_from_url("https://www.instagram.com/p/C-i9vJ2ST7C/") == "p"

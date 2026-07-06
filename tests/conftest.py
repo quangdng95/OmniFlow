@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest
 
 import server as server_module
+from backend import app as app_module
 from backend import config as config_module
 from backend import cookies as cookies_module
 from backend import jobs as jobs_module
@@ -13,8 +14,8 @@ from backend import jobs as jobs_module
 
 @pytest.fixture
 def client():
-    server_module.app.config["TESTING"] = True
-    return server_module.app.test_client()
+    app_module.app.config["TESTING"] = True
+    return app_module.app.test_client()
 
 
 @pytest.fixture(autouse=True)
