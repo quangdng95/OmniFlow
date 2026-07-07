@@ -30,20 +30,31 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
     >
       <div className="omniflow-header-inner">
         <div className="omniflow-nav" style={{ display: "flex", gap: 24 }}>
-          {navItems.map((item) => (
-            <Button
-              key={item.key}
-              type="text"
-              aria-current={active === item.key ? "page" : undefined}
-              style={{ color: "white", padding: 0, height: 36 }}
-              onClick={() => onNavigate(item.key)}
-            >
-              {item.label}
-            </Button>
-          ))}
+          {navItems.map((item) => {
+            const isActive = active === item.key;
+            return (
+              <Button
+                key={item.key}
+                type="text"
+                aria-current={isActive ? "page" : undefined}
+                style={{
+                  color: isActive ? "#0d9585" : "rgba(255, 255, 255, 0.75)",
+                  fontWeight: isActive ? 600 : 500,
+                  borderBottom: isActive ? "2px solid #0d9585" : "2px solid transparent",
+                  borderRadius: 0,
+                  padding: "0 4px",
+                  height: 36,
+                  transition: "all 0.2s ease",
+                }}
+                onClick={() => onNavigate(item.key)}
+              >
+                {item.label}
+              </Button>
+            );
+          })}
         </div>
 
-        <Divider style={{ borderColor: "rgba(255,255,255,0.2)", margin: 0 }} />
+        <Divider style={{ borderColor: "rgba(255,255,255,0.08)", margin: 0 }} />
 
         <Logo size="large" />
 
@@ -52,7 +63,7 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
             {t.header[active].title}
           </h1>
           {active === "home" && (
-            <div style={{ fontSize: 14, lineHeight: "20px" }}>
+            <div style={{ fontSize: 14, lineHeight: "20px", color: "rgba(255, 255, 255, 0.85)" }}>
               {t.header.home.descriptionLine1} <br />
               {t.header.home.descriptionLine2}
             </div>

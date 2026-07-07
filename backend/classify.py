@@ -17,7 +17,7 @@ import urllib.parse
 
 # Cap how many entries we pull from a playlist/channel. A channel can have
 # thousands of videos; listing them all would make yt-dlp slow and the UI heavy.
-PLAYLIST_ITEM_CAP = 200
+PLAYLIST_ITEM_CAP = 100
 # A YouTube Mix/Radio (list=RD…) is auto-generated and endless — cap it harder
 # so extraction can't hang the app (MISTAKES.md blacklist §3).
 MIX_ITEM_CAP = 50

@@ -111,16 +111,18 @@ def extract_video_info(cls):
         "simulate": True,
         "skip_download": True,
         "socket_timeout": 30,
+        "check_formats": False,
     }
     if cls.is_multi:
         # Flat extraction: list each entry's id/title/url/duration/thumbnail
         # WITHOUT fetching every video's full metadata - a channel with thousands
         # of videos would otherwise hang the app. playlistend caps the count as a
         # second guard on top of the flat (metadata-free) listing; the classifier
-        # already picked the cap (50 for an endless Mix, 200 otherwise).
+        # already picked the cap (50 for an endless Mix, 100 otherwise).
         ydl_opts["noplaylist"] = False
         ydl_opts["extract_flat"] = "in_playlist"
         ydl_opts["playlistend"] = cls.playlist_cap or classify.PLAYLIST_ITEM_CAP
+        ydl_opts["ignoreerrors"] = True
     else:
         ydl_opts["noplaylist"] = True
 

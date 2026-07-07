@@ -101,7 +101,7 @@ const en: Translations = {
   },
   footer: { by: "By" },
   urlInput: {
-    label: "Insert a video URL (Youtube/Tiktok/Insta/Facebook/Rednote)",
+    label: "Insert a video URL (YouTube/TikTok/Instagram/Facebook/RedNote/Threads/X/LinkedIn)",
     placeholder: "Copy and Paste your url",
     paste: "Paste",
     pasting: "Pasting…",
@@ -150,7 +150,7 @@ const en: Translations = {
   downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", download: "Download" },
   home: {
     introLines: [
-      "OmniFlow allows you to easily download videos from YouTube, TikTok, Instagram, Facebook, or Rednote.",
+      "OmniFlow allows you to easily download videos from YouTube (including entire playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), or LinkedIn.",
       "The service is completely free and requires no sign-up or additional software.",
       "It's optimized to work seamlessly across all modern devices, from your computer to your phone.",
       "Built entirely on our self-developed technology without third-party reliance, OmniFlow ensures lightning-fast processing and safe, verified downloads.",
@@ -160,7 +160,7 @@ const en: Translations = {
     steps: [
       {
         label: "Copy the link:",
-        body: "Go to YouTube, TikTok, Instagram, Facebook, or Rednote and find the video you want. Copy the video URL from the app or your browser.",
+        body: "Go to YouTube (playlist, channel, or video), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), or LinkedIn and find the content you want. Copy the URL from the app or your browser.",
       },
       {
         label: "Paste & Choose Format:",
@@ -199,7 +199,7 @@ const en: Translations = {
     sections: [
       {
         heading: "1. Our Service",
-        body: "OmniFlow is a free, general-purpose utility tool designed to help users download video and audio content from third-party platforms, including YouTube, TikTok, Instagram, Facebook, and Rednote.",
+        body: "OmniFlow is a free, general-purpose utility tool designed to help users download video and audio content from third-party platforms, including YouTube (with full support for playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), and LinkedIn.",
       },
       {
         heading: "2. Personal & Non-Commercial Use",
@@ -254,7 +254,7 @@ const vi: Translations = {
   },
   footer: { by: "Bởi" },
   urlInput: {
-    label: "Nhập đường dẫn video (Youtube/Tiktok/Insta/Facebook/Rednote)",
+    label: "Nhập đường dẫn video (YouTube/TikTok/Instagram/Facebook/RedNote/Threads/X/LinkedIn)",
     placeholder: "Sao chép và dán đường dẫn của bạn",
     paste: "Dán",
     pasting: "Đang dán…",
@@ -303,7 +303,7 @@ const vi: Translations = {
   downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", download: "Tải xuống" },
   home: {
     introLines: [
-      "OmniFlow giúp bạn dễ dàng tải video từ YouTube, TikTok, Instagram, Facebook hoặc Rednote.",
+      "OmniFlow giúp bạn dễ dàng tải video từ YouTube (bao gồm cả danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) hoặc LinkedIn.",
       "Dịch vụ hoàn toàn miễn phí và không yêu cầu đăng ký hay cài thêm phần mềm nào khác.",
       "Được tối ưu để hoạt động mượt mà trên mọi thiết bị hiện đại, từ máy tính đến điện thoại.",
       "Được xây dựng hoàn toàn trên công nghệ tự phát triển, không phụ thuộc bên thứ ba, OmniFlow đảm bảo xử lý cực nhanh và tải xuống an toàn, đã được xác minh.",
@@ -313,7 +313,7 @@ const vi: Translations = {
     steps: [
       {
         label: "Sao chép đường dẫn:",
-        body: "Vào YouTube, TikTok, Instagram, Facebook hoặc Rednote và tìm video bạn muốn. Sao chép đường dẫn video từ ứng dụng hoặc trình duyệt.",
+        body: "Vào YouTube (danh sách phát, kênh hoặc video), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) hoặc LinkedIn và tìm nội dung bạn muốn. Sao chép đường dẫn từ ứng dụng hoặc trình duyệt.",
       },
       {
         label: "Dán & Chọn định dạng:",
@@ -352,7 +352,7 @@ const vi: Translations = {
     sections: [
       {
         heading: "1. Dịch vụ của chúng tôi",
-        body: "OmniFlow là một công cụ tiện ích miễn phí, đa năng, được thiết kế để giúp người dùng tải video và âm thanh từ các nền tảng bên thứ ba, bao gồm YouTube, TikTok, Instagram, Facebook và Rednote.",
+        body: "OmniFlow là một công cụ tiện ích miễn phí, đa năng, được thiết kế để giúp người dùng tải video và âm thanh từ các nền tảng bên thứ ba, bao gồm YouTube (hỗ trợ đầy đủ danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) và LinkedIn.",
       },
       {
         heading: "2. Sử dụng cá nhân & phi thương mại",

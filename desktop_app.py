@@ -11,5 +11,5 @@ def run_flask():
 
 if __name__ == "__main__":
     threading.Thread(target=run_flask, daemon=True).start()
-    webview.create_window("OmniFlow", f"http://127.0.0.1:{PORT}", width=720, height=820)
+    webview.create_window("OmniFlow", f"http://127.0.0.1:{PORT}", width=720, height=1024)
     webview.start()

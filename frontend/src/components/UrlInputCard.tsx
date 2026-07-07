@@ -44,7 +44,7 @@ const UrlInputCard = forwardRef<InputRef, UrlInputCardProps>(
     let suffix: ReactNode;
     if (status === "checking") {
       suffix = (
-        <span style={{ display: "flex", alignItems: "center", gap: 4, color: "rgba(26,26,26,0.4)", fontSize: 12, fontWeight: 500 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 4, color: "rgba(255, 255, 255, 0.45)", fontSize: 12, fontWeight: 500 }}>
           <LoadingOutlined spin /> {t.urlInput.checking}
         </span>
       );
@@ -54,18 +54,19 @@ const UrlInputCard = forwardRef<InputRef, UrlInputCardProps>(
           type="button"
           onClick={onClear}
           disabled={clearDisabled}
+          className="omniflow-suffix-btn-clear"
           style={{
             font: "inherit",
             display: "flex",
             alignItems: "center",
             gap: 4,
-            color: clearDisabled ? "rgba(26,26,26,0.25)" : "#ff4d4f",
             fontSize: 10,
             fontWeight: 500,
             cursor: clearDisabled ? "not-allowed" : "pointer",
             background: "none",
             border: "none",
             padding: 0,
+            opacity: clearDisabled ? 0.35 : 1,
           }}
         >
           <CloseCircleOutlined /> {t.urlInput.clearUrl}
@@ -77,12 +78,12 @@ const UrlInputCard = forwardRef<InputRef, UrlInputCardProps>(
           type="button"
           onClick={onPaste}
           disabled={pasting}
+          className="omniflow-suffix-btn-paste"
           style={{
             font: "inherit",
             display: "flex",
             alignItems: "center",
             gap: 4,
-            color: "#0d9585",
             fontSize: 12,
             fontWeight: 500,
             cursor: pasting ? "default" : "pointer",
@@ -101,7 +102,7 @@ const UrlInputCard = forwardRef<InputRef, UrlInputCardProps>(
         <div style={{ width: "100%" }}>
           <div style={{ display: "flex", gap: 4, fontSize: 14, marginBottom: 4 }}>
             <span style={{ color: "#ff4d4f" }}>*</span>
-            <span style={{ color: "rgba(26,26,26,0.92)" }}>{t.urlInput.label}</span>
+            <span style={{ color: "rgba(255, 255, 255, 0.85)" }}>{t.urlInput.label}</span>
           </div>
           <Input
             ref={ref}

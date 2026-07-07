@@ -10,14 +10,15 @@ const SectionCard = ({ children, style }: SectionCardProps) => (
   <motion.div
     className="omniflow-card"
     initial={{ opacity: 0, y: 24 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, amount: 0.2 }}
+    animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.45, ease: "easeOut" }}
     style={{
-      background: "white",
-      border: "1px solid #f0f0f0",
-      borderRadius: 12,
-      boxShadow: "0px 1px 1px rgba(0,0,0,0.03), 0px 1px 3px rgba(0,0,0,0.02), 0px 2px 2px rgba(0,0,0,0.02)",
+      background: "rgba(17, 24, 39, 0.7)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+      border: "1px solid rgba(255, 255, 255, 0.08)",
+      borderRadius: 16,
+      boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.3)",
       width: "100%",
       display: "flex",
       flexDirection: "column",

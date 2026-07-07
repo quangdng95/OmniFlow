@@ -5,6 +5,9 @@
 body {
   margin: 0;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #090d16;
+  color: #f3f4f6;
+  overflow-y: scroll;
 }
 
 #root {
@@ -19,4 +22,82 @@ ul {
 
 li + li {
   margin-top: 4px;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1f2937;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0d9585;
+}
+
+/* Premium global button hover interactions */
+.ant-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.ant-btn:not(:disabled):hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(13, 149, 133, 0.25);
+}
+
+.ant-btn:not(:disabled):active {
+  transform: translateY(0);
+}
+
+/* Ant button override classes */
+.omniflow-btn-outline-green {
+  color: #0d9585 !important;
+  border-color: #0d9585 !important;
+  background: transparent !important;
+}
+
+.omniflow-btn-outline-green:not(:disabled):hover {
+  color: #0d9585 !important;
+  border-color: #0d9585 !important;
+  background: rgba(13, 149, 133, 0.08) !important;
+}
+
+.omniflow-btn-outline-orange {
+  color: #d46b08 !important;
+  border-color: #d46b08 !important;
+  background: transparent !important;
+}
+
+.omniflow-btn-outline-orange:not(:disabled):hover {
+  color: #d46b08 !important;
+  border-color: #d46b08 !important;
+  background: rgba(212, 107, 8, 0.08) !important;
+}
+
+/* Input suffix custom buttons styling */
+.omniflow-suffix-btn-paste {
+  color: #0d9585;
+  transition: all 0.2s ease;
+}
+
+.omniflow-suffix-btn-paste:hover:not(:disabled) {
+  color: #0b7e70;
+  transform: scale(1.05);
+}
+
+.omniflow-suffix-btn-clear {
+  color: #ff4d4f;
+  transition: all 0.2s ease;
+}
+
+.omniflow-suffix-btn-clear:hover:not(:disabled) {
+  color: #ff7875;
+  transform: scale(1.05);
 }

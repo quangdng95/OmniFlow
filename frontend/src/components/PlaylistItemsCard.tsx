@@ -40,8 +40,7 @@ const GREEN_TEXT = "#389e0d"; // success text
 const RED = "#cf1322";
 const ORANGE = "#d46b08";
 
-const outlineGreen = { color: GREEN, borderColor: GREEN };
-const outlineOrange = { color: ORANGE, borderColor: ORANGE };
+
 
 const isAvailable = (item: PlaylistItem) => item.is_available !== false;
 const statusOf = (rowStatus: Record<number, RowProgress>, i: number): RowDownloadStatus =>
@@ -83,6 +82,17 @@ const PlaylistItemsCard = ({
   const anyDone = doneCount > 0;
   // Numbering width scales to the list size (01. / 001.). UI-only — never in the file.
   const numWidth = Math.max(2, String(items.length).length);
+
+  const allSelected = selectableIndices.length > 0 && effectiveSelected.length === selectableIndices.length;
+  const indeterminate = effectiveSelected.length > 0 && effectiveSelected.length < selectableIndices.length;
+
+  const handleSelectAllChange = () => {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(selectableIndices));
+    }
+  };
 
   const toggleItem = (index: number) => {
     setSelected((prev) => {
@@ -129,7 +139,7 @@ const PlaylistItemsCard = ({
       return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
           <span style={{ fontSize: 12, color: GREEN_TEXT }}>✅ {t.playlist.downloaded}</span>
-          <Button size="small" icon={<RedoOutlined />} onClick={trigger} disabled={busy} style={outlineOrange}>
+          <Button size="small" icon={<RedoOutlined />} onClick={trigger} disabled={busy} className="omniflow-btn-outline-orange">
             {t.playlist.downloadAgain}
           </Button>
         </div>
@@ -152,7 +162,7 @@ const PlaylistItemsCard = ({
         icon={<DownloadOutlined />}
         onClick={trigger}
         disabled={busy}
-        style={busy ? undefined : outlineGreen}
+        className={busy ? undefined : "omniflow-btn-outline-green"}
         aria-label="download-item"
       >
         {t.playlist.download}
@@ -183,14 +193,29 @@ const PlaylistItemsCard = ({
 
         {/* Hint + unavailable filter. */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 13, color: "rgba(0,0,0,0.55)" }}>{t.playlist.orSelect}</span>
+          <span style={{ fontSize: 13, color: "rgba(255, 255, 255, 0.65)" }}>{t.playlist.orSelect}</span>
           {hasUnavailable && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(0,0,0,0.65)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(255, 255, 255, 0.75)" }}>
               {t.playlist.showUnavailable}
               <Switch size="small" checked={showUnavailable} onChange={setShowUnavailable} disabled={busy} />
             </span>
           )}
         </div>
+
+        {/* Master Select All Checkbox */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px" }}>
+          <Checkbox
+            indeterminate={indeterminate}
+            checked={allSelected}
+            onChange={handleSelectAllChange}
+            disabled={busy || selectableIndices.length === 0}
+          >
+            <span style={{ fontSize: 13, color: "rgba(255, 255, 255, 0.75)", fontWeight: 500 }}>
+              {t.playlist.selectAll}
+            </span>
+          </Checkbox>
+        </div>
+
         {truncated && (
           <p style={{ fontSize: 12, margin: 0, color: ORANGE }}>{t.playlist.truncated.replace("{n}", String(items.length))}</p>
         )}
@@ -211,19 +236,14 @@ const PlaylistItemsCard = ({
                 role="checkbox"
                 aria-checked={selected.has(index) && !isDone}
                 aria-disabled={!selectable}
+                className="omniflow-playlist-item"
                 style={{
-                  display: "flex",
-                  gap: 12,
-                  alignItems: "center",
-                  width: "100%",
-                  minHeight: 56,
-                  padding: 4,
                   opacity: available ? 1 : 0.45,
                   cursor: busy || !selectable ? "default" : "pointer",
                 }}
               >
                 <Checkbox checked={selected.has(index) && !isDone} disabled={busy || !selectable} style={{ pointerEvents: "none" }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.55)", minWidth: 28, flexShrink: 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255, 255, 255, 0.5)", minWidth: 28, flexShrink: 0 }}>
                   {String(position).padStart(numWidth, "0")}.
                 </span>
                 {item.thumbnail && (
@@ -231,13 +251,13 @@ const PlaylistItemsCard = ({
                     src={item.thumbnail}
                     referrerPolicy="no-referrer"
                     alt={item.title}
-                    style={{ width: 56, height: 56, borderRadius: 6, objectFit: "cover", flexShrink: 0, background: "#e5e7eb" }}
+                    className="omniflow-playlist-item-thumb"
                   />
                 )}
-                <div style={{ minWidth: 0, flex: 1 }}>
+                <div className="omniflow-playlist-item-info">
                   <div style={{ fontSize: 13, fontWeight: 500, wordBreak: "break-word", whiteSpace: "normal" }}>{item.title}</div>
                   {item.uploader && (
-                    <div style={{ fontSize: 12, color: "rgba(0,0,0,0.55)", marginTop: 2 }}>{item.uploader}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.6)", marginTop: 2 }}>{item.uploader}</div>
                   )}
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
                     {item.kind && (
@@ -250,12 +270,12 @@ const PlaylistItemsCard = ({
                         {t.playlist.unavailable}
                       </Tag>
                     )}
-                    {item.duration && <span style={{ fontSize: 12, color: "rgba(0,0,0,0.45)" }}>{item.duration}</span>}
+                    {item.duration && <span style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.5)" }}>{item.duration}</span>}
                   </div>
                 </div>
                 {/* Right: per-item status + action (real videos only). */}
                 {available && (
-                  <div style={{ display: "flex", justifyContent: "flex-end", flexShrink: 0, minWidth: 132 }}>
+                  <div className="omniflow-playlist-item-right">
                     {renderRightContent(index, status, rowStatus[index]?.percent ?? 0)}
                   </div>
                 )}
@@ -266,7 +286,7 @@ const PlaylistItemsCard = ({
 
         {/* State 4: a manual selection exists -> outline-green bulk button below the list. */}
         {!busy && effectiveSelected.length > 0 && (
-          <Button block icon={<DownloadOutlined />} onClick={() => downloadRows(effectiveSelected)} style={outlineGreen}>
+          <Button block icon={<DownloadOutlined />} onClick={() => downloadRows(effectiveSelected)} className="omniflow-btn-outline-green">
             {t.playlist.downloadItemsSelected}
           </Button>
         )}
