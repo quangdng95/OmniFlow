@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { message, type InputRef } from "antd";
+import { message, type InputRef, Collapse } from "antd";
 import Header, { type Page } from "../components/Header";
 import Footer from "../components/Footer";
 import AnimatedSection from "../components/AnimatedSection";
@@ -15,7 +15,27 @@ import type { CheckResult, PlaylistItem, RowProgress, VideoInfo } from "../types
 import { useLanguage } from "../i18n/LanguageContext";
 import { isLocal } from "../isLocal";
 
+import youtube from "../assets/tags/Youtube.svg";
+import tiktok from "../assets/tags/Tiktok.svg";
+import instagram from "../assets/tags/Instagram.svg";
+import facebook from "../assets/tags/Facebook.svg";
+import rednote from "../assets/tags/Rednote.svg";
+import threads from "../assets/tags/Threads.svg";
+import linkedin from "../assets/tags/LinkedIn.svg";
+import x from "../assets/tags/X.svg";
+
 type DownloadState = "idle" | "downloading" | "done";
+
+const platforms = [
+  { name: "YouTube", icon: youtube },
+  { name: "TikTok", icon: tiktok },
+  { name: "Instagram", icon: instagram },
+  { name: "Facebook", icon: facebook },
+  { name: "RedNote", icon: rednote },
+  { name: "Threads", icon: threads },
+  { name: "LinkedIn", icon: linkedin },
+  { name: "X (Twitter)", icon: x },
+];
 
 interface HomePageProps {
   onNavigate: (page: Page) => void;
@@ -331,24 +351,138 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           {checking && <CheckingStatusCard seconds={checkSeconds} onCancel={handleCancelCheck} />}
 
           {!checking && !checkResult && (
-            <AnimatedSection style={{ display: "flex", flexDirection: "column", gap: 24, color: "rgba(26,26,26,0.92)" }}>
-              <p style={{ fontSize: 14, lineHeight: "20px", margin: 0 }}>
-                {t.home.introLines.map((line, index) => (
-                  <span key={line}>
-                    {line}
-                    {index < t.home.introLines.length - 1 && <br />}
-                  </span>
-                ))}
-              </p>
-              <div>
-                <p style={{ fontSize: 20, fontWeight: 600, margin: "0 0 16px" }}>{t.home.howToHeading}</p>
-                <ol style={{ fontSize: 14, lineHeight: "20px" }}>
-                  {t.home.steps.map((step) => (
-                    <li key={step.label}>
-                      <strong>{step.label}</strong> {step.body}
-                    </li>
+            <AnimatedSection style={{ display: "flex", flexDirection: "column", gap: 32, color: "#1f2937", width: "100%" }}>
+              {/* Introduction */}
+              <div style={{ textAlign: "center", maxWidth: 600, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+                <p style={{ fontSize: 15, lineHeight: "22px", margin: 0, color: "#4b5563", fontWeight: 500 }}>
+                  {t.home.introLines[0]}
+                </p>
+                <p style={{ fontSize: 13, lineHeight: "18px", margin: 0, color: "#9ca3af" }}>
+                  {t.home.introLines[1]} • {t.home.introLines[2]}
+                </p>
+              </div>
+
+              {/* Supported Platforms Grid */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.5px", color: "#9ca3af" }}>
+                  Supported Platforms
+                </span>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 12, width: "100%" }}>
+                  {platforms.map((p) => (
+                    <div
+                      key={p.name}
+                      className="omniflow-platform-card"
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "12px 8px",
+                        background: "#ffffff",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: 12,
+                        cursor: "default",
+                        transition: "all 0.2s ease-in-out",
+                      }}
+                    >
+                      <img src={p.icon} alt={p.name} style={{ height: 24, width: "auto", objectFit: "contain" }} />
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "#4b5563" }}>{p.name}</span>
+                    </div>
                   ))}
-                </ol>
+                </div>
+              </div>
+
+              {/* How to Download Steps */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <p style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "#1f2937", textAlign: "center" }}>
+                  {t.home.howToHeading}
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, width: "100%" }}>
+                  {t.home.steps.map((step, index) => (
+                    <div
+                      key={step.label}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                        padding: 16,
+                        background: "#ffffff",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: 12,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.01)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: "50%",
+                          background: "rgba(13, 149, 133, 0.1)",
+                          color: "#0d9585",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 14,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1f2937", marginBottom: 4 }}>
+                          {step.label}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#6b7280", lineHeight: "18px" }}>
+                          {step.body}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Features / Benefits Grid */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <p style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "#1f2937", textAlign: "center" }}>
+                  {t.home.featuresHeading}
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, width: "100%" }}>
+                  {t.home.features.map((feat) => (
+                    <div
+                      key={feat.title}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 4,
+                        padding: 16,
+                        background: "#ffffff",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: 12,
+                      }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#0d9585" }}>{feat.title}</span>
+                      <span style={{ fontSize: 12, color: "#6b7280", lineHeight: "16px" }}>{feat.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* FAQ Section */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <p style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "#1f2937", textAlign: "center" }}>
+                  {t.home.faqHeading}
+                </p>
+                <Collapse
+                  ghost
+                  accordion
+                  expandIconPlacement="end"
+                  style={{ background: "#ffffff", border: "1px solid #f0f0f0", borderRadius: 12, padding: "4px 8px" }}
+                  items={t.home.faqs.map((faq, index) => ({
+                    key: String(index),
+                    label: <span style={{ fontSize: 13, fontWeight: 600, color: "#1f2937" }}>{faq.q}</span>,
+                    children: <p style={{ fontSize: 12, color: "#4b5563", margin: 0, lineHeight: "18px" }}>{faq.a}</p>,
+                  }))}
+                />
               </div>
             </AnimatedSection>
           )}

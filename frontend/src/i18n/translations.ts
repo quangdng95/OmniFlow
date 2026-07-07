@@ -60,6 +60,10 @@ export interface Translations {
     introLines: string[];
     howToHeading: string;
     steps: { label: string; body: string }[];
+    featuresHeading: string;
+    features: { title: string; desc: string }[];
+    faqHeading: string;
+    faqs: { q: string; a: string }[];
   };
   downloadStatus: {
     cancelled: string;
@@ -169,6 +173,34 @@ const en: Translations = {
       {
         label: "Download:",
         body: 'Click the "Convert" button. Once the fast processing is complete, hit "Download" to save the file straight to your device.',
+      },
+    ],
+    featuresHeading: "Why use OmniFlow Video Downloader:",
+    features: [
+      { title: "100% Free", desc: "No subscriptions, no hidden limits, completely free forever." },
+      { title: "No Registration", desc: "Start downloading immediately without sign-up or accounts." },
+      { title: "Lightning Fast", desc: "Optimized processing engine for high-speed downloads." },
+      { title: "Playlists & Channels", desc: "Download full playlists and channels from YouTube in one click." },
+      { title: "High Quality", desc: "Download videos in full HD, 1080p, and high-fidelity audio." },
+      { title: "Multi-Platform", desc: "Works seamlessly on macOS, Windows, iOS, and Android." },
+    ],
+    faqHeading: "Frequently Asked Questions",
+    faqs: [
+      {
+        q: "Where are downloaded files saved?",
+        a: "By default, files are saved to your Downloads folder. You can customize the destination path inside the App Settings page.",
+      },
+      {
+        q: "How do I download playlist or channel videos?",
+        a: "Just paste the link of a YouTube playlist or channel. OmniFlow will automatically scan it and display a list where you can select and download all items.",
+      },
+      {
+        q: "Does OmniFlow support audio conversion?",
+        a: "Yes! You can choose to extract audio (MP3) or keep video (MP4) in various resolutions before clicking download.",
+      },
+      {
+        q: "Is it safe to use OmniFlow?",
+        a: "Yes. OmniFlow is fully local, processes everything directly, contains no malware or third-party ads, and requires no registration.",
       },
     ],
   },
@@ -322,6 +354,34 @@ const vi: Translations = {
       {
         label: "Tải xuống:",
         body: 'Nhấn nút "Bắt đầu tải xuống". Sau khi xử lý xong, tệp sẽ được lưu thẳng vào thiết bị của bạn.',
+      },
+    ],
+    featuresHeading: "Tại sao nên dùng OmniFlow Downloader:",
+    features: [
+      { title: "100% Miễn phí", desc: "Không yêu cầu phí dịch vụ, không giới hạn tải xuống, miễn phí trọn đời." },
+      { title: "Không cần đăng ký", desc: "Tải ngay lập tức mà không cần tạo tài khoản hay đăng nhập." },
+      { title: "Tốc độ cực nhanh", desc: "Công cụ tối ưu hóa xử lý giúp tải video về thiết bị nhanh chóng." },
+      { title: "Tải Playlist & Kênh", desc: "Hỗ trợ tải toàn bộ danh sách phát và kênh YouTube chỉ với một click." },
+      { title: "Chất lượng cao", desc: "Tải video Full HD, 1080p và trích xuất nhạc chất lượng cao." },
+      { title: "Đa nền tảng", desc: "Tương thích mượt mà trên macOS, Windows, iOS và Android." },
+    ],
+    faqHeading: "Câu hỏi thường gặp (FAQ)",
+    faqs: [
+      {
+        q: "Video sau khi tải xuống được lưu ở đâu?",
+        a: "Theo mặc định, tệp sẽ được lưu vào thư mục Downloads của thiết bị. Bạn có thể thay đổi thư mục lưu trong mục Cài đặt của ứng dụng.",
+      },
+      {
+        q: "Làm thế nào để tải toàn bộ danh sách phát hoặc kênh?",
+        a: "Bạn chỉ cần dán liên kết danh sách phát hoặc kênh YouTube vào ô nhập liệu. OmniFlow sẽ quét và hiển thị danh sách để bạn chọn tải về hàng loạt.",
+      },
+      {
+        q: "OmniFlow có hỗ trợ chuyển đổi sang MP3 không?",
+        a: "Có! Bạn có thể chọn tải về định dạng Âm thanh (MP3) hoặc Video (MP4) với các mức chất lượng khác nhau.",
+      },
+      {
+        q: "Sử dụng OmniFlow có an toàn không?",
+        a: "Có. OmniFlow chạy hoàn toàn cục bộ, không chứa quảng cáo bên thứ ba độc hại và không yêu cầu cung cấp thông tin cá nhân.",
       },
     ],
   },
