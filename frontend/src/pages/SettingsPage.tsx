@@ -7,7 +7,6 @@ import SectionCard from "../components/SectionCard";
 import { api } from "../api";
 import { useLanguage } from "../i18n/LanguageContext";
 import type { Language } from "../i18n/translations";
-import type { CookiesStatus } from "../types";
 import { isLocal } from "../isLocal";
 
 interface SettingsPageProps {
@@ -18,14 +17,10 @@ const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
   const { t, language, setLanguage } = useLanguage();
   const [path, setPath] = useState("");
   const [rememberPath, setRememberPath] = useState(true);
-  const [cookiesPath, setCookiesPath] = useState("");
-  const [cookiesStatus, setCookiesStatus] = useState<CookiesStatus>("none");
 
   useEffect(() => {
     void api.getSettings().then((settings) => {
       setPath(settings.path);
-      setCookiesPath(settings.cookies_path);
-      setCookiesStatus(settings.cookies_status);
     });
   }, []);
 
@@ -37,23 +32,6 @@ const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     } catch {
       // user cancelled the folder picker
     }
-  };
-
-  const handleBrowseCookiesFile = async () => {
-    try {
-      const { path: chosen, cookies_status } = await api.browseFile();
-      setCookiesPath(chosen);
-      setCookiesStatus(cookies_status);
-      await api.updateSettings({ cookies_path: chosen });
-    } catch {
-      // user cancelled the file picker
-    }
-  };
-
-  const handleClearCookiesFile = async () => {
-    setCookiesPath("");
-    setCookiesStatus("none");
-    await api.updateSettings({ cookies_path: "" });
   };
 
   return (
@@ -82,36 +60,6 @@ const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
               <Checkbox checked={rememberPath} onChange={(e) => setRememberPath(e.target.checked)}>
                 {t.settingsPage.targetPath.rememberPath}
               </Checkbox>
-            </SectionCard>
-          )}
-
-          {isLocal() && (
-            <SectionCard>
-              <p style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>{t.settingsPage.cookies.heading}</p>
-              <p style={{ fontSize: 14, margin: 0 }}>{t.settingsPage.cookies.description}</p>
-              <div style={{ width: "100%" }}>
-                <Input
-                  value={cookiesPath}
-                  placeholder={t.settingsPage.cookies.noneSelected}
-                  readOnly
-                  suffix={
-                    <Button type="primary" size="small" icon={<FolderOutlined />} onClick={handleBrowseCookiesFile}>
-                      {t.settingsPage.cookies.browse}
-                    </Button>
-                  }
-                />
-              </div>
-              {cookiesStatus === "valid" && (
-                <p style={{ fontSize: 13, margin: 0, color: "#52c41a" }}>{t.settingsPage.cookies.statusValid}</p>
-              )}
-              {cookiesStatus === "no_session" && (
-                <p style={{ fontSize: 13, margin: 0, color: "#faad14" }}>{t.settingsPage.cookies.statusNoSession}</p>
-              )}
-              {cookiesPath && (
-                <Button size="small" onClick={handleClearCookiesFile}>
-                  {t.settingsPage.cookies.clear}
-                </Button>
-              )}
             </SectionCard>
           )}
 

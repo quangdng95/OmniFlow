@@ -72,15 +72,6 @@ export interface Translations {
       browse: string;
       rememberPath: string;
     };
-    cookies: {
-      heading: string;
-      description: string;
-      browse: string;
-      noneSelected: string;
-      clear: string;
-      statusValid: string;
-      statusNoSession: string;
-    };
     language: {
       heading: string;
       description: string;
@@ -191,16 +182,6 @@ const en: Translations = {
       description: "Here you can configure where the downloaded videos are to be saved.",
       browse: "Browse…",
       rememberPath: "Always save at the last used path.",
-    },
-    cookies: {
-      heading: "Instagram Cookies (optional)",
-      description:
-        'Most Instagram posts require a logged-in session to check or download. Log into instagram.com in your browser, export cookies for that tab as a cookies.txt file using an extension (e.g. "Get cookies.txt"), then select it below.',
-      browse: "Select File…",
-      noneSelected: "No cookies file selected",
-      clear: "Remove",
-      statusValid: "Instagram session cookie found.",
-      statusNoSession: "This file doesn't look like it has an Instagram session — make sure you were logged into instagram.com when you exported it.",
     },
     language: {
       heading: "Language",
@@ -354,16 +335,6 @@ const vi: Translations = {
       description: "Tại đây bạn có thể cấu hình nơi lưu các video đã tải xuống.",
       browse: "Chọn thư mục…",
       rememberPath: "Luôn lưu vào thư mục đã dùng gần nhất.",
-    },
-    cookies: {
-      heading: "Cookies Instagram (tuỳ chọn)",
-      description:
-        'Hầu hết bài viết Instagram yêu cầu đăng nhập mới có thể kiểm tra hoặc tải xuống. Hãy đăng nhập instagram.com trên trình duyệt, xuất cookies của tab đó thành file cookies.txt bằng một tiện ích (ví dụ "Get cookies.txt"), sau đó chọn file đó bên dưới.',
-      browse: "Chọn file…",
-      noneSelected: "Chưa chọn file cookies",
-      clear: "Xoá",
-      statusValid: "Đã tìm thấy session cookie của Instagram.",
-      statusNoSession: "File này có vẻ không chứa session Instagram — hãy chắc chắn bạn đã đăng nhập instagram.com khi xuất file.",
     },
     language: {
       heading: "Ngôn ngữ",

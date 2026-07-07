@@ -68,62 +68,6 @@ describe("SettingsPage", () => {
     await waitFor(() => expect(mockedApi.getSettings).toHaveBeenCalled());
     expect(await screen.findByDisplayValue("/Users/test/Downloads")).toBeInTheDocument();
   });
-
-  it("lets the user pick and later remove an Instagram cookies file", async () => {
-    mockedApi.browseFile.mockResolvedValue({ path: "/Users/test/cookies.txt", cookies_status: "valid" });
-    const user = userEvent.setup({ delay: null });
-    renderSettingsPage();
-
-    expect(screen.queryByText("Remove")).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /select file/i }));
-
-    await waitFor(() => expect(mockedApi.updateSettings).toHaveBeenCalledWith({ cookies_path: "/Users/test/cookies.txt" }));
-    expect(await screen.findByDisplayValue("/Users/test/cookies.txt")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Remove" }));
-    await waitFor(() => expect(mockedApi.updateSettings).toHaveBeenCalledWith({ cookies_path: "" }));
-    expect(screen.queryByDisplayValue("/Users/test/cookies.txt")).not.toBeInTheDocument();
-  });
-
-  it("shows no cookies status hint by default", () => {
-    renderSettingsPage();
-
-    expect(screen.queryByText(/session cookie found/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/doesn't look like it has an instagram session/i)).not.toBeInTheDocument();
-  });
-
-  it("warns when the picked cookies file has no detectable Instagram session", async () => {
-    mockedApi.browseFile.mockResolvedValue({ path: "/Users/test/cookies.txt", cookies_status: "no_session" });
-    const user = userEvent.setup({ delay: null });
-    renderSettingsPage();
-
-    await user.click(screen.getByRole("button", { name: /select file/i }));
-
-    expect(await screen.findByText(/doesn't look like it has an instagram session/i)).toBeInTheDocument();
-  });
-
-  it("confirms when the picked cookies file has a detectable Instagram session", async () => {
-    mockedApi.browseFile.mockResolvedValue({ path: "/Users/test/cookies.txt", cookies_status: "valid" });
-    const user = userEvent.setup({ delay: null });
-    renderSettingsPage();
-
-    await user.click(screen.getByRole("button", { name: /select file/i }));
-
-    expect(await screen.findByText(/session cookie found/i)).toBeInTheDocument();
-  });
-
-  it("clears the status hint after removing the cookies file", async () => {
-    mockedApi.browseFile.mockResolvedValue({ path: "/Users/test/cookies.txt", cookies_status: "valid" });
-    const user = userEvent.setup({ delay: null });
-    renderSettingsPage();
-
-    await user.click(screen.getByRole("button", { name: /select file/i }));
-    expect(await screen.findByText(/session cookie found/i)).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Remove" }));
-    expect(screen.queryByText(/session cookie found/i)).not.toBeInTheDocument();
-  });
 });
 
 describe("SettingsPage in remote mode (non-local hostname)", () => {
@@ -148,11 +92,10 @@ describe("SettingsPage in remote mode (non-local hostname)", () => {
     });
   });
 
-  it("hides Target Path and Instagram Cookies but keeps Language", () => {
+  it("hides Target Path but keeps Language", () => {
     renderSettingsPage();
 
     expect(screen.queryByText("Target Path")).not.toBeInTheDocument();
-    expect(screen.queryByText("Instagram Cookies (optional)")).not.toBeInTheDocument();
     expect(screen.getByText("Language")).toBeInTheDocument();
   });
 });
