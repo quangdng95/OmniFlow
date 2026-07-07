@@ -49,7 +49,7 @@ export interface Translations {
     savedItems: string; // global: "Saved: {n} items"
   };
   qualityAction: {
-    videoQuality: string;
+    selectQuality: string;
     startDownload: string;
     downloading: string;
     downloadAgain: string;
@@ -150,7 +150,7 @@ const en: Translations = {
     savedItems: "Saved: {n} items",
   },
   qualityAction: {
-    videoQuality: "Video Quality:",
+    selectQuality: "Select Quality:",
     startDownload: "Start Download",
     downloading: "Downloading",
     downloadAgain: "Download Again",
@@ -313,7 +313,7 @@ const vi: Translations = {
     savedItems: "Đã lưu: {n} mục",
   },
   qualityAction: {
-    videoQuality: "Chất lượng video:",
+    selectQuality: "Chọn chất lượng:",
     startDownload: "Bắt đầu tải xuống",
     downloading: "Đang tải xuống",
     downloadAgain: "Tải lại",

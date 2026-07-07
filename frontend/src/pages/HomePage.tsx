@@ -27,7 +27,12 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
   const [checking, setChecking] = useState(false);
   const [checkSeconds, setCheckSeconds] = useState(0);
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
-  const [selectedQuality, setSelectedQuality] = useState<string>("");
+  // "Best" is the fallback for a batch whose items have no shared quality
+  // ladder (e.g. an Instagram carousel, where each slide only ever carries
+  // its own single-option ["Image"]/["Video"]) - PlaylistItemsCard used to
+  // default its own local state this way; preserved here now that the value
+  // is lifted so per-item downloads still pass a sane quality.
+  const [selectedQuality, setSelectedQuality] = useState<string>("Best");
   // Single-video flow.
   const [downloadState, setDownloadState] = useState<DownloadState>("idle");
   const [progressPercent, setProgressPercent] = useState(0);
@@ -50,6 +55,10 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
     setActiveRows([]);
     setBatchJobId(null);
     setBatchSummary(null);
+    // Each new check starts fresh, same as when PlaylistItemsCard used to
+    // remount per-check with its own local default - runCheck's seeding
+    // overwrites this once the new result's real qualities are known.
+    setSelectedQuality("Best");
   };
 
   useEffect(() => {
@@ -151,6 +160,11 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
       } else if (result.type === "playlist" && result.items.length === 1) {
         // A 1-item playlist renders as a single video, so seed its quality too.
         setSelectedQuality(result.items[0].qualities[0]);
+      } else if (result.type === "playlist" && result.items.length > 1) {
+        // Flat playlist items share one quality ladder - seed it from whichever
+        // item actually carries it (see currentQualities below).
+        const shared = result.items.find((it) => it && it.qualities && it.qualities.length > 1)?.qualities;
+        if (shared) setSelectedQuality(shared[0]);
       }
     } catch (e) {
       if (checkTokenRef.current !== token) return;
@@ -221,6 +235,15 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           kind: playlistSingle.kind,
         }
       : null;
+
+  // Shared quality ladder for the selector in UrlInputCard - covers a single
+  // video, a 1-item playlist (via selectedItem), or a multi-item playlist's
+  // one common ladder (flat items can't have their own per-item formats).
+  const currentQualities: string[] =
+    selectedItem?.qualities ??
+    (checkResult?.type === "playlist"
+      ? checkResult.items.find((it) => it && it.qualities && it.qualities.length > 1)?.qualities ?? []
+      : []);
 
   const handleStartDownload = async () => {
     if (!selectedItem) return;
@@ -299,6 +322,10 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
             onClear={handleClear}
             clearDisabled={downloadState === "downloading" || busy}
             pasting={pasting}
+            qualities={currentQualities}
+            qualityValue={selectedQuality}
+            onQualityChange={setSelectedQuality}
+            qualityDisabled={checking || downloadState === "downloading" || busy}
           />
 
           {checking && <CheckingStatusCard seconds={checkSeconds} onCancel={handleCancelCheck} />}
@@ -335,6 +362,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
               busy={busy}
               rowStatus={rowStatus}
               batchSummary={batchSummary}
+              quality={selectedQuality}
               onDownloadItems={handleDownloadItems}
               onCancel={handleCancelBatch}
               onOpenFolder={isLocal() ? handleOpenFolder : undefined}
@@ -344,13 +372,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           {selectedItem && (
             <>
               <VideoInfoCard info={selectedItem} />
-              <QualityActionCard
-                qualities={selectedItem.qualities}
-                value={selectedQuality}
-                onChange={setSelectedQuality}
-                actionState={downloadState}
-                onAction={handleStartDownload}
-              />
+              <QualityActionCard actionState={downloadState} onAction={handleStartDownload} />
               {downloadState === "downloading" && (
                 <DownloadProgressCard percent={progressPercent} onCancel={handleCancelDownload} />
               )}

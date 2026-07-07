@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button, Checkbox, Progress, Segmented, Switch, Tag } from "antd";
+import { Button, Checkbox, Progress, Switch, Tag } from "antd";
 import {
   DownloadOutlined,
   RedoOutlined,
@@ -27,6 +27,9 @@ interface PlaylistItemsCardProps {
   busy: boolean; // a batch is currently running
   rowStatus: Record<number, RowProgress>;
   batchSummary: BatchSummary | null;
+  // Owned by HomePage now - the shared quality selector lives in UrlInputCard
+  // (Figma: "Quality" nests inside the URL card), not in this card.
+  quality: string;
   onDownloadItems: (rowIndices: number[], quality: string) => void;
   onCancel?: () => void;
   onOpenFolder?: () => void;
@@ -52,17 +55,13 @@ const PlaylistItemsCard = ({
   busy,
   rowStatus = {},
   batchSummary,
+  quality,
   onDownloadItems,
   onCancel,
   onOpenFolder,
 }: PlaylistItemsCardProps) => {
   const { t } = useLanguage();
 
-  const qualityOptions = useMemo(
-    () => (items || []).find((it) => it && it.qualities && it.qualities.length > 1)?.qualities ?? [],
-    [items]
-  );
-  const [quality, setQuality] = useState<string>(qualityOptions[0] ?? "Best");
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [showUnavailable, setShowUnavailable] = useState(false);
 
@@ -182,13 +181,6 @@ const PlaylistItemsCard = ({
           </Button>
         </div>
 
-        {qualityOptions.length > 1 && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <span style={{ fontSize: 12 }}>{t.qualityAction.videoQuality}</span>
-            <Segmented options={qualityOptions} value={quality} onChange={(v) => setQuality(v as string)} disabled={busy} />
-          </div>
-        )}
-
         {/* Hint + unavailable filter. */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 13, color: "rgba(0,0,0,0.55)" }}>{t.playlist.orSelect}</span>
@@ -224,6 +216,7 @@ const PlaylistItemsCard = ({
                   gap: 12,
                   alignItems: "center",
                   width: "100%",
+                  minHeight: 56,
                   padding: 4,
                   opacity: available ? 1 : 0.45,
                   cursor: busy || !selectable ? "default" : "pointer",

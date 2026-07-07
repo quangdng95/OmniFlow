@@ -1,4 +1,4 @@
-import { Button, Segmented } from "antd";
+import { Button } from "antd";
 import { DownloadOutlined, RedoOutlined } from "@ant-design/icons";
 import SectionCard from "./SectionCard";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -6,14 +6,15 @@ import { useLanguage } from "../i18n/LanguageContext";
 export type ActionState = "idle" | "downloading" | "done";
 
 interface QualityActionCardProps {
-  qualities: string[];
-  value: string;
-  onChange: (value: string) => void;
   actionState: ActionState;
   onAction: () => void;
 }
 
-const QualityActionCard = ({ qualities, value, onChange, actionState, onAction }: QualityActionCardProps) => {
+// Quality selection itself lives in UrlInputCard now (Figma nests the
+// "Quality" segmented control directly inside the URL card, not a separate
+// downstream one) - this card is just the Start Download / Downloading /
+// Download Again action button.
+const QualityActionCard = ({ actionState, onAction }: QualityActionCardProps) => {
   const { t } = useLanguage();
   let button;
   if (actionState === "downloading") {
@@ -36,26 +37,7 @@ const QualityActionCard = ({ qualities, value, onChange, actionState, onAction }
     );
   }
 
-  // A single option (Instagram photos -> ["Image"], Instagram videos ->
-  // ["Video"]) has nothing to choose between, so skip the selector entirely.
-  const showQualityPicker = qualities.length > 1;
-
-  return (
-    <SectionCard>
-      {showQualityPicker && (
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <span style={{ fontSize: 12 }}>{t.qualityAction.videoQuality}</span>
-          <Segmented
-            options={qualities}
-            value={value}
-            onChange={(v) => onChange(v as string)}
-            disabled={actionState === "downloading"}
-          />
-        </div>
-      )}
-      {button}
-    </SectionCard>
-  );
+  return <SectionCard>{button}</SectionCard>;
 };
 
 export default QualityActionCard;
