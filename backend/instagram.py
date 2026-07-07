@@ -241,7 +241,7 @@ def fetch_instagram_profile_instaloader(username, cookiefile_path=None):
         download_geotags=False,
         download_comments=False,
         save_metadata=False,
-        compress_metadata=False
+        compress_json=False
     )
     
     if cookiefile_path:
@@ -288,6 +288,76 @@ def fetch_instagram_profile_instaloader(username, cookiefile_path=None):
         count += 1
         
     return entries
+
+def fetch_instagram_profile_reel_media(username, cookies_path, limit=30):
+    # Primary profile/reels resolver (2026-07-07). Instagram's public
+    # GraphQL/AJAX surfaces (web_profile_info, ?__a=1, and instaloader's own
+    # GraphQL query machinery) now return a post *count* with NO *edges* for
+    # a profile the session doesn't own - confirmed live, not assumed (see
+    # MISTAKES.md). This goes through the same private www.instagram.com
+    # REST host + X-IG-App-ID/X-CSRFToken header pattern already proven to
+    # work for fetch_instagram_media (posts/carousels), which Meta still
+    # answers with real items for a logged-in session.
+    profile_data = fetch_instagram_profile_info(username, cookies_path)
+    user_data = (profile_data.get("data") or {}).get("user") or profile_data.get("user")
+    user_id = user_data.get("id") if user_data else None
+    if not user_id:
+        raise InstagramAuthError(f"Could not resolve Instagram user id for {username} (cookies).")
+
+    cookies_dict = _parse_instagram_cookies(cookies_path)
+    cookie_header = "; ".join(f"{name}={value}" for name, value in cookies_dict.items())
+    headers = {
+        "User-Agent": INSTAGRAM_UA,
+        "X-IG-App-ID": INSTAGRAM_APP_ID,
+        "X-CSRFToken": cookies_dict.get("csrftoken", ""),
+        "Referer": f"https://www.instagram.com/{username}/",
+        "Accept": "*/*",
+        "Cookie": cookie_header,
+    }
+
+    entries = []
+    max_id = None
+    while len(entries) < limit:
+        api_url = f"https://www.instagram.com/api/v1/feed/user/{user_id}/"
+        if max_id:
+            api_url += f"?max_id={urllib.parse.quote(max_id)}"
+        req = urllib.request.Request(api_url, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                payload = json.loads(resp.read().decode("utf-8", "replace"))
+        except urllib.error.HTTPError as e:
+            if e.code in (301, 302, 401, 403):
+                raise InstagramAuthError("Instagram requires a logged-in session (cookies).") from e
+            raise
+        except urllib.error.URLError as e:
+            raise InstagramAuthError("Could not reach Instagram to fetch this profile (cookies).") from e
+
+        for item in payload.get("items") or []:
+            if item.get("media_type") != 2:  # videos/reels only - matches the prior is_video filter
+                continue
+            code = item.get("code")
+            if not code:
+                continue
+            candidates = (item.get("image_versions2") or {}).get("candidates") or []
+            entries.append({
+                "id": code,
+                "title": (item.get("caption") or {}).get("text") or f"Instagram Reel {code}",
+                "url": f"https://www.instagram.com/reel/{code}/",
+                "thumbnail": candidates[0].get("url") if candidates else None,
+                "duration": item.get("video_duration"),
+                "kind": "video",
+                "_type": "url",
+                "ie_key": "Instagram",
+            })
+            if len(entries) >= limit:
+                break
+
+        if not payload.get("more_available") or not payload.get("next_max_id"):
+            break
+        max_id = payload["next_max_id"]
+
+    return entries
+
 
 def fetch_instagram_profile_info(username, cookiefile_path=None):
     cookies_dict = cookies.parse_cookies_from_file(cookiefile_path)

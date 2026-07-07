@@ -53,22 +53,40 @@ def extract_video_info(cls):
             print(f"[debug] Resolving Instagram profile for username: {username} using cookies: {cookies_path}", flush=True)
             entries = []
             try:
-                # Primary method: instaloader
-                entries = instagram.fetch_instagram_profile_instaloader(username, cookies_path)
-            except Exception as e_insta:
-                print(f"[debug] Instaloader profile fetch failed: {e_insta}. Trying Web Profile API fallback...", flush=True)
-                data = None
+                # Primary method: Instagram's own private feed API (2026-07-07).
+                # web_profile_info/GraphQL/instaloader all now return a post
+                # *count* with no *edges* for a profile the session doesn't
+                # own - confirmed live, see MISTAKES.md - so this must go
+                # first, not last.
+                entries = instagram.fetch_instagram_profile_reel_media(username, cookies_path)
+            except Exception as e_primary:
+                print(f"[debug] Private feed API failed: {e_primary}. Trying instaloader fallback...", flush=True)
                 try:
-                    data = instagram.fetch_instagram_profile_info(username, cookies_path)
-                except Exception as e1:
-                    print(f"[debug] fetch_instagram_profile_info failed: {e1}. Trying Graph API fallback...", flush=True)
+                    entries = instagram.fetch_instagram_profile_instaloader(username, cookies_path)
+                except Exception as e_insta:
+                    print(f"[debug] Instaloader profile fetch failed: {e_insta}. Trying Web Profile API fallback...", flush=True)
+                    data = None
                     try:
-                        data = instagram.fetch_instagram_profile_info_fallback(username, cookies_path)
-                    except Exception as e2:
-                        print(f"[debug] Instagram fallback profile fetch also failed: {e2}", flush=True)
-                        raise Exception(f"Failed to fetch Instagram profile: {e_insta} / {e1} / {e2}")
-                entries = instagram.parse_instagram_profile_json(data, username)
-            
+                        data = instagram.fetch_instagram_profile_info(username, cookies_path)
+                    except Exception as e1:
+                        print(f"[debug] fetch_instagram_profile_info failed: {e1}. Trying Graph API fallback...", flush=True)
+                        try:
+                            data = instagram.fetch_instagram_profile_info_fallback(username, cookies_path)
+                        except Exception as e2:
+                            print(f"[debug] Instagram fallback profile fetch also failed: {e2}", flush=True)
+                            raise Exception(
+                                f"Failed to fetch Instagram profile: {e_primary} / {e_insta} / {e1} / {e2}"
+                            )
+                    entries = instagram.parse_instagram_profile_json(data, username)
+
+            if not entries:
+                # Never a silent empty state (design-principles §3): every
+                # method above either raises or returns entries here, so an
+                # empty list means Instagram genuinely answered with zero
+                # videos for every method tried - surface that, don't render
+                # a confusing "0 items" playlist.
+                raise Exception(f"No public video posts/reels found for Instagram profile {username}")
+
             # Format as playlist/entries
             return {
                 "_type": "playlist",

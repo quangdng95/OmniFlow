@@ -210,3 +210,61 @@ def test_extract_video_info_keeps_noplaylist_for_a_single_video(monkeypatch):
     extraction_module.extract_video_info(classify.classify_url("https://www.youtube.com/watch?v=abc"))
     assert captured["opts"]["noplaylist"] is True
     assert "extract_flat" not in captured["opts"]
+
+
+# ---- extract_video_info: Instagram profile resolver chain ----
+
+
+def _no_instagram_cookies(monkeypatch):
+    # Skip real config/browser cookie lookups - the tests below only care
+    # about the fallback ORDER, not real Instagram auth.
+    from backend import config as config_module
+    from backend import cookies as cookies_module
+
+    monkeypatch.setattr(config_module, "get_cookies_path", lambda: None)
+    monkeypatch.setattr(cookies_module, "instagram_cookiefile_candidates", lambda: [])
+
+
+def test_extract_video_info_profile_tries_private_feed_api_first(monkeypatch):
+    # 2026-07-07: web_profile_info/GraphQL/instaloader all now answer a
+    # profile's post *count* with no *edges* for a session that doesn't own
+    # it (confirmed live, MISTAKES.md) - the private feed API must be tried
+    # BEFORE any of those, not after.
+    _no_instagram_cookies(monkeypatch)
+    from backend import instagram as instagram_module
+
+    called = {"instaloader": False}
+    monkeypatch.setattr(
+        instagram_module,
+        "fetch_instagram_profile_reel_media",
+        lambda username, cookies_path: [{"id": "abc", "title": "Reel", "url": "https://www.instagram.com/reel/abc/"}],
+    )
+
+    def fake_instaloader(username, cookies_path):
+        called["instaloader"] = True
+        raise AssertionError("should not fall back when the primary method succeeds")
+
+    monkeypatch.setattr(instagram_module, "fetch_instagram_profile_instaloader", fake_instaloader)
+
+    cls = classify.classify_url("https://www.instagram.com/someuser/reels/")
+    info = extraction_module.extract_video_info(cls)
+    assert info["entries"][0]["id"] == "abc"
+    assert called["instaloader"] is False
+
+
+def test_extract_video_info_profile_raises_instead_of_silent_empty_playlist(monkeypatch):
+    # design-principles §3: never a silent broken empty state. If every
+    # resolver in the chain comes back with zero entries, extract_video_info
+    # must raise (a friendly "no videos found" error), not hand back a
+    # playlist with 0 items that looks like a successful, empty channel.
+    _no_instagram_cookies(monkeypatch)
+    from backend import instagram as instagram_module
+
+    monkeypatch.setattr(instagram_module, "fetch_instagram_profile_reel_media", lambda username, cookies_path: [])
+    monkeypatch.setattr(instagram_module, "fetch_instagram_profile_instaloader", lambda username, cookies_path: [])
+    monkeypatch.setattr(instagram_module, "fetch_instagram_profile_info", lambda username, cookies_path: {"user": {}})
+    monkeypatch.setattr(instagram_module, "parse_instagram_profile_json", lambda data, username: [])
+
+    cls = classify.classify_url("https://www.instagram.com/someuser/reels/")
+    with pytest.raises(Exception):
+        extraction_module.extract_video_info(cls)

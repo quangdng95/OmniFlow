@@ -107,3 +107,122 @@ def test_fetch_instagram_media_any_raises_auth_error_when_all_unauthorized(monke
     monkeypatch.setattr(instagram_module, "fetch_instagram_media", always_auth)
     with pytest.raises(InstagramAuthError):
         instagram_module.fetch_instagram_media_any("https://www.instagram.com/p/abc/", ["/a.txt", "/b.txt"])
+
+
+# ---- fetch_instagram_profile_reel_media (private feed API, 2026-07-07) ----
+#
+# Confirmed live against a real profile+session: web_profile_info/GraphQL/
+# instaloader all answer with a post *count* but no *edges* for a profile the
+# session doesn't own. https://www.instagram.com/api/v1/feed/user/<id>/ (the
+# same private-API host+header pattern already proven for fetch_instagram_media)
+# still returns real items, so it is now the PRIMARY resolver - see MISTAKES.md.
+
+
+class _FakeResponse:
+    def __init__(self, payload):
+        self._body = __import__("json").dumps(payload).encode()
+
+    def read(self):
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+def test_fetch_instagram_profile_reel_media_filters_videos_and_paginates(monkeypatch, tmp_path):
+    cookies_file = tmp_path / "cookies.txt"
+    cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tcsrftoken\tcsrf456\n")
+
+    monkeypatch.setattr(
+        instagram_module,
+        "fetch_instagram_profile_info",
+        lambda username, cookies_path: {"data": {"user": {"id": "999"}}},
+    )
+
+    pages = [
+        {
+            "items": [
+                {"media_type": 1, "code": "PHOTO1"},  # photo - must be filtered out
+                {"media_type": 2, "code": "REEL1", "caption": {"text": "First reel"}, "video_duration": 12.5,
+                 "image_versions2": {"candidates": [{"url": "https://cdn/reel1.jpg"}]}},
+            ],
+            "more_available": True,
+            "next_max_id": "cursor-2",
+        },
+        {
+            "items": [
+                {"media_type": 2, "code": "REEL2", "caption": {"text": "Second reel"}, "video_duration": 8.0,
+                 "image_versions2": {"candidates": [{"url": "https://cdn/reel2.jpg"}]}},
+            ],
+            "more_available": False,
+            "next_max_id": None,
+        },
+    ]
+    calls = []
+
+    def fake_urlopen(req, timeout=30):
+        calls.append(req.full_url)
+        return _FakeResponse(pages[len(calls) - 1])
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+    entries = instagram_module.fetch_instagram_profile_reel_media("someuser", str(cookies_file))
+
+    assert len(calls) == 2  # paginated once via next_max_id
+    assert "cursor-2" in calls[1]
+    assert [e["id"] for e in entries] == ["REEL1", "REEL2"]  # photo dropped, both reels kept in order
+    assert entries[0]["title"] == "First reel"
+    assert entries[0]["thumbnail"] == "https://cdn/reel1.jpg"
+    assert entries[0]["duration"] == 12.5
+    assert entries[0]["url"] == "https://www.instagram.com/reel/REEL1/"
+
+
+def test_fetch_instagram_profile_reel_media_respects_limit(monkeypatch, tmp_path):
+    cookies_file = tmp_path / "cookies.txt"
+    cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tcsrftoken\tcsrf456\n")
+
+    monkeypatch.setattr(
+        instagram_module,
+        "fetch_instagram_profile_info",
+        lambda username, cookies_path: {"data": {"user": {"id": "999"}}},
+    )
+    page = {
+        "items": [{"media_type": 2, "code": f"R{i}"} for i in range(5)],
+        "more_available": True,
+        "next_max_id": "cursor-2",
+    }
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=30: _FakeResponse(page))
+
+    entries = instagram_module.fetch_instagram_profile_reel_media("someuser", str(cookies_file), limit=3)
+    assert len(entries) == 3
+
+
+def test_fetch_instagram_profile_reel_media_maps_403_to_auth_error(monkeypatch, tmp_path):
+    cookies_file = tmp_path / "cookies.txt"
+    cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tcsrftoken\tcsrf456\n")
+
+    monkeypatch.setattr(
+        instagram_module,
+        "fetch_instagram_profile_info",
+        lambda username, cookies_path: {"data": {"user": {"id": "999"}}},
+    )
+
+    def raise_403(req, timeout=30):
+        raise urllib.error.HTTPError(req.full_url, 403, "Forbidden", {}, None)
+
+    monkeypatch.setattr(urllib.request, "urlopen", raise_403)
+
+    with pytest.raises(InstagramAuthError):
+        instagram_module.fetch_instagram_profile_reel_media("someuser", str(cookies_file))
+
+
+def test_fetch_instagram_profile_reel_media_raises_when_user_id_unresolvable(monkeypatch, tmp_path):
+    cookies_file = tmp_path / "cookies.txt"
+    cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tcsrftoken\tcsrf456\n")
+    monkeypatch.setattr(instagram_module, "fetch_instagram_profile_info", lambda username, cookies_path: {"data": {"user": {}}})
+
+    with pytest.raises(InstagramAuthError):
+        instagram_module.fetch_instagram_profile_reel_media("someuser", str(cookies_file))
