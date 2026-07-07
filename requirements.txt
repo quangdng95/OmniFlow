@@ -18,7 +18,7 @@ instaloader
 # when Keychain blocks yt-dlp.
 browser_cookie3
 
-# Legacy Tkinter desktop app (main.py, ui.py)
+# Legacy Tkinter desktop app (legacy_tkinter_system.py, legacy_tkinter_ui.py)
 # Currently broken — see MISTAKES.md / rules/known-issues.md — kept for reference only.
 customtkinter
 pillow

@@ -5,7 +5,7 @@ from io import BytesIO
 import customtkinter as ctk
 
 # 
-from ui import OmniFlowUI, COLOR_ORANGE, COLOR_BLUE, COLOR_BTN_HOVER, COLOR_RED, COLOR_TEXT, COLOR_GREEN, COLOR_PURPLE, COLOR_FB, COLOR_REDNOTE
+from legacy_tkinter_ui import OmniFlowUI, COLOR_ORANGE, COLOR_BLUE, COLOR_BTN_HOVER, COLOR_RED, COLOR_TEXT, COLOR_GREEN, COLOR_PURPLE, COLOR_FB, COLOR_REDNOTE
 
 os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")

@@ -269,7 +269,7 @@ class OmniFlowUI(ctk.CTk):
         self.progressbar = ctk.CTkProgressBar(self.progress_view, height=10, fg_color=COLOR_BORDER, progress_color="#3B82F6")
         self.progressbar.pack(fill="x", padx=16, pady=(12, 16))
         self.progressbar.set(0)
-        self.progress_bar = self.progressbar  # Alias for main.py compatibility
+        self.progress_bar = self.progressbar  # Alias for legacy_tkinter_system.py compatibility
         
         self.btn_cancel_dl = ctk.CTkButton(self.progress_view, text=" Cancel Download", image=self.icons.get("CancelDownload"), compound="left", height=48, corner_radius=8, fg_color=COLOR_RED, font=("Inter", 15, "bold"))
         self.btn_cancel_dl.pack(fill="x", padx=16, pady=(0, 16))
@@ -342,7 +342,7 @@ class OmniFlowUI(ctk.CTk):
         self.label_terms = ctk.CTkLabel(terms_box, text=terms_text, font=("Inter", 14), text_color=COLOR_TEXT_MAIN, justify="left", anchor="w")
         self.label_terms.pack(fill="both", expand=True, padx=16, pady=16)
 
-        # TabViewMock for main.py compatibility
+        # TabViewMock for legacy_tkinter_system.py compatibility
         class TabViewMock:
             def set(self, val):
                 pass
