@@ -122,6 +122,30 @@ const IG_CAROUSEL: PlaylistCheckResult = {
   ],
 };
 
+// Real shape captured live from /api/check for the owner's reported "broken"
+// YouTube Mix URL (watch?v=dwWOEA00K8s&list=RDKzl6cT_u7RA&index=6) - trimmed
+// to 10 of the actual 50 items, keeping the real unicode titles/uploaders/
+// thumbnail URLs/position numbering, to catch anything a small synthetic
+// mock (YT_PLAYLIST above) wouldn't.
+const REAL_YOUTUBE_MIX: PlaylistCheckResult = {
+  type: "playlist",
+  platform: "YouTube",
+  title: "Mix - LIVE | Đến Sau - Ưng Hoàng Phúc | iTV HD - VTC13",
+  truncated: false,
+  items: [
+    { id: "dwWOEA00K8s", title: "Xa Muôn Trùng Mây | Khánh Phương | Official Music Video", uploader: "POPS MUSIC", thumbnail: "https://i.ytimg.com/vi/dwWOEA00K8s/hqdefault.jpg", duration: "05:28", position: 1, url: "https://www.youtube.com/watch?v=dwWOEA00K8s", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+    { id: "Kzl6cT_u7RA", title: "LIVE | Đến Sau - Ưng Hoàng Phúc | iTV HD - VTC13", uploader: "Ưng Hoàng Phúc", thumbnail: "https://i.ytimg.com/vi/Kzl6cT_u7RA/hqdefault.jpg", duration: "03:26", position: 2, url: "https://www.youtube.com/watch?v=Kzl6cT_u7RA", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+    { id: "E3Hv3xk3di0", title: "Hình Bóng Của Mây - Khánh Phương ft. Quỳnh Nga (MV OFFICIAL)", uploader: "Khánh Phương Tube", thumbnail: "https://i.ytimg.com/vi/E3Hv3xk3di0/hqdefault.jpg", duration: "06:17", position: 3, url: "https://www.youtube.com/watch?v=E3Hv3xk3di0", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+    { id: "Q8kohtX2PC4", title: "Tìm Lại Bầu Trời - Tuấn Hưng", uploader: "Tuấn Hưng", thumbnail: "https://i.ytimg.com/vi/Q8kohtX2PC4/hqdefault.jpg", duration: "05:29", position: 4, url: "https://www.youtube.com/watch?v=Q8kohtX2PC4", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+    { id: "tX7G0JYCIXs", title: "Ngụ - Quang Hà - DVD Tình", uploader: "Ly Minh Nhut (AnnaHouse Studio)", thumbnail: "https://i.ytimg.com/vi/tX7G0JYCIXs/hqdefault.jpg", duration: "06:05", position: 5, url: "https://www.youtube.com/watch?v=tX7G0JYCIXs", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+    { id: "qS3l_KFNGKk", title: "Hãy Xem Là Giấc Mơ - Chu Bin ( MV OFFICIAL )", uploader: "Chu Bin Official", thumbnail: "https://i.ytimg.com/vi/qS3l_KFNGKk/hqdefault.jpg", duration: "04:45", position: 6, url: "https://www.youtube.com/watch?v=qS3l_KFNGKk", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+    { id: "uXMHI8z0WVc", title: "Đành Thôi Quên Lãng - Khánh Phương (MV OFFICIAL)", uploader: "Khánh Phương Tube", thumbnail: "https://i.ytimg.com/vi/uXMHI8z0WVc/hqdefault.jpg", duration: "04:50", position: 7, url: "https://www.youtube.com/watch?v=uXMHI8z0WVc", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+    { id: "SItFPrgEITM", title: "Ngắm Hoa Lệ Rơi - Châu Khải Phong | Official Lyric Video", uploader: "Châu Khải Phong", thumbnail: "https://i.ytimg.com/vi/SItFPrgEITM/hqdefault.jpg", duration: "05:08", position: 8, url: "https://www.youtube.com/watch?v=SItFPrgEITM", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+    { id: "v2luYYn_aAQ", title: "Cầu Vòng Khuyết - Tuấn Hưng", uploader: "Tuấn Hưng", thumbnail: "https://i.ytimg.com/vi/v2luYYn_aAQ/hqdefault.jpg", duration: "04:12", position: 9, url: "https://www.youtube.com/watch?v=v2luYYn_aAQ", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+    { id: "PJalJefYFHo", title: "Yêu Cô Bạn Thân - Bằng Cường [Official MV HD]", uploader: "Bằng Cường Official", thumbnail: "https://i.ytimg.com/vi/PJalJefYFHo/hqdefault.jpg", duration: "03:58", position: 10, url: "https://www.youtube.com/watch?v=PJalJefYFHo", qualities: ["Best", "1080p", "720p", "480p", "Audio Only"], is_available: true },
+  ],
+};
+
 const BATCH_RUNNING: JobProgress = {
   status: "running",
   percent: 20,
@@ -381,6 +405,33 @@ describe("HomePage with a playlist result", () => {
     // While a batch runs, the global footer shows overall progress + Cancel Download.
     expect(screen.getByText(/1\/2 Downloaded/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel download/i })).toBeInTheDocument();
+  });
+
+  it("renders a real 10-item YouTube Mix response (owner-reported 'no result' repro)", async () => {
+    mockedApi.checkLink.mockResolvedValue(REAL_YOUTUBE_MIX);
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+
+    const input = screen.getByPlaceholderText("Copy and Paste your url");
+    await user.type(input, "https://www.youtube.com/watch?v=dwWOEA00K8s&list=RDKzl6cT_u7RA&index=6");
+
+    await waitFor(
+      () =>
+        expect(mockedApi.checkLink).toHaveBeenCalledWith(
+          "https://www.youtube.com/watch?v=dwWOEA00K8s&list=RDKzl6cT_u7RA&index=6"
+        ),
+      { timeout: 2000 }
+    );
+
+    await screen.findByText(
+      "Xa Muôn Trùng Mây | Khánh Phương | Official Music Video",
+      undefined,
+      { timeout: 3000 }
+    );
+    expect(screen.getByText(/total items/i)).toBeInTheDocument();
+    expect(screen.getByText("10")).toBeInTheDocument();
+    expect(screen.getByText("LIVE | Đến Sau - Ưng Hoàng Phúc | iTV HD - VTC13")).toBeInTheDocument();
+    expect(screen.getByText("Yêu Cô Bạn Thân - Bằng Cường [Official MV HD]")).toBeInTheDocument();
   });
 
   it("downloads a single row via its own inline download button", async () => {
