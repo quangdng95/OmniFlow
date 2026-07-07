@@ -105,7 +105,7 @@ const en: Translations = {
   },
   footer: { by: "By" },
   urlInput: {
-    label: "Insert a video URL (YouTube/TikTok/Instagram/Facebook/RedNote/Threads/X/LinkedIn)",
+    label: "Insert URL (All in One)",
     placeholder: "Copy and Paste your url",
     paste: "Paste",
     pasting: "Pasting…",
@@ -286,7 +286,7 @@ const vi: Translations = {
   },
   footer: { by: "Bởi" },
   urlInput: {
-    label: "Nhập đường dẫn video (YouTube/TikTok/Instagram/Facebook/RedNote/Threads/X/LinkedIn)",
+    label: "Nhập đường dẫn (Tất cả trong một)",
     placeholder: "Sao chép và dán đường dẫn của bạn",
     paste: "Dán",
     pasting: "Đang dán…",
