@@ -223,6 +223,21 @@ def test_get_platform_info_rednote():
     assert get_platform_info("https://www.rednote.com/explore/abc") == "RedNote"
 
 
+def test_get_platform_info_linkedin():
+    assert get_platform_info("https://www.linkedin.com/posts/someone_activity-1234567890-abcd/") == "LinkedIn"
+
+
+def test_classify_url_linkedin_post_is_single():
+    # LinkedIn posts (video or otherwise) are one item each - no list=-style
+    # multi-item shape exists on LinkedIn, so this always falls through to the
+    # SINGLE default (same as TikTok/Facebook), letting yt-dlp's LinkedInIE
+    # handle it unchanged.
+    cls = classify_url("https://www.linkedin.com/posts/mishalkhawaja_sendinblueviews-toronto-digitalmarketing-ugcPost-6850898786781339649-mM20")
+    assert cls.platform == "LinkedIn"
+    assert cls.kind == LinkKind.SINGLE
+    assert cls.is_multi is False
+
+
 def test_get_platform_info_unknown_falls_back_to_link():
     assert get_platform_info("https://example.com/video") == "Link"
 

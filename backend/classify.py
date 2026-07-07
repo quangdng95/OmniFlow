@@ -43,7 +43,7 @@ class LinkKind(str, enum.Enum):
 
 @dataclasses.dataclass(frozen=True)
 class Classification:
-    platform: str  # "YouTube" | "Instagram" | "TikTok" | "Facebook" | "RedNote" | "Link"
+    platform: str  # "YouTube" | "Instagram" | "TikTok" | "Facebook" | "RedNote" | "LinkedIn" | "Link"
     kind: LinkKind
     # The two URLs are deliberately separate (do NOT merge them): downloading a
     # watch?v=X&list=PL… item must fetch video X (url), while /api/check must
@@ -112,6 +112,7 @@ def get_platform_info(url):
     # "RedNote" is Xiaohongshu's international rebrand - links can come from
     # either the classic domains or the newer rednote.com one.
     if "xiaohongshu" in url_lower or "xhslink" in url_lower or "rednote" in url_lower: return "RedNote"
+    if "linkedin.com" in url_lower: return "LinkedIn"
     return "Link"
 
 
