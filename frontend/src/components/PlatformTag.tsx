@@ -28,6 +28,7 @@ const PlatformTag = ({ platform }: PlatformTagProps) => {
       <span
         style={{
           display: "inline-block",
+          alignSelf: "flex-start",
           padding: "2px 8px",
           borderRadius: 4,
           background: "rgba(26,26,26,0.06)",
@@ -39,7 +40,7 @@ const PlatformTag = ({ platform }: PlatformTagProps) => {
       </span>
     );
   }
-  return <img src={icon} alt={platform} height={20} />;
+  return <img src={icon} alt={platform} height={20} style={{ display: "block", alignSelf: "flex-start" }} />;
 };
 
 export default PlatformTag;
