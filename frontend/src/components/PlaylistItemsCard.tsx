@@ -191,18 +191,16 @@ const PlaylistItemsCard = ({
           </Button>
         </div>
 
-        {/* Hint + unavailable filter. */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 13, color: "rgba(255, 255, 255, 0.65)" }}>{t.playlist.orSelect}</span>
+          <span style={{ fontSize: 13, color: "rgba(31, 41, 55, 0.65)" }}>{t.playlist.orSelect}</span>
           {hasUnavailable && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(255, 255, 255, 0.75)" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(31, 41, 55, 0.75)" }}>
               {t.playlist.showUnavailable}
               <Switch size="small" checked={showUnavailable} onChange={setShowUnavailable} disabled={busy} />
             </span>
           )}
         </div>
 
-        {/* Master Select All Checkbox */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px" }}>
           <Checkbox
             indeterminate={indeterminate}
@@ -210,7 +208,7 @@ const PlaylistItemsCard = ({
             onChange={handleSelectAllChange}
             disabled={busy || selectableIndices.length === 0}
           >
-            <span style={{ fontSize: 13, color: "rgba(255, 255, 255, 0.75)", fontWeight: 500 }}>
+            <span style={{ fontSize: 13, color: "rgba(31, 41, 55, 0.75)", fontWeight: 500 }}>
               {t.playlist.selectAll}
             </span>
           </Checkbox>
@@ -243,7 +241,7 @@ const PlaylistItemsCard = ({
                 }}
               >
                 <Checkbox checked={selected.has(index) && !isDone} disabled={busy || !selectable} style={{ pointerEvents: "none" }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255, 255, 255, 0.5)", minWidth: 28, flexShrink: 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(31, 41, 55, 0.45)", minWidth: 28, flexShrink: 0 }}>
                   {String(position).padStart(numWidth, "0")}.
                 </span>
                 {item.thumbnail && (
@@ -257,7 +255,7 @@ const PlaylistItemsCard = ({
                 <div className="omniflow-playlist-item-info">
                   <div style={{ fontSize: 13, fontWeight: 500, wordBreak: "break-word", whiteSpace: "normal" }}>{item.title}</div>
                   {item.uploader && (
-                    <div style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.6)", marginTop: 2 }}>{item.uploader}</div>
+                    <div style={{ fontSize: 12, color: "rgba(31, 41, 55, 0.6)", marginTop: 2 }}>{item.uploader}</div>
                   )}
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 2 }}>
                     {item.kind && (
@@ -270,7 +268,7 @@ const PlaylistItemsCard = ({
                         {t.playlist.unavailable}
                       </Tag>
                     )}
-                    {item.duration && <span style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.5)" }}>{item.duration}</span>}
+                    {item.duration && <span style={{ fontSize: 12, color: "rgba(31, 41, 55, 0.5)" }}>{item.duration}</span>}
                   </div>
                 </div>
                 {/* Right: per-item status + action (real videos only). */}

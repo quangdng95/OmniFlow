@@ -5,8 +5,8 @@
 body {
   margin: 0;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #090d16;
-  color: #f3f4f6;
+  background-color: #f9fafb;
+  color: #1f2937;
   overflow-y: scroll;
 }
 
@@ -30,16 +30,16 @@ li + li {
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #f9fafb;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f2937;
+  background: #d1d5db;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #0d9585;
+  background: #9ca3af;
 }
 
 /* Premium global button hover interactions */
@@ -49,7 +49,7 @@ li + li {
 
 .ant-btn:not(:disabled):hover {
   transform: translateY(-1.5px);
-  box-shadow: 0 4px 12px rgba(13, 149, 133, 0.25);
+  box-shadow: 0 4px 12px rgba(13, 149, 133, 0.15);
 }
 
 .ant-btn:not(:disabled):active {

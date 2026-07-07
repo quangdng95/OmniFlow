@@ -44,7 +44,7 @@ const UrlInputCard = forwardRef<InputRef, UrlInputCardProps>(
     let suffix: ReactNode;
     if (status === "checking") {
       suffix = (
-        <span style={{ display: "flex", alignItems: "center", gap: 4, color: "rgba(255, 255, 255, 0.45)", fontSize: 12, fontWeight: 500 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 4, color: "rgba(0, 0, 0, 0.45)", fontSize: 12, fontWeight: 500 }}>
           <LoadingOutlined spin /> {t.urlInput.checking}
         </span>
       );
@@ -102,7 +102,7 @@ const UrlInputCard = forwardRef<InputRef, UrlInputCardProps>(
         <div style={{ width: "100%" }}>
           <div style={{ display: "flex", gap: 4, fontSize: 14, marginBottom: 4 }}>
             <span style={{ color: "#ff4d4f" }}>*</span>
-            <span style={{ color: "rgba(255, 255, 255, 0.85)" }}>{t.urlInput.label}</span>
+            <span style={{ color: "rgba(31, 41, 55, 0.85)" }}>{t.urlInput.label}</span>
           </div>
           <Input
             ref={ref}

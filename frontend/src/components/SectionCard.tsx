@@ -13,12 +13,12 @@ const SectionCard = ({ children, style }: SectionCardProps) => (
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.45, ease: "easeOut" }}
     style={{
-      background: "rgba(17, 24, 39, 0.7)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
-      border: "1px solid rgba(255, 255, 255, 0.08)",
+      background: "rgba(255, 255, 255, 0.85)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      border: "1px solid rgba(0, 0, 0, 0.05)",
       borderRadius: 16,
-      boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.3)",
+      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01)",
       width: "100%",
       display: "flex",
       flexDirection: "column",

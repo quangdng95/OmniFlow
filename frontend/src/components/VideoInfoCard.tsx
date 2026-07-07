@@ -21,15 +21,15 @@ const VideoInfoCard = ({ info }: VideoInfoCardProps) => {
               borderRadius: 8,
               objectFit: "cover",
               flexShrink: 0,
-              background: "#1f2937",
+              background: "#f3f4f6",
             }}
           />
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0, alignItems: "flex-start" }}>
           <PlatformTag platform={info.platform} />
-          <div style={{ fontSize: 14, fontWeight: 600, wordBreak: "break-word", color: "#f3f4f6" }}>{info.title}</div>
-          {info.uploader && <div style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.65)" }}>{info.uploader}</div>}
-          {info.duration && <div style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.45)" }}>{info.duration}</div>}
+          <div style={{ fontSize: 14, fontWeight: 600, wordBreak: "break-word", color: "#1f2937" }}>{info.title}</div>
+          {info.uploader && <div style={{ fontSize: 12, color: "rgba(31, 41, 55, 0.65)" }}>{info.uploader}</div>}
+          {info.duration && <div style={{ fontSize: 12, color: "rgba(31, 41, 55, 0.45)" }}>{info.duration}</div>}
         </div>
       </div>
     </SectionCard>

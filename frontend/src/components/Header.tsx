@@ -38,7 +38,7 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
                 type="text"
                 aria-current={isActive ? "page" : undefined}
                 style={{
-                  color: isActive ? "#0d9585" : "rgba(255, 255, 255, 0.75)",
+                  color: isActive ? "#0d9585" : "rgba(31, 41, 55, 0.65)",
                   fontWeight: isActive ? 600 : 500,
                   borderBottom: isActive ? "2px solid #0d9585" : "2px solid transparent",
                   borderRadius: 0,
@@ -54,16 +54,16 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
           })}
         </div>
 
-        <Divider style={{ borderColor: "rgba(255,255,255,0.08)", margin: 0 }} />
+        <Divider style={{ borderColor: "rgba(0,0,0,0.06)", margin: 0 }} />
 
         <Logo size="large" />
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, color: "white" }}>
-          <h1 className="omniflow-heading-title" style={{ margin: 0, fontSize: 24, fontWeight: 600, lineHeight: "32px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, color: "#1f2937" }}>
+          <h1 className="omniflow-heading-title" style={{ margin: 0, fontSize: 24, fontWeight: 600, lineHeight: "32px", color: "#1f2937" }}>
             {t.header[active].title}
           </h1>
           {active === "home" && (
-            <div style={{ fontSize: 14, lineHeight: "20px", color: "rgba(255, 255, 255, 0.85)" }}>
+            <div style={{ fontSize: 14, lineHeight: "20px", color: "rgba(31, 41, 55, 0.75)" }}>
               {t.header.home.descriptionLine1} <br />
               {t.header.home.descriptionLine2}
             </div>
