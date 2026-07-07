@@ -20,6 +20,8 @@ from backend import extraction as extraction_module
 from backend import instagram as instagram_module
 from backend import cookies as cookies_module
 from backend import jobs as jobs_module
+from backend import threads as threads_module
+from backend import linkedin as linkedin_module
 from backend.config import (
     load_session,
     resolve_save_dir,
@@ -522,6 +524,134 @@ def test_start_download_instagram_rejected_when_remote(client):
     )
     assert resp.status_code == 403
     assert "locally" in resp.get_json()["error"]
+
+
+# ---- Threads is local-only, same reasoning as Instagram ----
+
+
+def test_check_link_threads_rejected_when_remote(client):
+    resp = client.post(
+        "/api/check",
+        json={"url": "https://www.threads.com/@someone/post/abc123"},
+        headers={"Host": "example.com"},
+    )
+    assert resp.status_code == 403
+    assert "locally" in resp.get_json()["error"]
+
+
+def test_check_link_threads_succeeds_when_local(client, monkeypatch):
+    monkeypatch.setattr(threads_module, "threads_cookiefile_candidates", lambda: ["/acct.txt"])
+    monkeypatch.setattr(
+        threads_module,
+        "fetch_threads_media",
+        lambda url, cf: {"title": "A post", "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": None}]},
+    )
+    resp = client.post("/api/check", json={"url": "https://www.threads.com/@someone/post/abc123"})
+    assert resp.status_code == 200
+    assert resp.get_json()["type"] == "video"
+
+
+def test_check_link_threads_no_candidates_returns_friendly_auth_error(client, monkeypatch):
+    monkeypatch.setattr(threads_module, "threads_cookiefile_candidates", lambda: [])
+    resp = client.post("/api/check", json={"url": "https://www.threads.com/@someone/post/abc123"})
+    assert resp.status_code == 400
+    assert "Threads" in resp.get_json()["error"]
+
+
+def test_start_download_threads_rejected_when_remote(client):
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.threads.com/@someone/post/abc123", "title": "Video", "quality": "Best"},
+        headers={"Host": "example.com"},
+    )
+    assert resp.status_code == 403
+    assert "locally" in resp.get_json()["error"]
+
+
+# ---- LinkedIn: yt-dlp video path, custom og:image fallback for image posts ----
+
+
+def test_check_link_linkedin_falls_back_to_image_resolver(client, monkeypatch):
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("Unable to extract video")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    monkeypatch.setattr(
+        linkedin_module,
+        "fetch_linkedin_image_post",
+        lambda url: {"title": "A post", "items": [{"kind": "image", "url": "http://cdn/i.jpg", "thumbnail": "http://cdn/i.jpg"}]},
+    )
+    resp = client.post("/api/check", json={"url": "https://www.linkedin.com/posts/someone_activity-123-abcd"})
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["type"] == "video"
+    assert body["kind"] == "image"
+
+
+def test_check_link_linkedin_video_post_unaffected(client, monkeypatch):
+    # A real LinkedIn video post never reaches the image fallback - the
+    # standard yt-dlp path handles it exactly like every other platform.
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda cls: {"title": "A LinkedIn video", "formats": []})
+    resp = client.post("/api/check", json={"url": "https://www.linkedin.com/posts/someone_activity-123-abcd"})
+    assert resp.status_code == 200
+    assert resp.get_json()["title"] == "A LinkedIn video"
+
+
+def test_start_download_threads_saves_with_correct_extension(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+    monkeypatch.setattr(threads_module, "threads_cookiefile_candidates", lambda: ["/acct.txt"])
+    monkeypatch.setattr(
+        threads_module,
+        "fetch_threads_media_any",
+        lambda url, cfs: {"title": "A post", "items": [{"kind": "image", "url": "http://cdn/i.jpg", "thumbnail": None}]},
+    )
+    monkeypatch.setattr(download_module, "download_direct_url", lambda cdn_url, output_path, job_id: None)
+
+    class SyncThread:
+        def __init__(self, target=None, daemon=None):
+            self._target = target
+
+        def start(self):
+            self._target()
+
+    monkeypatch.setattr(threading, "Thread", SyncThread)
+
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.threads.com/@someone/post/abc123", "title": "My Post", "quality": "Best"},
+    )
+    assert resp.status_code == 200
+    job_id = resp.get_json()["job_id"]
+    assert jobs_module.jobs[job_id]["status"] == "done"
+    assert jobs_module.jobs[job_id]["filename"].endswith(".jpg")
+
+
+def test_start_download_linkedin_image_saves_as_jpg(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+    monkeypatch.setattr(
+        linkedin_module,
+        "fetch_linkedin_image_post",
+        lambda url: {"title": "A post", "items": [{"kind": "image", "url": "http://cdn/i.jpg", "thumbnail": None}]},
+    )
+    monkeypatch.setattr(download_module, "download_direct_url", lambda cdn_url, output_path, job_id: None)
+
+    class SyncThread:
+        def __init__(self, target=None, daemon=None):
+            self._target = target
+
+        def start(self):
+            self._target()
+
+    monkeypatch.setattr(threading, "Thread", SyncThread)
+
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.linkedin.com/posts/someone_activity-123-abcd", "title": "My Post", "quality": "Best"},
+    )
+    assert resp.status_code == 200
+    job_id = resp.get_json()["job_id"]
+    assert jobs_module.jobs[job_id]["status"] == "done"
+    assert jobs_module.jobs[job_id]["filename"].endswith(".jpg")
 
 
 # ---- remote downloads stage into a temp dir, not the configured folder ----

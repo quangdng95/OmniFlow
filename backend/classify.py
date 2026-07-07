@@ -39,11 +39,12 @@ class LinkKind(str, enum.Enum):
     INSTAGRAM_POST_OR_CAROUSEL = "instagram_post_or_carousel"
     INSTAGRAM_PROFILE = "instagram_profile"
     INSTAGRAM_STORY = "instagram_story"
+    THREADS_POST = "threads_post"
 
 
 @dataclasses.dataclass(frozen=True)
 class Classification:
-    platform: str  # "YouTube" | "Instagram" | "TikTok" | "Facebook" | "RedNote" | "LinkedIn" | "Link"
+    platform: str  # "YouTube" | "Instagram" | "TikTok" | "Facebook" | "RedNote" | "LinkedIn" | "Threads" | "Link"
     kind: LinkKind
     # The two URLs are deliberately separate (do NOT merge them): downloading a
     # watch?v=X&list=PL… item must fetch video X (url), while /api/check must
@@ -113,6 +114,9 @@ def get_platform_info(url):
     # either the classic domains or the newer rednote.com one.
     if "xiaohongshu" in url_lower or "xhslink" in url_lower or "rednote" in url_lower: return "RedNote"
     if "linkedin.com" in url_lower: return "LinkedIn"
+    # Threads (Meta) currently serves its web app from threads.com, though the
+    # older threads.net domain (and its private API host) still resolves too.
+    if "threads.com" in url_lower or "threads.net" in url_lower: return "Threads"
     return "Link"
 
 
@@ -171,6 +175,16 @@ def instagram_shortcode_from_url(url):
     return m.group(1) if m else None
 
 
+def threads_shortcode_from_url(url):
+    # A Threads post URL is https://www.threads.{com,net}/@<username>/post/<shortcode>
+    # (query params like ?xmt=... carry no meaning for identifying the post).
+    # The shortcode decodes with the exact same url-safe-base64 scheme Instagram
+    # shortcodes use (confirmed live 2026-07-07) - Threads shares Instagram's
+    # media id/private-API infrastructure under a different app id.
+    m = re.search(r"threads\.(?:com|net)/@[^/]+/post/([A-Za-z0-9_-]+)", url)
+    return m.group(1) if m else None
+
+
 def entry_index_from_url(url):
     # Instagram carousel share links can carry the picked slide as ?img_index=N.
     try:
@@ -220,6 +234,10 @@ def classify_url(raw_url):
         elif _PLAYLIST_URL_RE.search(url):
             kind = LinkKind.YOUTUBE_PLAYLIST
             playlist_cap = PLAYLIST_ITEM_CAP
+    elif platform == "Threads":
+        shortcode = threads_shortcode_from_url(url)
+        if shortcode:
+            kind = LinkKind.THREADS_POST
 
     return Classification(
         platform=platform,

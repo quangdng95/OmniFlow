@@ -4,6 +4,7 @@ import tiktok from "../assets/tags/Tiktok.svg";
 import facebook from "../assets/tags/Facebook.svg";
 import rednote from "../assets/tags/Rednote.svg";
 import linkedin from "../assets/tags/LinkedIn.svg";
+import threads from "../assets/tags/Threads.svg";
 import type { Platform } from "../types";
 
 const TAG_ICONS: Partial<Record<Platform, string>> = {
@@ -13,6 +14,7 @@ const TAG_ICONS: Partial<Record<Platform, string>> = {
   Facebook: facebook,
   RedNote: rednote,
   LinkedIn: linkedin,
+  Threads: threads,
 };
 
 interface PlatformTagProps {

@@ -4,6 +4,7 @@ H.264 enforcement."""
 import os
 import subprocess
 import time
+import urllib.request
 from types import SimpleNamespace
 
 import pytest
@@ -16,6 +17,7 @@ from backend.download import (
     build_download_options,
     combined_download_percent,
     detect_video_codec,
+    download_direct_url,
     ensure_h264,
     get_unique_filename,
     sanitize_filename,
@@ -290,3 +292,40 @@ def test_ensure_h264_honors_cancel_mid_reencode(monkeypatch, tmp_path):
         ensure_h264(str(video), "/ff", "j-cancel")
     assert video.read_bytes() == b"original-vp9-bytes"  # original untouched
     assert not (tmp_path / "clip.mp4.h264.mp4").exists()  # partial temp removed
+
+
+# ---- download_direct_url ----
+#
+# Zero test coverage existed for this function before 2026-07-07 - every
+# route-level test that touched it monkeypatched download_direct_url itself
+# rather than the urllib call inside it, so a real bug (backend/download.py
+# never imported urllib.request at all, despite calling
+# urllib.request.Request/urlopen) went unnoticed until a live download was
+# actually attempted (see MISTAKES.md). This exercises the REAL function body.
+
+
+class _FakeCdnResponse:
+    def __init__(self, body):
+        self._body = body
+        self.headers = {"Content-Length": str(len(body))}
+
+    def read(self, n=-1):
+        chunk, self._body = self._body[:n if n and n > 0 else len(self._body)], self._body[n if n and n > 0 else len(self._body):]
+        return chunk
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+
+def test_download_direct_url_writes_the_response_body_to_disk(tmp_path, monkeypatch):
+    jobs_module.jobs["j-direct"] = {"cancelled": False, "percent": 0, "text": ""}
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=30: _FakeCdnResponse(b"fake-cdn-bytes"))
+
+    out_path = tmp_path / "out.jpg"
+    download_direct_url("http://cdn.example.com/i.jpg", str(out_path), "j-direct")
+
+    assert out_path.read_bytes() == b"fake-cdn-bytes"
+    assert jobs_module.jobs["j-direct"]["percent"] == 100

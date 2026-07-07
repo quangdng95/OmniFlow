@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 import yt_dlp
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, config, cookies, download, extraction, instagram, jobs, paths
+from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, paths, threads
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
@@ -127,6 +127,9 @@ def browse_file():
 
 
 INSTAGRAM_LOCAL_ONLY_ERROR = "Instagram downloads are only available when running OmniFlow locally on your own machine."
+THREADS_LOCAL_ONLY_ERROR = "Threads downloads are only available when running OmniFlow locally on your own machine."
+THREADS_AUTH_ERROR = "❌ Lỗi: Cần một trình duyệt đã đăng nhập Threads (threads.com) trên máy này để tải bài viết. Vui lòng đăng nhập rồi thử lại."
+THREADS_EXTRACT_ERROR = "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung."
 
 @app.post("/api/check")
 def check_link():
@@ -146,6 +149,11 @@ def check_link():
     # own, since it might not fail at all if the owner has cookies configured.
     if cls.platform == "Instagram" and not is_local_request():
         return jsonify({"error": INSTAGRAM_LOCAL_ONLY_ERROR}), 403
+    # Threads auth is the same story as Instagram: auto-extracted from the
+    # local owner's own logged-in browser, so it can't be handed to a remote
+    # visitor without burning the owner's own Threads session.
+    if cls.platform == "Threads" and not is_local_request():
+        return jsonify({"error": THREADS_LOCAL_ONLY_ERROR}), 403
 
     # Instagram posts/reels/tv go through our own resolver (so photos and
     # carousels work at all) ONLY if we have a valid cookies file.
@@ -163,9 +171,36 @@ def check_link():
             finally:
                 cookies._cleanup_temp_cookiefiles(candidates)
 
+    # Threads has no yt-dlp/gallery-dl support at all (MISTAKES.md, 2026-07-07),
+    # so unlike Instagram there is no fallback path to fall through to - a
+    # resolver failure here goes straight to a friendly error.
+    if cls.kind == classify.LinkKind.THREADS_POST:
+        candidates = threads.threads_cookiefile_candidates()
+        last_error = None
+        if candidates:
+            try:
+                media = threads.fetch_threads_media_any(url, candidates)
+                return jsonify(instagram.instagram_check_response(url, media))
+            except Exception as e:
+                last_error = e
+            finally:
+                cookies._cleanup_temp_cookiefiles(candidates)
+        if not candidates or isinstance(last_error, threads.ThreadsAuthError):
+            return jsonify({"error": THREADS_AUTH_ERROR}), 400
+        return jsonify({"error": THREADS_EXTRACT_ERROR}), 400
+
     try:
         info = extraction.extract_video_info(cls)
     except yt_dlp.utils.DownloadError as e:
+        # yt-dlp's LinkedInIE only handles a post with a <video> tag - an
+        # image-only LinkedIn post fails here with "Unable to extract video",
+        # so fall back to the custom og:image resolver before giving up.
+        if cls.platform == "LinkedIn":
+            try:
+                media = linkedin.fetch_linkedin_image_post(url)
+                return jsonify(instagram.instagram_check_response(url, media))
+            except Exception:
+                pass
         return jsonify({"error": extraction.describe_extraction_error(url, e, config.get_cookies_path())}), 400
     except Exception:
         return jsonify({"error": "Invalid link or private video"}), 400
@@ -221,6 +256,8 @@ def start_download():
 
     if cls.platform == "Instagram" and not is_local_request():
         return jsonify({"error": INSTAGRAM_LOCAL_ONLY_ERROR}), 403
+    if cls.platform == "Threads" and not is_local_request():
+        return jsonify({"error": THREADS_LOCAL_ONLY_ERROR}), 403
 
     remote_temp_dir = None
     if is_local_request():
@@ -295,6 +332,105 @@ def start_download():
 
         threading.Thread(target=run_instagram, daemon=True).start()
         return jsonify({"job_id": job_id})
+
+    # Threads posts download through the same direct-CDN-fetch pattern as
+    # Instagram (no yt-dlp/ffmpeg support exists for Threads at all).
+    threads_candidates = []
+    if cls.kind == classify.LinkKind.THREADS_POST:
+        threads_candidates = threads.threads_cookiefile_candidates()
+    if threads_candidates:
+
+        job_id = uuid.uuid4().hex
+        jobs.jobs[job_id] = {
+            "status": "running", "percent": 0, "text": "Starting...",
+            "filename": None, "filepath": None, "cancelled": False,
+        }
+
+        def run_threads():
+            try:
+                media = threads.fetch_threads_media_any(url, threads_candidates)
+                items = media["items"]
+                idx = (entry_index - 1) if entry_index else 0
+                if idx < 0 or idx >= len(items):
+                    raise ValueError("Selected item is no longer available")
+                item = items[idx]
+                cdn_url = item.get("url")
+                if not cdn_url:
+                    raise ValueError("No downloadable media found")
+                ext = "jpg" if item["kind"] == "image" else "mp4"
+                final_output_path = download.get_unique_filename(save_dir, title, ext)
+                jobs.jobs[job_id]["filename"] = os.path.basename(final_output_path)
+                jobs.jobs[job_id]["filepath"] = final_output_path
+                download.download_direct_url(cdn_url, final_output_path, job_id)
+            except yt_dlp.utils.DownloadCancelled:
+                jobs._remove_job_file(job_id)
+                jobs.jobs[job_id]["text"] = "Cancelled"
+                jobs.jobs[job_id]["status"] = "cancelled"
+                return
+            except threads.ThreadsAuthError:
+                jobs._remove_job_file(job_id)
+                jobs.jobs[job_id]["text"] = THREADS_AUTH_ERROR
+                jobs.jobs[job_id]["status"] = "error"
+                return
+            except Exception as e:
+                print(f"[download] job {job_id} (threads) failed: {e}")
+                jobs._remove_job_file(job_id)
+                jobs.jobs[job_id]["text"] = str(e) or "Download failed"
+                jobs.jobs[job_id]["status"] = "error"
+                return
+            finally:
+                cookies._cleanup_temp_cookiefiles(threads_candidates)
+            jobs.jobs[job_id]["percent"] = 100
+            jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
+            jobs.jobs[job_id]["status"] = "done"
+
+        threading.Thread(target=run_threads, daemon=True).start()
+        return jsonify({"job_id": job_id})
+
+    # LinkedIn posts can be either a video (yt-dlp's LinkedInIE handles it
+    # below) or a plain image (no <video> tag - needs the custom og:image
+    # resolver instead). Try the cheap image resolver first; a post with no
+    # og:image (a real video post, or an unsupported document/slide-deck post)
+    # falls through to the standard yt-dlp pipeline, which raises its own
+    # DownloadError for a document post rather than silently mis-downloading it.
+    if cls.platform == "LinkedIn":
+        try:
+            linkedin_media = linkedin.fetch_linkedin_image_post(url)
+        except Exception:
+            linkedin_media = None
+        if linkedin_media:
+            job_id = uuid.uuid4().hex
+            jobs.jobs[job_id] = {
+                "status": "running", "percent": 0, "text": "Starting...",
+                "filename": None, "filepath": None, "cancelled": False,
+            }
+
+            def run_linkedin_image():
+                try:
+                    cdn_url = linkedin_media["items"][0].get("url")
+                    if not cdn_url:
+                        raise ValueError("No downloadable media found")
+                    final_output_path = download.get_unique_filename(save_dir, title, "jpg")
+                    jobs.jobs[job_id]["filename"] = os.path.basename(final_output_path)
+                    jobs.jobs[job_id]["filepath"] = final_output_path
+                    download.download_direct_url(cdn_url, final_output_path, job_id)
+                except yt_dlp.utils.DownloadCancelled:
+                    jobs._remove_job_file(job_id)
+                    jobs.jobs[job_id]["text"] = "Cancelled"
+                    jobs.jobs[job_id]["status"] = "cancelled"
+                    return
+                except Exception as e:
+                    print(f"[download] job {job_id} (linkedin image) failed: {e}")
+                    jobs._remove_job_file(job_id)
+                    jobs.jobs[job_id]["text"] = str(e) or "Download failed"
+                    jobs.jobs[job_id]["status"] = "error"
+                    return
+                jobs.jobs[job_id]["percent"] = 100
+                jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
+                jobs.jobs[job_id]["status"] = "done"
+
+            threading.Thread(target=run_linkedin_image, daemon=True).start()
+            return jsonify({"job_id": job_id})
 
     ffmpeg_bin = paths.get_ffmpeg_path()
     if not ffmpeg_bin:

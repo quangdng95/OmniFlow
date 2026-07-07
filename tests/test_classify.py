@@ -68,6 +68,21 @@ OWNER_URL_CASES = [
         {"platform": "TikTok", "kind": LinkKind.SINGLE, "is_multi": False},
         id="tiktok-single",
     ),
+    pytest.param(
+        "https://www.linkedin.com/posts/mishalkhawaja_sendinblueviews-toronto-digitalmarketing-ugcPost-6850898786781339649-mM20",
+        {"platform": "LinkedIn", "kind": LinkKind.SINGLE, "is_multi": False},
+        id="linkedin-video-post",
+    ),
+    pytest.param(
+        "https://www.threads.com/@unrootdesign/post/DWE8-rMEmXp?xmt=AQG02YOkgRow_Lg2H1w1Fj79vUlnAuBuMZEZbm9PHcaavw",
+        {"platform": "Threads", "kind": LinkKind.THREADS_POST, "is_multi": False, "shortcode": "DWE8-rMEmXp"},
+        id="threads-video-post",
+    ),
+    pytest.param(
+        "https://www.threads.com/@figma/post/DaTf9pqiaMW?xmt=AQG02YOkgRow_Lg2H1w1Fj79vUlnAuBuMZEZbm9PHcaavw",
+        {"platform": "Threads", "kind": LinkKind.THREADS_POST, "is_multi": False, "shortcode": "DaTf9pqiaMW"},
+        id="threads-image-post",
+    ),
 ]
 
 
@@ -235,6 +250,27 @@ def test_classify_url_linkedin_post_is_single():
     cls = classify_url("https://www.linkedin.com/posts/mishalkhawaja_sendinblueviews-toronto-digitalmarketing-ugcPost-6850898786781339649-mM20")
     assert cls.platform == "LinkedIn"
     assert cls.kind == LinkKind.SINGLE
+    assert cls.is_multi is False
+
+
+def test_get_platform_info_threads():
+    assert get_platform_info("https://www.threads.com/@someone/post/Abc123") == "Threads"
+    assert get_platform_info("https://www.threads.net/@someone/post/Abc123") == "Threads"
+
+
+def test_threads_shortcode_from_url():
+    assert classify.threads_shortcode_from_url(
+        "https://www.threads.com/@unrootdesign/post/DWE8-rMEmXp?xmt=abc"
+    ) == "DWE8-rMEmXp"
+    assert classify.threads_shortcode_from_url("https://www.threads.com/@someone/") is None
+
+
+def test_classify_url_threads_post_is_single_multi_false():
+    # A Threads post is always one item (video or image, decided by the
+    # resolver, not the URL) - is_multi is False even though its own LinkKind
+    # (THREADS_POST) differs from the generic SINGLE default.
+    cls = classify_url("https://www.threads.com/@figma/post/DaTf9pqiaMW")
+    assert cls.kind == LinkKind.THREADS_POST
     assert cls.is_multi is False
 
 
