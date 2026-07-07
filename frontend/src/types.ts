@@ -1,4 +1,4 @@
-export type Platform = "YouTube" | "Instagram" | "TikTok" | "Facebook" | "RedNote" | "LinkedIn" | "Threads" | "Link";
+export type Platform = "YouTube" | "Instagram" | "TikTok" | "Facebook" | "RedNote" | "LinkedIn" | "Threads" | "X" | "Link";
 
 // Instagram photos resolve to "image"; everything else is "video". Optional so
 // non-Instagram responses (which never set it) default to video-like behavior.

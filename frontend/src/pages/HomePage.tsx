@@ -168,7 +168,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
       }
     } catch (e) {
       if (checkTokenRef.current !== token) return;
-      message.error((e as Error).message);
+      message.error(`${(e as Error).message} ${t.urlInput.checkFailedRetryHint}`);
     } finally {
       if (checkTokenRef.current === token) setChecking(false);
     }

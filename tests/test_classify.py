@@ -36,6 +36,15 @@ OWNER_URL_CASES = [
         id="youtube-mix",
     ),
     pytest.param(
+        # Same Mix, different `index=` - the owner reported this exact variant
+        # (index=6) as "returns no result". Pinned to prove index= never
+        # affects classification: only `list=` decides Mix vs playlist vs single.
+        "https://www.youtube.com/watch?v=dwWOEA00K8s&list=RDKzl6cT_u7RA&index=6",
+        {"platform": "YouTube", "kind": LinkKind.YOUTUBE_MIX, "is_multi": True,
+         "playlist_cap": classify.MIX_ITEM_CAP},
+        id="youtube-mix-different-index",
+    ),
+    pytest.param(
         "https://youtu.be/dwWOEA00K8s?si=LfMB9LkTkYcKoRgX",
         {"platform": "YouTube", "kind": LinkKind.SINGLE, "is_multi": False},
         id="youtube-single-short-link",
@@ -256,6 +265,27 @@ def test_classify_url_linkedin_post_is_single():
 def test_get_platform_info_threads():
     assert get_platform_info("https://www.threads.com/@someone/post/Abc123") == "Threads"
     assert get_platform_info("https://www.threads.net/@someone/post/Abc123") == "Threads"
+
+
+def test_get_platform_info_x():
+    assert get_platform_info("https://x.com/someone/status/12345") == "X"
+    assert get_platform_info("https://www.x.com/someone/status/12345") == "X"
+    assert get_platform_info("https://twitter.com/someone/status/12345") == "X"
+    assert get_platform_info("https://mobile.twitter.com/someone/status/12345") == "X"
+
+
+def test_get_platform_info_x_does_not_false_positive_on_similar_domains():
+    # "x.com" is a short substring - must be checked via hostname, not a bare
+    # `in` check, since an unrelated domain could contain it (e.g. "vertex.com").
+    assert get_platform_info("https://vertex.com/some/path") == "Link"
+    assert get_platform_info("https://example.com/x.com/fake") == "Link"
+
+
+def test_classify_url_x_post_is_single():
+    cls = classify_url("https://x.com/someone/status/12345")
+    assert cls.platform == "X"
+    assert cls.kind == LinkKind.SINGLE
+    assert cls.is_multi is False
 
 
 def test_threads_shortcode_from_url():

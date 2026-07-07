@@ -15,9 +15,9 @@ export interface Translations {
     pasting: string;
     checking: string;
     clearUrl: string;
+    checkFailedRetryHint: string; // appended to a failed check's error message
   };
   checkingStatus: { checkingLink: string; cancel: string };
-  videoInfo: { titleLabel: string; authorLabel: string; timeLabel: string };
   playlist: {
     heading: string;
     empty: string;
@@ -116,9 +116,9 @@ const en: Translations = {
     pasting: "Pasting…",
     checking: "Checking",
     clearUrl: "Clear URL",
+    checkFailedRetryHint: "Please clear the URL and paste the link again to try once more.",
   },
   checkingStatus: { checkingLink: "Checking Link…", cancel: "Cancel" },
-  videoInfo: { titleLabel: "Title:", authorLabel: "Author:", timeLabel: "Time:" },
   playlist: {
     heading: "Select items to download",
     empty: "This story has no downloadable video content.",
@@ -279,9 +279,9 @@ const vi: Translations = {
     pasting: "Đang dán…",
     checking: "Đang kiểm tra",
     clearUrl: "Xoá đường dẫn",
+    checkFailedRetryHint: "Vui lòng xoá đường dẫn và dán lại link để thử lại.",
   },
   checkingStatus: { checkingLink: "Đang kiểm tra đường dẫn…", cancel: "Huỷ" },
-  videoInfo: { titleLabel: "Tiêu đề:", authorLabel: "Tác giả:", timeLabel: "Thời lượng:" },
   playlist: {
     heading: "Chọn các mục để tải",
     empty: "Story này không có video nào để tải.",
