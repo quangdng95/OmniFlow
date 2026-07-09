@@ -55,6 +55,7 @@ export interface Settings {
   path: string;
   cookies_path: string;
   cookies_status: CookiesStatus;
+  playlist_limit?: number;
 }
 
 export type JobStatus = "running" | "done" | "cancelled" | "error";

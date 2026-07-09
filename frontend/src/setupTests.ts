@@ -5,7 +5,7 @@ class MockIntersectionObserver {
   unobserve() {}
   disconnect() {}
 }
-// framer-motion's whileInView and antd's internal layout checks expect these to exist in jsdom.
+// framer-motion's whileInView checks expect these to exist in jsdom.
 Object.defineProperty(window, "IntersectionObserver", {
   writable: true,
   value: MockIntersectionObserver,

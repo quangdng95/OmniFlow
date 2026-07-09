@@ -15,6 +15,7 @@ export interface Translations {
     pasting: string;
     checking: string;
     clearUrl: string;
+    removeUrl: string;
     checkFailedRetryHint: string; // appended to a failed check's error message
   };
   checkingStatus: { checkingLink: string; cancel: string };
@@ -46,7 +47,8 @@ export interface Translations {
     downloadItemsSelected: string; // bulk button for a manual selection
     percentDownloading: string; // per-row: "{p}% Downloading"
     downloadedProgress: string; // global: "{done}/{total} Downloaded"
-    savedItems: string; // global: "Saved: {n} items"
+    savedItems: string; // global: "Saved: {n} Items"
+    failedItems: string; // global: "Failed: {n} Items"
   };
   qualityAction: {
     selectQuality: string;
@@ -82,6 +84,16 @@ export interface Translations {
       english: string;
       vietnamese: string;
     };
+    playlistLimit: {
+      heading: string;
+      description: string;
+      option30: string;
+      option50: string;
+      option100: string;
+      option200: string;
+      option500: string;
+      optionAll: string;
+    };
   };
   terms: {
     heading: string;
@@ -97,7 +109,7 @@ const en: Translations = {
     nav: { home: "Home", settings: "Settings", terms: "Terms of Use" },
     home: {
       title: "OmniFlow – All-in-One Video Downloader",
-      descriptionLine1: "Download videos and stories instantly with OmniFlow.",
+      descriptionLine1: "Download videos and media instantly with OmniFlow.",
       descriptionLine2: "It's fast, free, and fully compatible with all your devices!",
     },
     settings: { title: "Settings" },
@@ -111,6 +123,7 @@ const en: Translations = {
     pasting: "Pasting…",
     checking: "Checking",
     clearUrl: "Clear URL",
+    removeUrl: "Remove URL",
     checkFailedRetryHint: "Please clear the URL and paste the link again to try once more.",
   },
   checkingStatus: { checkingLink: "Checking Link…", cancel: "Cancel" },
@@ -142,7 +155,8 @@ const en: Translations = {
     downloadItemsSelected: "Download Items Selected",
     percentDownloading: "{p}% Downloading",
     downloadedProgress: "{done}/{total} Downloaded",
-    savedItems: "Saved: {n} items",
+    savedItems: "Saved: {n} Items",
+    failedItems: "Failed: {n} Items",
   },
   qualityAction: {
     selectQuality: "Select Quality:",
@@ -217,9 +231,19 @@ const en: Translations = {
     },
     language: {
       heading: "Language",
-      description: "Choose the display language for the app.",
+      description: "Please select a language from the list below. You have to restart OmniFlow in order to apply your selection.",
       english: "English",
       vietnamese: "Vietnamese",
+    },
+    playlistLimit: {
+      heading: "Playlist / Channel Loading Limit",
+      description: "Configure the maximum number of videos to load when parsing a playlist or channel (applies to YouTube, Instagram Reels, etc.). Lower values load faster.",
+      option30: "30 items (Fastest)",
+      option50: "50 items",
+      option100: "100 items (Recommended)",
+      option200: "200 items",
+      option500: "500 items",
+      optionAll: "All items (Slowest, could hit rate limits)",
     },
   },
   terms: {
@@ -278,7 +302,7 @@ const vi: Translations = {
     nav: { home: "Trang chủ", settings: "Cài đặt", terms: "Điều khoản sử dụng" },
     home: {
       title: "OmniFlow – Tải video từ mọi nền tảng",
-      descriptionLine1: "Tải video và story ngay lập tức với OmniFlow.",
+      descriptionLine1: "Tải video và media ngay lập tức với OmniFlow.",
       descriptionLine2: "Nhanh, miễn phí và tương thích với mọi thiết bị của bạn!",
     },
     settings: { title: "Cài đặt" },
@@ -292,6 +316,7 @@ const vi: Translations = {
     pasting: "Đang dán…",
     checking: "Đang kiểm tra",
     clearUrl: "Xoá đường dẫn",
+    removeUrl: "Gỡ đường dẫn",
     checkFailedRetryHint: "Vui lòng xoá đường dẫn và dán lại link để thử lại.",
   },
   checkingStatus: { checkingLink: "Đang kiểm tra đường dẫn…", cancel: "Huỷ" },
@@ -324,6 +349,7 @@ const vi: Translations = {
     percentDownloading: "{p}% Đang tải",
     downloadedProgress: "Đã tải {done}/{total}",
     savedItems: "Đã lưu: {n} mục",
+    failedItems: "Lỗi: {n} mục",
   },
   qualityAction: {
     selectQuality: "Chọn chất lượng:",
@@ -398,9 +424,19 @@ const vi: Translations = {
     },
     language: {
       heading: "Ngôn ngữ",
-      description: "Chọn ngôn ngữ hiển thị cho ứng dụng.",
+      description: "Vui lòng chọn ngôn ngữ từ danh sách bên dưới. Bạn cần khởi động lại OmniFlow để áp dụng lựa chọn.",
       english: "Tiếng Anh",
       vietnamese: "Tiếng Việt",
+    },
+    playlistLimit: {
+      heading: "Giới hạn tải Playlist / Kênh",
+      description: "Cấu hình số lượng video tối đa được tải khi quét playlist hoặc kênh (áp dụng cho YouTube, Instagram Reels, v.v.). Giới hạn nhỏ giúp tải nhanh hơn.",
+      option30: "30 video (Nhanh nhất)",
+      option50: "50 video",
+      option100: "100 video (Khuyên dùng)",
+      option200: "200 video",
+      option500: "500 video",
+      optionAll: "Tất cả video (Chậm nhất, có thể bị giới hạn chặn)",
     },
   },
   terms: {

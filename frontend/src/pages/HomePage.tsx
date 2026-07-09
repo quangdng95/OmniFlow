@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { message, type InputRef, Collapse } from "antd";
-import Header, { type Page } from "../components/Header";
-import Footer from "../components/Footer";
+import { toast } from "sonner";
+import { type Page } from "../components/Header";
 import AnimatedSection from "../components/AnimatedSection";
-import UrlInputCard from "../components/UrlInputCard";
+import UrlInputCard, { type UrlInputStatus } from "../components/UrlInputCard";
 import CheckingStatusCard from "../components/CheckingStatusCard";
 import VideoInfoCard from "../components/VideoInfoCard";
-import QualityActionCard from "../components/QualityActionCard";
-import DownloadProgressCard from "../components/DownloadProgressCard";
-import DownloadSuccessCard from "../components/DownloadSuccessCard";
 import PlaylistItemsCard, { type BatchSummary } from "../components/PlaylistItemsCard";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { api } from "../api";
 import type { CheckResult, PlaylistItem, RowProgress, VideoInfo } from "../types";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -24,7 +26,7 @@ import threads from "../assets/tags/Threads.svg";
 import linkedin from "../assets/tags/LinkedIn.svg";
 import x from "../assets/tags/X.svg";
 
-type DownloadState = "idle" | "downloading" | "done";
+type DownloadState = "idle" | "downloading" | "done" | "fail";
 
 const platforms = [
   { name: "YouTube", icon: youtube },
@@ -41,32 +43,29 @@ interface HomePageProps {
   onNavigate: (page: Page) => void;
 }
 
-const HomePage = ({ onNavigate }: HomePageProps) => {
+const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
   const { t } = useLanguage();
   const [url, setUrl] = useState("");
   const [checking, setChecking] = useState(false);
   const [checkSeconds, setCheckSeconds] = useState(0);
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
-  // "Best" is the fallback for a batch whose items have no shared quality
-  // ladder (e.g. an Instagram carousel, where each slide only ever carries
-  // its own single-option ["Image"]/["Video"]) - PlaylistItemsCard used to
-  // default its own local state this way; preserved here now that the value
-  // is lifted so per-item downloads still pass a sane quality.
   const [selectedQuality, setSelectedQuality] = useState<string>("Best");
-  // Single-video flow.
+  
+  // Single-video flow
   const [downloadState, setDownloadState] = useState<DownloadState>("idle");
   const [progressPercent, setProgressPercent] = useState(0);
   const [progressFilename, setProgressFilename] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
-  // Playlist flow: per-row download status + the currently-running batch job.
+  const [pasting, setPasting] = useState(false);
+
+  // Playlist flow
   const [rowStatus, setRowStatus] = useState<Record<number, RowProgress>>({});
   const [activeRows, setActiveRows] = useState<number[]>([]);
   const [batchJobId, setBatchJobId] = useState<string | null>(null);
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null);
-  const [pasting, setPasting] = useState(false);
 
   const checkTokenRef = useRef(0);
-  const inputRef = useRef<InputRef>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const busy = batchJobId !== null;
 
   const resetDownloadState = () => {
@@ -75,9 +74,6 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
     setActiveRows([]);
     setBatchJobId(null);
     setBatchSummary(null);
-    // Each new check starts fresh, same as when PlaylistItemsCard used to
-    // remount per-check with its own local default - runCheck's seeding
-    // overwrites this once the new result's real qualities are known.
     setSelectedQuality("Best");
   };
 
@@ -107,7 +103,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
     return () => clearInterval(id);
   }, [checking]);
 
-  // Single-video job poll.
+  // Single-video job poll
   useEffect(() => {
     if (!jobId || downloadState !== "downloading") return;
     const id = setInterval(async () => {
@@ -119,8 +115,8 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           setProgressFilename(progress.filename);
           clearInterval(id);
         } else if (progress.status === "error" || progress.status === "cancelled") {
-          setDownloadState("idle");
-          message.error(
+          setDownloadState(progress.status === "error" ? "fail" : "idle");
+          toast.error(
             progress.status === "error" ? progress.text || t.downloadStatus.failedFallback : t.downloadStatus.cancelled
           );
           clearInterval(id);
@@ -132,7 +128,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
     return () => clearInterval(id);
   }, [jobId, downloadState, t]);
 
-  // Playlist batch job poll -> maps each item's progress back to its row.
+  // Playlist batch job poll
   useEffect(() => {
     if (!batchJobId) return;
     const id = setInterval(async () => {
@@ -148,7 +144,6 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
             });
             return next;
           });
-          // Overall bar for the global footer: a done item counts as 100%.
           const total = ips.length;
           const done = ips.filter((ip) => ip.status === "done").length;
           const percent = total
@@ -157,8 +152,8 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           setBatchSummary({ done, total, percent });
         }
         if (progress.status !== "running") {
-          setBatchJobId(null); // batch finished; rowStatus holds the final per-row state
-          setBatchSummary(null); // footer switches to the "Saved: N items" summary
+          setBatchJobId(null);
+          setBatchSummary(null);
           clearInterval(id);
         }
       } catch {
@@ -178,17 +173,15 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
       if (result.type === "video") {
         setSelectedQuality(result.qualities[0]);
       } else if (result.type === "playlist" && result.items.length === 1) {
-        // A 1-item playlist renders as a single video, so seed its quality too.
         setSelectedQuality(result.items[0].qualities[0]);
       } else if (result.type === "playlist" && result.items.length > 1) {
-        // Flat playlist items share one quality ladder - seed it from whichever
-        // item actually carries it (see currentQualities below).
         const shared = result.items.find((it) => it && it.qualities && it.qualities.length > 1)?.qualities;
         if (shared) setSelectedQuality(shared[0]);
       }
     } catch (e) {
       if (checkTokenRef.current !== token) return;
-      message.error(`${(e as Error).message} ${t.urlInput.checkFailedRetryHint}`);
+      toast.error(`${(e as Error).message} ${t.urlInput.checkFailedRetryHint}`);
+      setDownloadState("fail");
     } finally {
       if (checkTokenRef.current === token) setChecking(false);
     }
@@ -198,23 +191,14 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
     setPasting(true);
     try {
       if (isLocal()) {
-        // Reads via the server (pbpaste) instead of the browser's
-        // navigator.clipboard API - that API is unreliable in this app's
-        // actual runtime contexts (permission prompts that never resolve in
-        // some browsers, and no support at all inside the desktop app's
-        // embedded webview window). Only correct when browser and server
-        // share a machine - pbpaste would read the wrong clipboard for a
-        // remote visitor, which is why this branch only runs locally.
         const { text } = await api.getClipboard();
         setUrl(text.trim());
       } else {
-        // A remote visitor's clipboard can only be read from their own
-        // browser - the server has no access to it at all.
         const text = await navigator.clipboard.readText();
         setUrl(text.trim());
       }
     } catch (e) {
-      message.error((e as Error).message);
+      toast.error((e as Error).message);
       inputRef.current?.focus();
     } finally {
       setPasting(false);
@@ -235,8 +219,6 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
     setUrl("");
   };
 
-  // A 1-video "playlist" (e.g. a channel with one upload) is rendered as a plain
-  // single video, not the multi-select list.
   const playlistSingle: PlaylistItem | null =
     checkResult?.type === "playlist" && checkResult.items.length === 1 ? checkResult.items[0] : null;
 
@@ -256,9 +238,6 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
         }
       : null;
 
-  // Shared quality ladder for the selector in UrlInputCard - covers a single
-  // video, a 1-item playlist (via selectedItem), or a multi-item playlist's
-  // one common ladder (flat items can't have their own per-item formats).
   const currentQualities: string[] =
     selectedItem?.qualities ??
     (checkResult?.type === "playlist"
@@ -271,20 +250,16 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
     setProgressPercent(0);
     setProgressFilename(null);
     try {
-      // For a 1-item playlist, download that item's own URL (or its entry_index
-      // into the original URL for an Instagram Story); otherwise the pasted URL.
       const dlUrl = playlistSingle?.url ?? url.trim();
       const dlEntry = playlistSingle?.url ? undefined : playlistSingle?.entry_index;
       const { job_id } = await api.startDownload(dlUrl, selectedItem.title, selectedQuality, dlEntry);
       setJobId(job_id);
     } catch (e) {
-      message.error((e as Error).message);
-      setDownloadState("idle");
+      toast.error((e as Error).message);
+      setDownloadState("fail");
     }
   };
 
-  // Download a set of playlist rows (a single item, a retry, or a bulk selection)
-  // as one batch job, mapping its per-item progress back onto those rows.
   const handleDownloadItems = async (rowIndices: number[], quality: string) => {
     if (batchJobId || rowIndices.length === 0 || checkResult?.type !== "playlist") return;
     const playlist = checkResult;
@@ -302,7 +277,7 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
       const { job_id } = await api.startBatchDownload(url.trim(), quality, items);
       setBatchJobId(job_id);
     } catch (e) {
-      message.error((e as Error).message);
+      toast.error((e as Error).message);
       setRowStatus((prev) => {
         const next = { ...prev };
         rowIndices.forEach((i) => (next[i] = { status: "error", percent: 0 }));
@@ -324,15 +299,19 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
     void api.openFolder();
   };
 
-  // "result" also covers a failed check: as long as there's text in the field,
-  // offer Clear URL instead of reverting to Paste (which implies an empty field).
-  const inputStatus = checking ? "checking" : url.trim() ? "result" : "idle";
+  // Input states mapping
+  let inputStatus: UrlInputStatus = "idle";
+  if (checking) {
+    inputStatus = "checking";
+  } else if (downloadState === "fail") {
+    inputStatus = "error";
+  } else if (url.trim()) {
+    inputStatus = "result";
+  }
 
   return (
-    <>
-      <Header active="home" onNavigate={onNavigate} />
-      <div className="omniflow-content">
-        <div className="omniflow-content-inner">
+    <div className="w-full select-none">
+      <div className="w-full flex flex-col gap-4">
           <UrlInputCard
             ref={inputRef}
             value={url}
@@ -351,138 +330,97 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           {checking && <CheckingStatusCard seconds={checkSeconds} onCancel={handleCancelCheck} />}
 
           {!checking && !checkResult && (
-            <AnimatedSection style={{ display: "flex", flexDirection: "column", gap: 32, color: "#1f2937", width: "100%" }}>
+            <AnimatedSection className="flex flex-col gap-8 text-[#1f2937] w-full">
               {/* Introduction */}
-              <div style={{ textAlign: "center", maxWidth: 600, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
-                <p style={{ fontSize: 15, lineHeight: "22px", margin: 0, color: "#4b5563", fontWeight: 500 }}>
+              <div className="text-center max-w-[600px] mx-auto flex flex-col gap-3">
+                <p className="text-sm font-medium text-slate-600 m-0">
                   {t.home.introLines[0]}
                 </p>
-                <p style={{ fontSize: 13, lineHeight: "18px", margin: 0, color: "#9ca3af" }}>
+                <p className="text-xs text-slate-400 m-0">
                   {t.home.introLines[1]} • {t.home.introLines[2]}
                 </p>
               </div>
 
-              {/* Supported Platforms Grid */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.5px", color: "#9ca3af" }}>
+              {/* Supported Platforms */}
+              <div className="flex flex-col items-center gap-3 select-none">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Supported Platforms
                 </span>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 12, width: "100%" }}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
                   {platforms.map((p) => (
                     <div
                       key={p.name}
-                      className="omniflow-platform-card"
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "12px 8px",
-                        background: "#ffffff",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: 12,
-                        cursor: "default",
-                        transition: "all 0.2s ease-in-out",
-                      }}
+                      className="flex flex-col items-center gap-2 p-3 bg-white border border-slate-200/50 rounded-xl cursor-default transition-all duration-200 hover:translate-y-[-1.5px] hover:shadow-sm hover:border-[#0d9585]"
                     >
-                      <img src={p.icon} alt={p.name} style={{ height: 24, width: "auto", objectFit: "contain" }} />
-                      <span style={{ fontSize: 11, fontWeight: 600, color: "#4b5563" }}>{p.name}</span>
+                      <img src={p.icon} alt={p.name} className="h-6 w-auto object-contain" />
+                      <span className="text-[10px] font-bold text-slate-500">{p.name}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* How to Download Steps */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <p style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "#1f2937", textAlign: "center" }}>
+              {/* Steps */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-base font-bold text-slate-800 text-center m-0">
                   {t.home.howToHeading}
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, width: "100%" }}>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
                   {t.home.steps.map((step, index) => (
                     <div
                       key={step.label}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 12,
-                        padding: 16,
-                        background: "#ffffff",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: 12,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.01)",
-                      }}
+                      className="flex flex-col gap-3 p-4 bg-white border border-slate-200/50 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.01)]"
                     >
-                      <div
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "50%",
-                          background: "rgba(13, 149, 133, 0.1)",
-                          color: "#0d9585",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 14,
-                          fontWeight: 700,
-                        }}
-                      >
+                      <div className="w-7 h-7 rounded-full bg-[#0d9585]/10 text-[#0d9585] flex items-center justify-center text-xs font-bold">
                         {index + 1}
                       </div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1f2937", marginBottom: 4 }}>
+                      <div className="flex flex-col gap-1">
+                        <h4 className="text-xs font-bold text-slate-800 m-0">
                           {step.label}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#6b7280", lineHeight: "18px" }}>
+                        </h4>
+                        <p className="text-[11px] text-slate-500 leading-relaxed m-0">
                           {step.body}
-                        </div>
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Features / Benefits Grid */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <p style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "#1f2937", textAlign: "center" }}>
+              {/* Features */}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-base font-bold text-slate-800 text-center m-0">
                   {t.home.featuresHeading}
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, width: "100%" }}>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                   {t.home.features.map((feat) => (
                     <div
                       key={feat.title}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 4,
-                        padding: 16,
-                        background: "#ffffff",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: 12,
-                      }}
+                      className="flex flex-col gap-1 p-4 bg-white border border-slate-200/50 rounded-xl"
                     >
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#0d9585" }}>{feat.title}</span>
-                      <span style={{ fontSize: 12, color: "#6b7280", lineHeight: "16px" }}>{feat.desc}</span>
+                      <span className="text-xs font-bold text-[#0d9585]">{feat.title}</span>
+                      <span className="text-[11px] text-slate-500 leading-relaxed">{feat.desc}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* FAQ Section */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <p style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "#1f2937", textAlign: "center" }}>
+              {/* FAQs */}
+              <div className="flex flex-col gap-4 select-none">
+                <h3 className="text-base font-bold text-slate-800 text-center m-0">
                   {t.home.faqHeading}
-                </p>
-                <Collapse
-                  ghost
-                  accordion
-                  expandIconPlacement="end"
-                  style={{ background: "#ffffff", border: "1px solid #f0f0f0", borderRadius: 12, padding: "4px 8px" }}
-                  items={t.home.faqs.map((faq, index) => ({
-                    key: String(index),
-                    label: <span style={{ fontSize: 13, fontWeight: 600, color: "#1f2937" }}>{faq.q}</span>,
-                    children: <p style={{ fontSize: 12, color: "#4b5563", margin: 0, lineHeight: "18px" }}>{faq.a}</p>,
-                  }))}
-                />
+                </h3>
+                <Accordion className="w-full bg-white border border-slate-200/60 rounded-xl p-2 px-4 shadow-sm">
+                  {t.home.faqs.map((faq, index) => (
+                    <AccordionItem key={index} value={String(index)} className="border-b border-neutral-100 last:border-0">
+                      <AccordionTrigger className="text-xs font-semibold text-slate-800 hover:no-underline py-3">
+                        {faq.q}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-xs text-slate-500 leading-relaxed pb-3">
+                        {faq.a}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
               </div>
             </AnimatedSection>
           )}
@@ -504,26 +442,20 @@ const HomePage = ({ onNavigate }: HomePageProps) => {
           )}
 
           {selectedItem && (
-            <>
-              <VideoInfoCard info={selectedItem} />
-              <QualityActionCard actionState={downloadState} onAction={handleStartDownload} />
-              {downloadState === "downloading" && (
-                <DownloadProgressCard percent={progressPercent} onCancel={handleCancelDownload} />
-              )}
-              {downloadState === "done" && progressFilename && (
-                <DownloadSuccessCard
-                  filename={progressFilename}
-                  onOpenFolder={isLocal() ? handleOpenFolder : undefined}
-                  downloadUrl={isLocal() || !jobId ? undefined : `/api/download-file/${jobId}`}
-                />
-              )}
-            </>
+            <VideoInfoCard
+              info={selectedItem}
+              actionState={downloadState}
+              percent={progressPercent}
+              filename={progressFilename}
+              onDownload={handleStartDownload}
+              onCancel={handleCancelDownload}
+              onOpenFolder={isLocal() ? handleOpenFolder : undefined}
+              downloadUrl={isLocal() || !jobId ? undefined : `/api/download-file/${jobId}`}
+            />
           )}
 
-          <Footer />
-        </div>
       </div>
-    </>
+    </div>
   );
 };
 

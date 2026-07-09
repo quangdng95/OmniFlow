@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { translations, type Language, type Translations } from "./translations";
+import { Toaster } from "@/components/ui/sonner";
 
 const STORAGE_KEY = "omniflow-language";
 
@@ -28,6 +29,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t: translations[language] }}>
       {children}
+      <Toaster position="top-center" />
     </LanguageContext.Provider>
   );
 };

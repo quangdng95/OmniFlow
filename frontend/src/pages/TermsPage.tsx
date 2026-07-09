@@ -1,5 +1,4 @@
-import Header, { type Page } from "../components/Header";
-import Footer from "../components/Footer";
+import { type Page } from "../components/Header";
 import SectionCard from "../components/SectionCard";
 import { useLanguage } from "../i18n/LanguageContext";
 
@@ -7,41 +6,51 @@ interface TermsPageProps {
   onNavigate: (page: Page) => void;
 }
 
-const TermsPage = ({ onNavigate }: TermsPageProps) => {
+const TermsPage = ({ onNavigate: _onNavigate }: TermsPageProps) => {
   const { t } = useLanguage();
   return (
-    <>
-      <Header active="terms" onNavigate={onNavigate} />
-      <div className="omniflow-content">
-        <div className="omniflow-content-inner">
-          <SectionCard>
-            <p style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>{t.terms.heading}</p>
-            <div>
-              <div style={{ display: "flex", gap: 4, alignItems: "baseline" }}>
-                <span style={{ fontSize: 14 }}>{t.terms.lastUpdatedLabel}</span>
-                <span style={{ fontSize: 16, fontWeight: 600 }}>{t.terms.lastUpdatedValue}</span>
+    <div className="w-full select-none">
+      <div className="w-full flex flex-col gap-4">
+          {/* Title */}
+          <h2 className="text-xl font-bold text-slate-800 text-center py-2">
+            {t.header.terms.title}
+          </h2>
+
+          <SectionCard className="p-6 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-6 text-slate-800">
+            {/* Header info */}
+            <div className="flex flex-col gap-2 border-b border-neutral-100 pb-4">
+              <p className="text-lg font-bold text-slate-900 m-0">{t.terms.heading}</p>
+              <div className="flex gap-2 items-baseline text-xs text-slate-500">
+                <span>{t.terms.lastUpdatedLabel}</span>
+                <span className="font-semibold text-slate-700">{t.terms.lastUpdatedValue}</span>
               </div>
-              <p style={{ fontSize: 14, margin: "8px 0 0" }}>{t.terms.intro}</p>
+              <p className="text-sm text-slate-600 leading-relaxed mt-2 m-0">{t.terms.intro}</p>
             </div>
-            {t.terms.sections.map((section) => (
-              <div key={section.heading}>
-                <p style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>{section.heading}</p>
-                <p style={{ fontSize: 14, margin: "8px 0 0" }}>{section.body}</p>
-                {section.list && (
-                  <ul style={{ fontSize: 14, margin: "8px 0 0" }}>
-                    {section.list.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                )}
-                {section.trailing && <p style={{ fontSize: 14, margin: "8px 0 0" }}>{section.trailing}</p>}
-              </div>
-            ))}
+
+            {/* Sections content */}
+            <div className="flex flex-col gap-5">
+              {t.terms.sections.map((section) => (
+                <div key={section.heading} className="flex flex-col gap-2">
+                  <h3 className="text-sm font-bold text-slate-900 m-0">{section.heading}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed m-0">{section.body}</p>
+                  
+                  {section.list && (
+                    <ul className="list-disc pl-5 text-xs text-slate-600 flex flex-col gap-1.5 mt-1.5">
+                      {section.list.map((item) => (
+                        <li key={item} className="pl-1">{item}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {section.trailing && (
+                    <p className="text-xs text-slate-600 leading-relaxed m-0 mt-1">{section.trailing}</p>
+                  )}
+                </div>
+              ))}
+            </div>
           </SectionCard>
-          <Footer />
-        </div>
+
       </div>
-    </>
+    </div>
   );
 };
 

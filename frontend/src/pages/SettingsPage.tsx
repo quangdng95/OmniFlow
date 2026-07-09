@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Button, Checkbox, Input, Radio } from "antd";
-import { FolderOutlined } from "@ant-design/icons";
-import Header, { type Page } from "../components/Header";
-import Footer from "../components/Footer";
+import { Folder } from "lucide-react";
+import { type Page } from "../components/Header";
 import SectionCard from "../components/SectionCard";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { api } from "../api";
 import { useLanguage } from "../i18n/LanguageContext";
 import type { Language } from "../i18n/translations";
@@ -13,16 +14,23 @@ interface SettingsPageProps {
   onNavigate: (page: Page) => void;
 }
 
-const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
+const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
   const { t, language, setLanguage } = useLanguage();
   const [path, setPath] = useState("");
   const [rememberPath, setRememberPath] = useState(true);
+  const [playlistLimit, setPlaylistLimit] = useState(100);
 
   useEffect(() => {
     void api.getSettings().then((settings) => {
       setPath(settings.path);
+      setPlaylistLimit(settings.playlist_limit ?? 100);
     });
   }, []);
+
+  const handlePlaylistLimitChange = async (newVal: number) => {
+    setPlaylistLimit(newVal);
+    await api.updateSettings({ playlist_limit: newVal });
+  };
 
   const handleBrowse = async () => {
     try {
@@ -34,50 +42,146 @@ const SettingsPage = ({ onNavigate }: SettingsPageProps) => {
     }
   };
 
+  const handlePathChange = async (newVal: string) => {
+    setPath(newVal);
+    await api.updateSettings({ path: newVal });
+  };
+
   return (
-    <>
-      <Header active="settings" onNavigate={onNavigate} />
-      <div className="omniflow-content">
-        <div className="omniflow-content-inner">
+    <div className="w-full select-none">
+      <div className="w-full flex flex-col gap-4">
+          {/* Title */}
+          <h2 className="text-xl font-bold text-slate-800 text-center py-2">
+            {t.header.settings.title}
+          </h2>
+
           {isLocal() && (
-            <SectionCard>
-              <p style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>{t.settingsPage.targetPath.heading}</p>
-              <div style={{ width: "100%" }}>
-                <div style={{ fontSize: 14, marginBottom: 4 }}>
-                  <span style={{ color: "#ff4d4f" }}>*</span> {t.settingsPage.targetPath.description}
+            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
+              <p className="text-base font-semibold text-slate-800 m-0">
+                {t.settingsPage.targetPath.heading}
+              </p>
+              
+              <div className="flex flex-col gap-2.5 w-full">
+                <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
+                  <span className="text-red-500 font-bold mr-1">*</span>
+                  {t.settingsPage.targetPath.description}
+                </p>
+
+                <div className="flex items-center gap-2 border border-slate-200 bg-white rounded-lg pl-3 pr-2 py-1.5 focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-100 transition-all w-full">
+                  <Folder className="h-4 w-4 text-slate-400 shrink-0" />
+                  <input
+                    value={path}
+                    onChange={(e) => handlePathChange(e.target.value)}
+                    className="flex-1 bg-transparent border-0 outline-none text-sm text-slate-900 placeholder:text-muted-foreground min-w-0"
+                  />
+                  <button
+                    onClick={handleBrowse}
+                    type="button"
+                    className="text-xs font-bold text-[#0d9585] hover:text-[#0b7e70] transition-colors px-2 py-1 focus:outline-none cursor-pointer shrink-0"
+                  >
+                    {t.settingsPage.targetPath.browse}
+                  </button>
                 </div>
-                <Input
-                  value={path}
-                  onChange={(e) => setPath(e.target.value)}
-                  onBlur={() => void api.updateSettings({ path })}
-                  suffix={
-                    <Button type="primary" size="small" icon={<FolderOutlined />} onClick={handleBrowse}>
-                      {t.settingsPage.targetPath.browse}
-                    </Button>
-                  }
-                />
               </div>
-              <Checkbox checked={rememberPath} onChange={(e) => setRememberPath(e.target.checked)}>
-                {t.settingsPage.targetPath.rememberPath}
-              </Checkbox>
+
+              <div className="flex items-center gap-2 p-1 select-none">
+                <Checkbox
+                  checked={rememberPath}
+                  onCheckedChange={(checked) => setRememberPath(!!checked)}
+                  id="remember-path-checkbox"
+                />
+                <label
+                  htmlFor="remember-path-checkbox"
+                  className="text-xs font-semibold text-slate-700 cursor-pointer"
+                >
+                  {t.settingsPage.targetPath.rememberPath}
+                </label>
+              </div>
             </SectionCard>
           )}
 
-          <SectionCard>
-            <p style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>{t.settingsPage.language.heading}</p>
-            <p style={{ fontSize: 14, margin: 0 }}>{t.settingsPage.language.description}</p>
-            <Radio.Group value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <Radio value="en">{t.settingsPage.language.english}</Radio>
-                <Radio value="vi">{t.settingsPage.language.vietnamese}</Radio>
+          <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
+            <p className="text-base font-semibold text-slate-800 m-0">
+              {t.settingsPage.language.heading}
+            </p>
+            <p className="text-xs text-slate-500 m-0">
+              {t.settingsPage.language.description}
+            </p>
+            
+            <RadioGroup
+              value={language}
+              onValueChange={(val) => setLanguage(val as Language)}
+              className="flex flex-col gap-3 mt-2"
+            >
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="en" id="lang-en" />
+                <Label htmlFor="lang-en" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                  {t.settingsPage.language.english}
+                </Label>
               </div>
-            </Radio.Group>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="vi" id="lang-vi" />
+                <Label htmlFor="lang-vi" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                  {t.settingsPage.language.vietnamese}
+                </Label>
+              </div>
+            </RadioGroup>
           </SectionCard>
 
-          <Footer />
-        </div>
+          <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
+            <p className="text-base font-semibold text-slate-800 m-0">
+              {t.settingsPage.playlistLimit.heading}
+            </p>
+            <p className="text-xs text-slate-500 m-0">
+              {t.settingsPage.playlistLimit.description}
+            </p>
+            
+            <RadioGroup
+              value={playlistLimit.toString()}
+              onValueChange={(val) => handlePlaylistLimitChange(parseInt(val, 10))}
+              className="flex flex-col gap-3 mt-2"
+            >
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="30" id="limit-30" />
+                <Label htmlFor="limit-30" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                  {t.settingsPage.playlistLimit.option30}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="50" id="limit-50" />
+                <Label htmlFor="limit-50" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                  {t.settingsPage.playlistLimit.option50}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="100" id="limit-100" />
+                <Label htmlFor="limit-100" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                  {t.settingsPage.playlistLimit.option100}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="200" id="limit-200" />
+                <Label htmlFor="limit-200" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                  {t.settingsPage.playlistLimit.option200}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="500" id="limit-500" />
+                <Label htmlFor="limit-500" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                  {t.settingsPage.playlistLimit.option500}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="0" id="limit-all" />
+                <Label htmlFor="limit-all" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                  {t.settingsPage.playlistLimit.optionAll}
+                </Label>
+              </div>
+            </RadioGroup>
+          </SectionCard>
+
       </div>
-    </>
+    </div>
   );
 };
 

@@ -1,7 +1,6 @@
-import { Button, Divider } from "antd";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Logo from "./Logo";
-import { HEADER_BG } from "../theme";
 import { useLanguage } from "../i18n/LanguageContext";
 
 export type Page = "home" | "settings" | "terms";
@@ -22,30 +21,26 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
 
   return (
     <motion.div
-      className="omniflow-header"
+      className="w-full bg-[#fbfbf9] border-b border-neutral-200/40 shadow-md flex justify-center py-4 px-6 select-none"
       initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      style={{ background: HEADER_BG }}
     >
-      <div className="omniflow-header-inner">
-        <div className="omniflow-nav" style={{ display: "flex", gap: 24 }}>
+      <div className="w-full max-w-[680px] flex flex-col gap-4 items-center">
+        {/* Navigation */}
+        <div className="flex gap-6 items-center justify-center w-full">
           {navItems.map((item) => {
             const isActive = active === item.key;
             return (
               <Button
                 key={item.key}
-                type="text"
-                aria-current={isActive ? "page" : undefined}
-                style={{
-                  color: isActive ? "#0d9585" : "rgba(31, 41, 55, 0.65)",
-                  fontWeight: isActive ? 600 : 500,
-                  borderBottom: isActive ? "2px solid #0d9585" : "2px solid transparent",
-                  borderRadius: 0,
-                  padding: "0 4px",
-                  height: 36,
-                  transition: "all 0.2s ease",
-                }}
+                variant={isActive ? "default" : "secondary"}
+                size="sm"
+                className={`font-medium ${
+                  isActive 
+                    ? "bg-[#171717] text-[#fafafa] shadow-sm" 
+                    : "bg-[#f5f5f5] text-[#171717] hover:bg-neutral-200"
+                }`}
                 onClick={() => onNavigate(item.key)}
               >
                 {item.label}
@@ -54,21 +49,23 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
           })}
         </div>
 
-        <Divider style={{ borderColor: "rgba(0,0,0,0.06)", margin: 0 }} />
+        {/* Divider */}
+        <div className="w-full h-px bg-neutral-200" />
 
-        <Logo size="large" />
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 16, color: "#1f2937" }}>
-          <h1 className="omniflow-heading-title" style={{ margin: 0, fontSize: 24, fontWeight: 600, lineHeight: "32px", color: "#1f2937" }}>
-            {t.header[active].title}
-          </h1>
-          {active === "home" && (
-            <div style={{ fontSize: 14, lineHeight: "20px", color: "rgba(31, 41, 55, 0.75)" }}>
-              {t.header.home.descriptionLine1} <br />
-              {t.header.home.descriptionLine2}
+        {/* Logo, Title & Description (Home Page Only) */}
+        {active === "home" && (
+          <>
+            <Logo size="large" />
+            <div className="flex flex-col gap-2 items-center text-center select-none">
+              <h1 className="font-semibold text-xl text-[#334155] leading-snug">
+                {t.header.home.title}
+              </h1>
+              <div className="text-sm font-light text-neutral-500 leading-relaxed whitespace-pre-line max-w-[480px]">
+                {t.header.home.descriptionLine1} {t.header.home.descriptionLine2}
+              </div>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </motion.div>
   );

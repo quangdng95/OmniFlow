@@ -401,7 +401,7 @@ describe("HomePage with a playlist result", () => {
 
     // Per-row status shows inline in the list from the poll.
     await screen.findByText(/40% Downloading/i); // row 1
-    await screen.findByText(/✅ Downloaded/); // row 2
+    await screen.findByText("Downloaded"); // row 2
     // While a batch runs, the global footer shows overall progress + Cancel Download.
     expect(screen.getByText(/1\/2 Downloaded/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /cancel download/i })).toBeInTheDocument();

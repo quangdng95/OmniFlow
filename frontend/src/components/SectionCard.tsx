@@ -1,30 +1,23 @@
 import type { CSSProperties, ReactNode } from "react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface SectionCardProps {
   children: ReactNode;
   style?: CSSProperties;
+  className?: string;
 }
 
-const SectionCard = ({ children, style }: SectionCardProps) => (
+const SectionCard = ({ children, style, className }: SectionCardProps) => (
   <motion.div
-    className="omniflow-card"
+    className={cn(
+      "bg-white/85 backdrop-blur-[12px] border border-black/5 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.02),_0_1px_2px_rgba(0,0,0,0.01)] w-full flex flex-col gap-4 p-4",
+      className
+    )}
     initial={{ opacity: 0, y: 24 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.45, ease: "easeOut" }}
-    style={{
-      background: "rgba(255, 255, 255, 0.85)",
-      backdropFilter: "blur(12px)",
-      WebkitBackdropFilter: "blur(12px)",
-      border: "1px solid rgba(0, 0, 0, 0.05)",
-      borderRadius: 16,
-      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01)",
-      width: "100%",
-      display: "flex",
-      flexDirection: "column",
-      gap: 16,
-      ...style,
-    }}
+    style={style}
   >
     {children}
   </motion.div>
