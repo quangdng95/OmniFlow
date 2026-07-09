@@ -31,7 +31,7 @@ def test_load_session_returns_default_on_malformed_json(isolated_config):
 def test_save_and_load_session_round_trip(isolated_config, tmp_path):
     save_session(str(tmp_path))
     session = load_session()
-    assert session == {"path": str(tmp_path), "cookies_path": "", "browser": "chrome"}
+    assert session == {"path": str(tmp_path), "cookies_path": "", "browser": "chrome", "playlist_limit": 100}
 
 
 def test_save_and_load_session_round_trip_with_cookies_path(isolated_config, tmp_path):
@@ -39,7 +39,7 @@ def test_save_and_load_session_round_trip_with_cookies_path(isolated_config, tmp
     cookies_file.write_text("# fake cookies file")
     save_session(str(tmp_path), str(cookies_file))
     session = load_session()
-    assert session == {"path": str(tmp_path), "cookies_path": str(cookies_file), "browser": "chrome"}
+    assert session == {"path": str(tmp_path), "cookies_path": str(cookies_file), "browser": "chrome", "playlist_limit": 100}
 
 
 def test_load_session_self_heals_stale_path_to_real_downloads(isolated_config):

@@ -233,7 +233,7 @@ def instagram_check_response(url, media):
     return {"type": "playlist", "platform": platform, "title": title, "items": entries}
 
 
-def fetch_instagram_profile_instaloader(username, cookiefile_path=None):
+def fetch_instagram_profile_instaloader(username, cookiefile_path=None, limit=30):
     L = instaloader.Instaloader(
         download_pictures=False,
         download_videos=False,
@@ -265,7 +265,7 @@ def fetch_instagram_profile_instaloader(username, cookiefile_path=None):
     
     count = 0
     for post in posts:
-        if count >= 30:
+        if count >= limit:
             break
             
         if not post.is_video:
@@ -317,13 +317,20 @@ def fetch_instagram_profile_reel_media(username, cookies_path, limit=30):
 
     entries = []
     max_id = None
-    while len(entries) < limit:
+    # Cap the number of API pages regardless of `limit` - each page takes up to
+    # 12s when Instagram is slow, and fetching 10+ pages = 2+ minutes of wait.
+    # 3 pages × ~12 items/page = ~36 items, which comfortably covers our limit
+    # of 30. If a profile has far fewer videos per page, we'll still loop until
+    # more_available is False.
+    max_pages = 5
+    pages_fetched = 0
+    while len(entries) < limit and pages_fetched < max_pages:
         api_url = f"https://www.instagram.com/api/v1/feed/user/{user_id}/"
         if max_id:
             api_url += f"?max_id={urllib.parse.quote(max_id)}"
         req = urllib.request.Request(api_url, headers=headers)
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=12) as resp:
                 payload = json.loads(resp.read().decode("utf-8", "replace"))
         except urllib.error.HTTPError as e:
             if e.code in (301, 302, 401, 403):
@@ -332,6 +339,7 @@ def fetch_instagram_profile_reel_media(username, cookies_path, limit=30):
         except urllib.error.URLError as e:
             raise InstagramAuthError("Could not reach Instagram to fetch this profile (cookies).") from e
 
+        pages_fetched += 1
         for item in payload.get("items") or []:
             if item.get("media_type") != 2:  # videos/reels only - matches the prior is_video filter
                 continue
@@ -359,6 +367,7 @@ def fetch_instagram_profile_reel_media(username, cookies_path, limit=30):
     return entries
 
 
+
 def fetch_instagram_profile_info(username, cookiefile_path=None):
     cookies_dict = cookies.parse_cookies_from_file(cookiefile_path)
     session = requests.Session()
@@ -372,7 +381,7 @@ def fetch_instagram_profile_info(username, cookiefile_path=None):
     }
     
     api_url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
-    resp = session.get(api_url, headers=headers, timeout=15)
+    resp = session.get(api_url, headers=headers, timeout=8)
     
     if resp.status_code != 200:
         print(f"[debug] Instagram Web Profile API failed with status code {resp.status_code}. Response: {resp.text[:500]}", flush=True)
@@ -393,13 +402,13 @@ def fetch_instagram_profile_info_fallback(username, cookiefile_path=None):
     }
     
     api_url = f"https://www.instagram.com/{username}/?__a=1&__d=dis"
-    resp = session.get(api_url, headers=headers, timeout=15)
+    resp = session.get(api_url, headers=headers, timeout=8)
     if resp.status_code == 200:
         return resp.json()
     raise Exception(f"Fallback Instagram API returned status {resp.status_code}")
 
 
-def parse_instagram_profile_json(data, username):
+def parse_instagram_profile_json(data, username, limit=30):
     user_data = None
     if "data" in data and "user" in data["data"]:
         user_data = data["data"]["user"]
@@ -421,6 +430,9 @@ def parse_instagram_profile_json(data, username):
     seen_shortcodes = set()
     
     for edge in edges:
+        if len(parsed_entries) >= limit:
+            break
+            
         node = edge.get("node")
         if not node:
             continue

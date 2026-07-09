@@ -237,10 +237,10 @@ def test_extract_video_info_profile_tries_private_feed_api_first(monkeypatch):
     monkeypatch.setattr(
         instagram_module,
         "fetch_instagram_profile_reel_media",
-        lambda username, cookies_path: [{"id": "abc", "title": "Reel", "url": "https://www.instagram.com/reel/abc/"}],
+        lambda username, cookies_path, **kwargs: [{"id": "abc", "title": "Reel", "url": "https://www.instagram.com/reel/abc/"}],
     )
 
-    def fake_instaloader(username, cookies_path):
+    def fake_instaloader(username, cookies_path, **kwargs):
         called["instaloader"] = True
         raise AssertionError("should not fall back when the primary method succeeds")
 
@@ -260,10 +260,10 @@ def test_extract_video_info_profile_raises_instead_of_silent_empty_playlist(monk
     _no_instagram_cookies(monkeypatch)
     from backend import instagram as instagram_module
 
-    monkeypatch.setattr(instagram_module, "fetch_instagram_profile_reel_media", lambda username, cookies_path: [])
-    monkeypatch.setattr(instagram_module, "fetch_instagram_profile_instaloader", lambda username, cookies_path: [])
+    monkeypatch.setattr(instagram_module, "fetch_instagram_profile_reel_media", lambda username, cookies_path, **kwargs: [])
+    monkeypatch.setattr(instagram_module, "fetch_instagram_profile_instaloader", lambda username, cookies_path, **kwargs: [])
     monkeypatch.setattr(instagram_module, "fetch_instagram_profile_info", lambda username, cookies_path: {"user": {}})
-    monkeypatch.setattr(instagram_module, "parse_instagram_profile_json", lambda data, username: [])
+    monkeypatch.setattr(instagram_module, "parse_instagram_profile_json", lambda data, username, **kwargs: [])
 
     cls = classify.classify_url("https://www.instagram.com/someuser/reels/")
     with pytest.raises(Exception):

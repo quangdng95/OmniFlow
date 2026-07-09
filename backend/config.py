@@ -36,6 +36,7 @@ def load_session():
     path_val = default_path
     cookies_path_val = ""
     browser_val = "chrome"
+    playlist_limit_val = 100
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r") as f:
@@ -43,6 +44,7 @@ def load_session():
                 path_val = data.get("path", default_path)
                 cookies_path_val = data.get("cookies_path", "")
                 browser_val = data.get("browser", "chrome")
+                playlist_limit_val = data.get("playlist_limit", 100)
         except Exception:
             pass
 
@@ -55,14 +57,19 @@ def load_session():
             os.makedirs(default_path, exist_ok=True)
         except OSError:
             pass
-        save_session(path_val, cookies_path_val, browser_val)
+        save_session(path_val, cookies_path_val, browser_val, playlist_limit_val)
 
-    return {"path": path_val, "cookies_path": cookies_path_val, "browser": browser_val}
+    return {"path": path_val, "cookies_path": cookies_path_val, "browser": browser_val, "playlist_limit": playlist_limit_val}
 
 
-def save_session(path_val, cookies_path_val="", browser_val="chrome"):
+def save_session(path_val, cookies_path_val="", browser_val="chrome", playlist_limit_val=100):
     with open(CONFIG_FILE, "w") as f:
-        json.dump({"path": path_val, "cookies_path": cookies_path_val, "browser": browser_val}, f)
+        json.dump({
+            "path": path_val,
+            "cookies_path": cookies_path_val,
+            "browser": browser_val,
+            "playlist_limit": playlist_limit_val
+        }, f)
 
 
 def get_cookies_path():

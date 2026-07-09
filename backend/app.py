@@ -61,11 +61,13 @@ def update_settings():
     path_val = data.get("path", session["path"])
     cookies_path_val = data.get("cookies_path", session["cookies_path"])
     browser_val = data.get("browser", session.get("browser", "chrome"))
-    config.save_session(path_val, cookies_path_val, browser_val)
+    playlist_limit_val = data.get("playlist_limit", session.get("playlist_limit", 100))
+    config.save_session(path_val, cookies_path_val, browser_val, playlist_limit_val)
     return jsonify({
         "path": path_val,
         "cookies_path": cookies_path_val,
         "browser": browser_val,
+        "playlist_limit": playlist_limit_val,
         "cookies_status": config.cookies_status_for(cookies_path_val),
     })
 

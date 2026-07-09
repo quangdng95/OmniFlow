@@ -33,6 +33,8 @@ def extract_video_info(cls):
     # executes the extraction that classification dictates. It never re-derives
     # platform/kind from the URL string.
     url = cls.extraction_url
+    playlist_limit = config.load_session().get("playlist_limit", 100)
+    
     if cls.kind == classify.LinkKind.INSTAGRAM_PROFILE:
         # Use our Custom Instagram Profile/Reels Resolver to bypass Meta blocks
         username = cls.username
@@ -52,32 +54,35 @@ def extract_video_info(cls):
         try:
             print(f"[debug] Resolving Instagram profile for username: {username} using cookies: {cookies_path}", flush=True)
             entries = []
+            # Cap Instagram profile limit at a sensible default (30) for the
+            # /api/check call - loading 100+ videos via sequential API pages
+            # adds many seconds of latency. The user can refine in Settings.
+            # Never let a playlist_limit of 0 become 500 requests.
+            limit = min(playlist_limit, 30) if playlist_limit > 0 else 30
             try:
                 # Primary method: Instagram's own private feed API (2026-07-07).
                 # web_profile_info/GraphQL/instaloader all now return a post
                 # *count* with no *edges* for a profile the session doesn't
                 # own - confirmed live, see MISTAKES.md - so this must go
                 # first, not last.
-                entries = instagram.fetch_instagram_profile_reel_media(username, cookies_path)
+                entries = instagram.fetch_instagram_profile_reel_media(username, cookies_path, limit=limit)
             except Exception as e_primary:
-                print(f"[debug] Private feed API failed: {e_primary}. Trying instaloader fallback...", flush=True)
+                # Only try fallbacks if primary totally failed (not just slow).
+                # Each fallback adds up to 15s timeout, so keep the chain short.
+                print(f"[debug] Private feed API failed: {e_primary}. Trying Web Profile API fallback...", flush=True)
+                data = None
                 try:
-                    entries = instagram.fetch_instagram_profile_instaloader(username, cookies_path)
-                except Exception as e_insta:
-                    print(f"[debug] Instaloader profile fetch failed: {e_insta}. Trying Web Profile API fallback...", flush=True)
-                    data = None
+                    data = instagram.fetch_instagram_profile_info(username, cookies_path)
+                except Exception as e1:
+                    print(f"[debug] fetch_instagram_profile_info failed: {e1}. Trying Graph API fallback...", flush=True)
                     try:
-                        data = instagram.fetch_instagram_profile_info(username, cookies_path)
-                    except Exception as e1:
-                        print(f"[debug] fetch_instagram_profile_info failed: {e1}. Trying Graph API fallback...", flush=True)
-                        try:
-                            data = instagram.fetch_instagram_profile_info_fallback(username, cookies_path)
-                        except Exception as e2:
-                            print(f"[debug] Instagram fallback profile fetch also failed: {e2}", flush=True)
-                            raise Exception(
-                                f"Failed to fetch Instagram profile: {e_primary} / {e_insta} / {e1} / {e2}"
-                            )
-                    entries = instagram.parse_instagram_profile_json(data, username)
+                        data = instagram.fetch_instagram_profile_info_fallback(username, cookies_path)
+                    except Exception as e2:
+                        print(f"[debug] All Instagram profile fallbacks failed: {e2}", flush=True)
+                        raise Exception(
+                            f"Failed to fetch Instagram profile: {e_primary} / {e1} / {e2}"
+                        )
+                entries = instagram.parse_instagram_profile_json(data, username, limit=limit)
 
             if not entries:
                 # Never a silent empty state (design-principles §3): every
@@ -121,7 +126,12 @@ def extract_video_info(cls):
         # already picked the cap (50 for an endless Mix, 100 otherwise).
         ydl_opts["noplaylist"] = False
         ydl_opts["extract_flat"] = "in_playlist"
-        ydl_opts["playlistend"] = cls.playlist_cap or classify.PLAYLIST_ITEM_CAP
+        if cls.kind == classify.LinkKind.YOUTUBE_MIX:
+            ydl_opts["playlistend"] = cls.playlist_cap or 50
+        elif playlist_limit > 0:
+            ydl_opts["playlistend"] = playlist_limit
+        else:
+            ydl_opts["playlistend"] = 10000
         ydl_opts["ignoreerrors"] = True
     else:
         ydl_opts["noplaylist"] = True

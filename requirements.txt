@@ -9,6 +9,7 @@ yt-dlp
 # Primary resolver for Instagram profile/reels listings (yt-dlp's
 # instagram:user extractor is blocked by Meta) - see backend/instagram.py.
 instaloader
+requests
 
 # Auto-extracts a logged-in Instagram sessionid straight from the local
 # browsers' cookie DBs (decrypts the macOS Keychain itself) so users don't have
@@ -17,13 +18,6 @@ instaloader
 # --cookies-from-browser, used as a more-reliable primary path plus a fallback
 # when Keychain blocks yt-dlp.
 browser_cookie3
-
-# Legacy Tkinter desktop app (legacy_tkinter_system.py, legacy_tkinter_ui.py)
-# Currently broken — see MISTAKES.md / rules/known-issues.md — kept for reference only.
-customtkinter
-pillow
-requests
-cairosvg
 
 # Testing (tests/test_server.py)
 pytest
