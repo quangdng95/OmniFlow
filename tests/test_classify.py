@@ -329,6 +329,27 @@ def test_instagram_shortcode_from_url_non_instagram_returns_none():
     assert instagram_shortcode_from_url("https://www.youtube.com/watch?v=abc") is None
 
 
+def test_instagram_shortcode_from_url_is_case_insensitive_on_domain_and_keyword():
+    # Regression: the domain/path-keyword match used to be case-sensitive,
+    # so an upper/mixed-case URL (e.g. from a source that capitalizes it)
+    # silently fell through to the unreliable generic yt-dlp path instead of
+    # the custom resolver - reported live as "Invalid link or private
+    # video"/"Unable to extract data" for a genuinely public post.
+    assert instagram_shortcode_from_url("HTTPS://WWW.INSTAGRAM.COM/REEL/DYTRs5Loe6A/") == "DYTRs5Loe6A"
+    assert instagram_shortcode_from_url("https://WWW.Instagram.COM/p/DYTRs5Loe6A/") == "DYTRs5Loe6A"
+
+
+def test_instagram_shortcode_from_url_recognizes_instagr_am_short_domain():
+    # instagr.am is Instagram's own official short domain - it does not
+    # contain the substring "instagram" (the dot breaks it) so it needs its
+    # own explicit match, both here and in get_platform_info.
+    assert instagram_shortcode_from_url("https://instagr.am/p/DYTRs5Loe6A/") == "DYTRs5Loe6A"
+
+
+def test_get_platform_info_recognizes_instagr_am_short_domain():
+    assert get_platform_info("https://instagr.am/p/DYTRs5Loe6A/") == "Instagram"
+
+
 # ---- is_playlist_url ----
 
 

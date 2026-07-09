@@ -153,14 +153,17 @@ def test_check_link_invalid_link(client, monkeypatch):
     assert resp.get_json()["error"] == "no such video"
 
 
-def test_check_link_unexpected_exception_falls_back_to_generic_message(client, monkeypatch):
+def test_check_link_unexpected_exception_is_described_not_hidden(client, monkeypatch):
+    # An unexpected (non-DownloadError) exception now still goes through
+    # describe_extraction_error instead of being swallowed into a bare
+    # "Invalid link or private video" dead end - its own message survives.
     def raise_error(url):
         raise RuntimeError("something unrelated broke")
 
     monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
     resp = client.post("/api/check", json={"url": "https://example.com/dead"})
     assert resp.status_code == 400
-    assert resp.get_json()["error"] == "Invalid link or private video"
+    assert resp.get_json()["error"] == "something unrelated broke"
 
 
 def test_check_link_instagram_with_no_session_anywhere_says_so_immediately(client):

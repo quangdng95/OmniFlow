@@ -152,7 +152,7 @@ def test_check_link_returns_error_when_info_is_empty(client, monkeypatch):
     monkeypatch.setattr(extraction_module, "extract_video_info", lambda url: None)
     resp = client.post("/api/check", json={"url": "https://youtube.com/watch?v=abc"})
     assert resp.status_code == 400
-    assert resp.get_json()["error"] == "Invalid link or private video"
+    assert "Không thể xử lý liên kết" in resp.get_json()["error"]
 
 
 def test_check_link_builds_qualities_and_duration(client, monkeypatch):

@@ -214,13 +214,12 @@ def check_link():
                 pass
         error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
         return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, config.get_cookies_path())}), 400
-    except Exception:
-        if ig_resolver_error is not None:
-            return jsonify({"error": extraction.describe_extraction_error(url, ig_resolver_error, config.get_cookies_path())}), 400
-        return jsonify({"error": "Invalid link or private video"}), 400
+    except Exception as e:
+        error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
+        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, config.get_cookies_path())}), 400
 
     if not info:
-        return jsonify({"error": "Invalid link or private video"}), 400
+        return jsonify({"error": extraction.describe_extraction_error(url, ig_resolver_error or Exception(""), config.get_cookies_path())}), 400
 
     # Two kinds of playlist resolve here:
     #  - a YouTube playlist/channel or Instagram profile (flat/resolver listing):

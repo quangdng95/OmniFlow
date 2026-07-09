@@ -107,7 +107,11 @@ def get_platform_info(url):
     url = normalize_rednote_url(url)
     url_lower = url.lower()
     if "youtube" in url_lower or "youtu.be" in url_lower: return "YouTube"
-    if "instagram" in url_lower: return "Instagram"
+    # "instagr.am" is Instagram's own official short domain - it does NOT
+    # contain the substring "instagram" (the dot breaks it), so it needs its
+    # own check or it silently falls through to the generic "Link" platform
+    # below, skipping every Instagram-specific code path entirely.
+    if "instagram" in url_lower or "instagr.am" in url_lower: return "Instagram"
     if "tiktok" in url_lower: return "TikTok"
     if "facebook.com" in url_lower or "fb.watch" in url_lower: return "Facebook"
     # "RedNote" is Xiaohongshu's international rebrand - links can come from
@@ -131,12 +135,14 @@ def get_platform_info(url):
 
 def is_instagram_profile_url(url):
     url_lower = url.lower()
-    if "instagram.com" not in url_lower:
+    if "instagram.com" not in url_lower and "instagr.am" not in url_lower:
         return False
     try:
         parsed_url = urllib.parse.urlparse(url)
         path = parsed_url.path.strip("/")
-        parts = [p for p in path.split("/") if p]
+        # Path segments are lowercased for comparison only - a path-keyword
+        # check like this must not care about case, unlike a shortcode.
+        parts = [p.lower() for p in path.split("/") if p]
         if not parts:
             return False
         # Ignore common non-profile endpoints/paths
@@ -154,13 +160,14 @@ def is_instagram_profile_url(url):
 def is_instagram_story_url(url):
     # Stories (/stories/<user>/<id>) carry no shortcode and list via a full
     # (non-flat) yt-dlp playlist extraction — a distinct kind from post/profile.
-    if "instagram.com" not in url.lower():
+    url_lower = url.lower()
+    if "instagram.com" not in url_lower and "instagr.am" not in url_lower:
         return False
     try:
         path = urllib.parse.urlparse(url).path.strip("/")
     except Exception:
         return False
-    return path.split("/", 1)[0] == "stories"
+    return path.split("/", 1)[0].lower() == "stories"
 
 
 def instagram_username_from_url(url):
@@ -180,7 +187,16 @@ def instagram_shortcode_from_url(url):
     # private media-info endpoint. Stories (/stories/<user>/<id>/) are a
     # different shape handled by the yt-dlp path, so they return None. The
     # optional leading segment tolerates the <username>/p/<shortcode> shape.
-    m = re.search(r"instagram\.com/(?:[^/]+/)?(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)", url)
+    # IGNORECASE covers both the domain (instagram.com is case-insensitive
+    # per the URL spec) and the p/reel/tv keywords; the captured shortcode
+    # itself is unaffected since [A-Za-z0-9_-] already spells out both
+    # cases explicitly and IGNORECASE never changes what a group captures.
+    # instagr.am is Instagram's own official short domain.
+    m = re.search(
+        r"(?:instagram\.com|instagr\.am)/(?:[^/]+/)?(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)",
+        url,
+        re.IGNORECASE,
+    )
     return m.group(1) if m else None
 
 
@@ -189,8 +205,9 @@ def threads_shortcode_from_url(url):
     # (query params like ?xmt=... carry no meaning for identifying the post).
     # The shortcode decodes with the exact same url-safe-base64 scheme Instagram
     # shortcodes use (confirmed live 2026-07-07) - Threads shares Instagram's
-    # media id/private-API infrastructure under a different app id.
-    m = re.search(r"threads\.(?:com|net)/@[^/]+/post/([A-Za-z0-9_-]+)", url)
+    # media id/private-API infrastructure under a different app id. IGNORECASE
+    # for the same reason as instagram_shortcode_from_url above.
+    m = re.search(r"threads\.(?:com|net)/@[^/]+/post/([A-Za-z0-9_-]+)", url, re.IGNORECASE)
     return m.group(1) if m else None
 
 

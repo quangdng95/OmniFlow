@@ -208,8 +208,12 @@ def describe_extraction_error(url, error, cookies_path=None):
     first_sentence = message.split(". ")[0].strip()
     if "github" in first_sentence.lower() or "report this issue" in first_sentence.lower():
         return "❌ Lỗi: Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau."
-        
-    return first_sentence or "Invalid link or private video"
+
+    # Last resort: an exception with no usable message at all (e.g. a bare
+    # `raise ValueError()`) reaching this point means every earlier, more
+    # specific mapping above missed it - still say something actionable
+    # instead of the old bare "Invalid link or private video" dead end.
+    return first_sentence or "❌ Lỗi: Không thể xử lý liên kết này. Vui lòng kiểm tra lại link hoặc thử lại sau."
 
 
 def _format_label_height(f):
