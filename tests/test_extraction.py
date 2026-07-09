@@ -52,6 +52,34 @@ def test_qualities_for_defaults_only_when_no_formats():
     assert qualities_for({}) == ["Best", "Audio Only"]
 
 
+def test_qualities_for_uses_youtubes_label_not_raw_height_for_ultrawide_video():
+    # Regression: a non-16:9 (e.g. ultrawide/letterboxed) source has a raw
+    # pixel `height` well below its YouTube-labeled tier - a real "2160p"
+    # stream can be as short as 1440px tall. Using raw height both shows the
+    # wrong number (e.g. "1440p" for what YouTube itself calls 2160p) and can
+    # drop a tier that's really >= 360p under the raw-height floor. Numbers
+    # below are real values pulled from a live 2.5:1 aspect-ratio video.
+    info = {
+        "formats": [
+            {"height": 170, "format_note": "240p"},
+            {"height": 256, "format_note": "360p"},
+            {"height": 342, "format_note": "480p"},
+            {"height": 512, "format_note": "720p"},
+            {"height": 768, "format_note": "1080p"},
+            {"height": 1024, "format_note": "1440p"},
+            {"height": 1440, "format_note": "2160p"},
+        ]
+    }
+    assert qualities_for(info) == [
+        "2160p", "1440p", "1080p", "720p", "480p", "360p", "Best", "Audio Only",
+    ]
+
+
+def test_qualities_for_falls_back_to_raw_height_when_format_note_is_missing_or_unparsable():
+    info = {"formats": [{"height": 720, "format_note": None}, {"height": 480, "format_note": "storyboard"}]}
+    assert qualities_for(info) == ["720p", "480p", "Best", "Audio Only"]
+
+
 def test_format_duration_formats_minutes_and_seconds():
     assert format_duration(95) == "01:35"
 

@@ -120,6 +120,21 @@ def test_apply_progress_update_ignores_downloading_status_with_no_known_total():
 # ---- build_download_options ----
 
 
+@pytest.fixture(autouse=True)
+def _no_network_quality_lookup(monkeypatch):
+    # build_download_options resolves a numbered quality label (e.g. "1080p")
+    # against the source's real formats via a lightweight yt-dlp lookup (see
+    # resolve_quality_height in extraction.py). Stub it to "no data found" by
+    # default so the rest of this file's tests - which only care about the
+    # general shape of the built options, not per-source resolution mapping
+    # - stay offline and deterministic; that falls back to treating the
+    # label's own number as the raw height, same as every existing assertion
+    # below already expects. Tests that DO care about real resolution
+    # mapping override this stub explicitly (see the resolve_quality_height
+    # tests further down).
+    monkeypatch.setattr(download_module, "_fetch_formats_for_quality_resolution", lambda *a, **k: [])
+
+
 def test_build_download_options_for_audio():
     opts = build_download_options("Audio Only", "/tmp/My Video", "/path/to/ffmpeg", [], [])
     assert opts["format"] == "bestaudio/best"
@@ -145,15 +160,20 @@ def test_build_download_options_speed_flags():
 
 def test_build_download_options_for_video_quality():
     opts = build_download_options("720p", "/tmp/My Video", "/path/to/ffmpeg", [], [])
-    # The selector prefers H.264 (avc1) at every fallback step so macOS gets a
-    # playable file, but still falls back to any codec so a download never fails.
+    # No hard vcodec filter on any alternative - a resolution cap must never
+    # be satisfied by settling for a lower-resolution avc1 stream just
+    # because one exists under the height ceiling (that was the bug: yt-dlp's
+    # "A/B/C" selector commits to the first alternative that matches
+    # anything, so a hard `[vcodec^=avc1]` filter silently downgraded
+    # resolution whenever avc1 didn't reach the requested height). Codec
+    # preference lives only in format_sort as a tie-break.
     assert opts["format"] == (
-        "bestvideo[vcodec^=avc1][height<=720]+bestaudio[ext=m4a]/"
-        "bestvideo[vcodec^=avc1][height<=720]+bestaudio/"
-        "best[vcodec^=avc1][height<=720]/"
-        "bestvideo[height<=720]+bestaudio/best[height<=720]/best"
+        "bestvideo[height<=720]+bestaudio[ext=m4a]/"
+        "bestvideo[height<=720]+bestaudio/"
+        "best[height<=720]/"
+        "best"
     )
-    assert opts["format_sort"] == ["vcodec:h264", "res", "acodec:m4a"]
+    assert opts["format_sort"] == ["res", "vcodec:h264", "acodec:m4a"]
     # PRD §7: merge straight to an mp4 container via a fast stream-copy remux -
     # NO blanket libx264 re-encode (that made "combine" slow). The rare VP9/AV1
     # straggler is re-encoded afterward by ensure_h264(), not here.
@@ -163,21 +183,57 @@ def test_build_download_options_for_video_quality():
     assert "postprocessor_args" not in opts
 
 
-def test_build_download_options_video_prefers_avc1_and_never_only_vp9():
+def test_build_download_options_video_prefers_avc1_as_a_tiebreak_not_a_filter():
     for quality in ("360p", "1080p", "Best"):
         opts = build_download_options(quality, "/tmp/v", "/ff", [], [])
-        # H.264 is the first thing tried and h264 leads the codec sort...
-        assert opts["format"].startswith("bestvideo[vcodec^=avc1]")
-        assert opts["format_sort"][0] == "vcodec:h264"
-        # ...and it never pins the download to a VP9/AV1-only selector.
+        # h264 is preferred via format_sort (a tie-break among equal
+        # resolutions), never as a hard filter that could sacrifice
+        # resolution by excluding a higher-res VP9/AV1-only format.
+        assert "vcodec^=avc1" not in opts["format"]
+        assert opts["format_sort"][0] == "res"
+        assert "vcodec:h264" in opts["format_sort"]
+        # It also never pins the download to a VP9/AV1-only selector.
         assert "vp9" not in opts["format"].lower()
         assert "av01" not in opts["format"].lower()
 
 
-def test_build_download_options_for_best_quality_maps_to_2160():
+def test_build_download_options_for_best_quality_has_no_height_cap():
+    # "Best" must always mean the single highest-resolution stream available,
+    # full stop - a hardcoded "<=2160" ceiling used to silently exclude
+    # anything above 4K, and worse, compared against raw pixel height, which
+    # can be smaller than a non-16:9 source's true top label (see
+    # resolve_quality_height) - so it could cap even lower than 4K.
     opts = build_download_options("Best", "/tmp/My Video", "/path/to/ffmpeg", [], [])
-    assert "[height<=2160]" in opts["format"]
-    assert opts["format"].startswith("bestvideo[vcodec^=avc1][height<=2160]")
+    assert "height<=" not in opts["format"]
+    assert opts["format"].startswith("bestvideo+bestaudio")
+
+
+def test_build_download_options_resolves_quality_label_to_the_sources_real_height(monkeypatch):
+    # Regression for the ultrawide-video bug: requesting the platform's own
+    # "1080p" label must download what THAT source actually calls 1080p (raw
+    # height 768 here, per format_note), not a literal height<=1080 cap that
+    # would let a higher-labeled tier (height 1024, labeled "1440p") through.
+    fake_formats = [
+        {"height": 342, "format_note": "480p"},
+        {"height": 512, "format_note": "720p"},
+        {"height": 768, "format_note": "1080p"},
+        {"height": 1024, "format_note": "1440p"},
+    ]
+    monkeypatch.setattr(download_module, "_fetch_formats_for_quality_resolution", lambda *a, **k: fake_formats)
+    opts = build_download_options("1080p", "/tmp/v", "/ff", [], [])
+    assert "[height<=768]" in opts["format"]
+    assert "height<=1080]" not in opts["format"]
+    assert "height<=1024]" not in opts["format"]
+
+
+def test_build_download_options_falls_back_to_literal_height_when_lookup_finds_no_match(monkeypatch):
+    # A platform whose extractor doesn't populate format_note (most non-
+    # YouTube sources), or a failed lookup, has no label to match against -
+    # fall back to the label's own number as a literal height, same
+    # assumption used before per-label resolution existed.
+    monkeypatch.setattr(download_module, "_fetch_formats_for_quality_resolution", lambda *a, **k: [])
+    opts = build_download_options("1080p", "/tmp/v", "/ff", [], [])
+    assert "[height<=1080]" in opts["format"]
 
 
 def test_build_download_options_includes_cookiefile_when_provided():

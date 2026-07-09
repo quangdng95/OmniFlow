@@ -6,9 +6,13 @@ extraction that classification dictates (profile resolver vs flat playlist vs
 single) and shapes the results for the frontend.
 """
 
+import re
+
 import yt_dlp
 
 from backend import classify, config, cookies, instagram
+
+_QUALITY_LABEL_RE = re.compile(r"^(\d+)p")
 
 
 def resolve_thumbnail(info):
@@ -208,16 +212,62 @@ def describe_extraction_error(url, error, cookies_path=None):
     return first_sentence or "Invalid link or private video"
 
 
+def _format_label_height(f):
+    # The platform's own displayed quality label (e.g. YouTube's "1440p",
+    # "2160p") lives in format_note. For a non-16:9 source (ultrawide/
+    # letterboxed) the raw pixel `height` can be well below the labeled tier
+    # - a real "2160p" stream can be as short as 1440px - so using raw
+    # height instead of the label both shows the wrong number to the user
+    # and (in qualities_for) makes the >= 360 floor drop tiers that are
+    # actually >= 360p by the platform's own label. Falls back to raw
+    # height when there's no parseable format_note (most non-YouTube
+    # extractors don't populate it, but their raw height already matches
+    # what the platform displays in practice).
+    h = f.get("height")
+    if not h or not isinstance(h, int):
+        return None
+    note_match = _QUALITY_LABEL_RE.match(f.get("format_note") or "")
+    return int(note_match.group(1)) if note_match else h
+
+
 def qualities_for(info):
     res_set = set()
     for f in info.get("formats", []):
-        h = f.get("height")
-        if h and isinstance(h, int) and h >= 360:
-            res_set.add(h)
+        label_height = _format_label_height(f)
+        if label_height is not None and label_height >= 360:
+            res_set.add(label_height)
     qualities = [f"{h}p" for h in sorted(res_set, reverse=True)]
     qualities.append("Best")
     qualities.append("Audio Only")
     return qualities
+
+
+def resolve_quality_height(formats, quality):
+    """Map a quality label like "1080p" (one of qualities_for()'s own
+    outputs) back to the raw pixel `height` that label actually means for
+    THIS media - not just the label's numeric value, which only equals raw
+    height for a 16:9 source (see _format_label_height). This is what makes
+    a download match the label the user picked instead of over- or under-
+    shooting it on an unusually-shaped source. Returns None for "Best"/
+    "Audio Only" (the caller should leave those uncapped) or when `quality`
+    isn't a recognized "Np" label. Falls back to treating the label's own
+    number as the raw height when no format in `formats` actually carries
+    that label (e.g. the lookup failed, or the source has no format_note at
+    all) - the same assumption used before per-label resolution existed.
+    """
+    if quality in ("Best", "Audio Only") or not quality.endswith("p"):
+        return None
+    try:
+        target_label = int(quality[:-1])
+    except ValueError:
+        return None
+    matched_height = None
+    for f in formats or []:
+        if _format_label_height(f) == target_label:
+            h = f["height"]
+            if matched_height is None or h > matched_height:
+                matched_height = h
+    return matched_height if matched_height is not None else target_label
 
 
 def format_duration(duration):

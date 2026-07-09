@@ -10,7 +10,7 @@ import urllib.request
 
 import yt_dlp
 
-from backend import config, cookies, instagram, jobs
+from backend import config, cookies, extraction, instagram, jobs
 
 
 def sanitize_filename(name):
@@ -66,6 +66,38 @@ def download_direct_url(cdn_url, output_path, job_id, chunk_size=131072, on_prog
 # ---------------------------------------------------------------------------
 
 
+def _fetch_formats_for_quality_resolution(url, cookies_path, entry_index):
+    # A lightweight metadata-only lookup so build_download_options can map a
+    # quality label (e.g. "1080p") to the raw pixel height that label
+    # actually means for THIS media (extraction.resolve_quality_height) -
+    # without it, a request for "1080p" on a non-16:9 source could silently
+    # download a different real quality than what the platform itself calls
+    # 1080p. Best-effort: any failure here just means the label's own number
+    # gets treated as a literal height ceiling, same as before per-label
+    # resolution existed.
+    opts = {"quiet": True, "no_warnings": True}
+    if entry_index:
+        opts["noplaylist"] = False
+        opts["playlist_items"] = str(entry_index)
+    else:
+        opts["noplaylist"] = True
+    if url and "instagram" in url.lower():
+        opts["http_headers"] = {"User-Agent": instagram.INSTAGRAM_UA}
+    if cookies_path:
+        opts["cookiefile"] = cookies_path
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+    except Exception:
+        return []
+    if not info:
+        return []
+    if info.get("entries"):
+        entries = [e for e in info["entries"] if e]
+        info = entries[0] if entries else info
+    return info.get("formats") or []
+
+
 def build_download_options(
     quality, output_path_no_ext, ffmpeg_bin, progress_hooks, postprocessor_hooks, cookies_path=None, entry_index=None, url=None
 ):
@@ -111,22 +143,47 @@ def build_download_options(
         opts["format"] = "bestaudio/best"
         opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}]
     else:
-        h = quality.replace("p", "").replace("Best", "2160")
-        # Strongly prefer H.264 (avc1) video + AAC (m4a) audio. macOS (Finder
-        # QuickLook / QuickTime) cannot decode VP9 or AV1 inside an .mp4 - such a
-        # file opens as a black/white screen even though the download "succeeded".
-        # yt-dlp will otherwise happily hand back VP9 for anything YouTube serves
-        # above 1080p. This format ladder tries h264 first at every step, relaxing
-        # one constraint per fallback so a download never fails outright; anything
-        # that STILL slips through as VP9/AV1 (e.g. a 4K source with no h264 track)
-        # is caught afterward by the ensure_h264() re-encode safety net in run().
+        if quality == "Best":
+            # No cap at all - always the single highest-resolution stream
+            # available, whatever that is. (Hardcoding a "2160" ceiling here
+            # used to silently exclude anything above 4K and, worse, was in
+            # the same raw-pixel-height space that can be smaller than a
+            # non-16:9 source's true top label - see resolve_quality_height.)
+            height_filter = ""
+        else:
+            # Map the label (e.g. "1080p") to the raw pixel height that
+            # label actually means for THIS media, not just its number - a
+            # non-16:9 (e.g. ultrawide/letterboxed) source's real "1080p"
+            # can have a raw height far from 1080, and using the number
+            # directly either misses that tier or lets a higher tier through
+            # unintentionally. Falls back to the literal number when the
+            # lookup fails or the source has no format_note to match against.
+            formats = _fetch_formats_for_quality_resolution(url, cookies_path, entry_index)
+            resolved_height = extraction.resolve_quality_height(formats, quality)
+            height_filter = f"[height<={resolved_height}]" if resolved_height else ""
+        # Prefer H.264 (avc1) video + AAC (m4a) audio when it doesn't cost
+        # resolution. macOS (Finder QuickLook / QuickTime) cannot decode VP9
+        # or AV1 inside an .mp4 - such a file opens as a black/white screen
+        # even though the download "succeeded" - so a hard `[vcodec^=avc1]`
+        # filter used to sit in front of every alternative below. That was a
+        # real bug: yt-dlp's "A/B/C" selector commits to the FIRST
+        # alternative that matches ANYTHING, so as soon as any avc1 format
+        # existed at all under the height cap it won - even a far lower
+        # resolution than what was actually available. YouTube commonly only
+        # ships avc1 up to 1080p, so picking "Best"/1440p/2160p silently
+        # downgraded to whatever the highest avc1 tier happened to be instead
+        # of the true best. Codec preference now lives only in format_sort as
+        # a tie-break (res ranked first), so the true highest resolution
+        # within the requested cap always wins; a VP9/AV1 pick that slips
+        # through is still caught afterward by the ensure_h264() re-encode
+        # safety net in run().
         opts["format"] = (
-            f"bestvideo[vcodec^=avc1][height<={h}]+bestaudio[ext=m4a]/"
-            f"bestvideo[vcodec^=avc1][height<={h}]+bestaudio/"
-            f"best[vcodec^=avc1][height<={h}]/"
-            f"bestvideo[height<={h}]+bestaudio/best[height<={h}]/best"
+            f"bestvideo{height_filter}+bestaudio[ext=m4a]/"
+            f"bestvideo{height_filter}+bestaudio/"
+            f"best{height_filter}/"
+            f"best"
         )
-        opts["format_sort"] = ["vcodec:h264", "res", "acodec:m4a"]
+        opts["format_sort"] = ["res", "vcodec:h264", "acodec:m4a"]
         # PRD §7: merge straight into an mp4 container. Because the selector above
         # already lands H.264 video + m4a audio in the common case, both the merge
         # and the FFmpegVideoRemuxer are a fast stream-COPY (`-c copy`) - NO
