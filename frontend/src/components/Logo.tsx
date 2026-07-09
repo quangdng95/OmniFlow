@@ -7,11 +7,11 @@ interface LogoProps {
 const Logo = ({ size = "large" }: LogoProps) => {
   if (size === "small") {
     return (
-      <div className="flex items-center gap-[2px] shrink-0 select-none">
-        <img src={logoIcon} alt="Logo" width={16} height={16} className="h-4 w-4 shrink-0" />
-        <div className="text-[#0d9585] leading-none shrink-0">
-          <div className="text-[8.35px] font-semibold">OmniFlow</div>
-          <div className="text-[4.17px] text-muted-foreground">Video Downloader</div>
+      <div className="flex items-center gap-[4.17px] shrink-0 select-none">
+        <img src={logoIcon} alt="Logo" width={32} height={32} className="h-8 w-8 shrink-0" />
+        <div className="text-slate-700 leading-none shrink-0 flex flex-col items-start">
+          <div className="text-[16.7px] font-medium font-sans">OmniFlow</div>
+          <div className="text-[8.35px] font-normal font-sans">Video Downloader</div>
         </div>
       </div>
     );

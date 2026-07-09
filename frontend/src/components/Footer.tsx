@@ -9,16 +9,14 @@ const Footer = () => {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      style={{
-        display: "flex",
-        gap: 8,
-        alignItems: "center",
-        justifyContent: "center",
-        width: "100%",
-        padding: "24px 0 8px",
-      }}
+      className="flex gap-2 items-end justify-center w-full pt-6 pb-2"
     >
-      <span style={{ fontSize: 12, color: "rgba(26,26,26,0.92)" }}>{t.footer.by}</span>
+      <p
+        className="text-xs text-slate-900 whitespace-nowrap m-0"
+        style={{ textShadow: "0px 2px 4px rgba(0,0,0,0.02), 0px 1px 6px rgba(0,0,0,0.02), 0px 1px 2px rgba(0,0,0,0.03)" }}
+      >
+        {t.footer.by}
+      </p>
       <Logo size="small" />
     </motion.div>
   );
