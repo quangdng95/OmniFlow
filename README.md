@@ -9,6 +9,7 @@
 
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#installation)
+  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/OmniFlow)](../../releases/latest)
 </div>
 
 ---
@@ -30,6 +31,17 @@ platforms creators, designers, and researchers actually pull reference material 
 </p>
 
 **YouTube · TikTok · Instagram · Facebook · RedNote (Xiaohongshu) · LinkedIn · Threads · X (Twitter)**
+
+| Platform | Single item | Bulk / multi-item | Notes |
+|---|---|---|---|
+| YouTube | ✅ Video, audio-only | ✅ Playlist, channel, Mix/Radio | |
+| TikTok | ✅ Video | — | |
+| Instagram | ✅ Post, Reel, photo | ✅ Carousel, Story, profile/Reels | Private content needs a logged-in browser session |
+| Facebook | ✅ Reel | — | |
+| RedNote (Xiaohongshu) | ✅ Video, image | — | |
+| LinkedIn | ✅ Video post, image post | — | Native document/slide-deck posts not yet supported |
+| Threads | ✅ Video post, image post | — | Needs a logged-in browser session |
+| X (Twitter) | ✅ Video post | — | |
 
 ## Features
 
@@ -70,6 +82,14 @@ Some platforms (Instagram, Threads) need a logged-in browser session to resolve 
 content — OmniFlow reads this automatically from your local browser cookies; no manual export
 needed.
 
+**Example:**
+
+```
+Paste:  https://www.youtube.com/watch?v=dQw4w9WgXcQ
+Pick:   Best
+Get:    Never Gonna Give You Up.mp4  (in ~/Downloads)
+```
+
 ## Building from source
 
 **Requirements:** Node.js, Python 3.9+, npm.
@@ -103,6 +123,42 @@ cd frontend && npm install && cd ..
   vendored `ffmpeg` for remuxing.
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, [shadcn/ui](https://ui.shadcn.com).
 - **Desktop shell:** [`pywebview`](https://pywebview.flowrl.com), packaged with PyInstaller.
+
+## Privacy
+
+OmniFlow runs entirely on your Mac. It does **not**:
+
+- Store or route your downloads through any external server
+- Track or log your download history
+- Collect or transmit personal data anywhere
+
+Browser cookies (used to resolve private Instagram/Threads content) are read locally and never
+leave your machine.
+
+## Roadmap
+
+Known gaps, tracked honestly rather than hidden:
+
+- [ ] Native `arm64` `ffmpeg` for the Apple Silicon build, so it no longer needs Rosetta 2 at
+  runtime (the Intel build's `ffmpeg` is already native)
+- [ ] Code signing + notarization, so macOS stops warning about an unidentified developer on
+  first launch
+- [ ] LinkedIn native document/slide-deck (PDF) post support
+- [ ] Windows / Linux builds
+
+## Contributing
+
+Contributions are welcome:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feat/my-feature`)
+3. Commit your changes
+4. Push to your branch and open a Pull Request
+
+## Support & Issues
+
+Found a bug or have a feature request? Open an issue on
+[GitHub Issues](https://github.com/quangdng95/OmniFlow/issues).
 
 ## Disclaimer
 
