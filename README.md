@@ -73,8 +73,8 @@ needed.
 
 ```bash
 # clone and enter the repo
-git clone https://github.com/quangdng95/OnmiDown.git
-cd OnmiDown
+git clone https://github.com/quangdng95/OmniFlow.git
+cd OmniFlow
 
 # one-time setup
 python3 -m venv .venv && source .venv/bin/activate
