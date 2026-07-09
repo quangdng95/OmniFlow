@@ -106,8 +106,8 @@ cd frontend && npm install && cd ..
 OmniFlow is built for **personal, non-commercial use** — research, study, and archiving your own
 reference material. You are solely responsible for the copyright status of anything you download
 and for complying with each platform's Terms of Service. The developers provide this tool "AS IS"
-with zero liability for how it's used — see [DISCLAIMER.md](DISCLAIMER.md) for the full legal
-disclaimer and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for the acceptable-use policy.
+with zero liability for how it's used — see [DISCLAIMER.md](.github/DISCLAIMER.md) for the full legal
+disclaimer and [CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md) for the acceptable-use policy.
 
 ## License
 
