@@ -7,7 +7,7 @@
 
   Paste a link. Get the file. No watermarks, no ads, no anti-bot dead ends.
 
-  [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+  [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#installation)
 </div>
 
@@ -103,12 +103,12 @@ cd frontend && npm install && cd ..
 
 ## Disclaimer
 
-OmniFlow is built for **personal, fair-use** purposes — research, study, and archiving your own
-reference material. You are responsible for the copyright status of anything you download. This
-project is not intended for mass scraping or for re-uploading downloaded content for profit, and
-it is not affiliated with, endorsed by, or liable for changes made by any of the source platforms
-(YouTube, Meta, RedNote, etc.) that may break a feature.
+OmniFlow is built for **personal, non-commercial use** — research, study, and archiving your own
+reference material. You are solely responsible for the copyright status of anything you download
+and for complying with each platform's Terms of Service. The developers provide this tool "AS IS"
+with zero liability for how it's used — see [DISCLAIMER.md](DISCLAIMER.md) for the full legal
+disclaimer and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for the acceptable-use policy.
 
 ## License
 
-Licensed under the [Apache License 2.0](LICENSE).
+Licensed under the [GNU General Public License v3.0](LICENSE).
