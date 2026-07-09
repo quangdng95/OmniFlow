@@ -18,8 +18,12 @@ hiddenimports = []
 # in pyobjc — both need everything collected or the frozen app breaks at runtime.
 # browser_cookie3 is imported lazily (inside cookiefiles_from_browsers) and pulls
 # in C-extension deps (lz4, pycryptodomex); collect it so the frozen app can still
-# auto-extract Instagram cookies from the user's browser.
-for pkg in ("yt_dlp", "webview", "browser_cookie3"):
+# auto-extract Instagram cookies from the user's browser. curl_cffi wraps a
+# native libcurl-impersonate binary yt-dlp uses to impersonate a real
+# browser's TLS/HTTP fingerprint (see requirements.txt) - without collecting
+# it explicitly the frozen app would silently lack impersonation even though
+# curl_cffi is installed at build time.
+for pkg in ("yt_dlp", "webview", "browser_cookie3", "curl_cffi"):
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(pkg)
     datas += pkg_datas
     binaries += pkg_binaries

@@ -175,28 +175,49 @@ def extract_video_info(cls):
 def describe_extraction_error(url, error, cookies_path=None):
     message = str(error)
     lower = message.lower()
+    # A bare builtin exception (ValueError, KeyError, TypeError, ...) means
+    # something broke unexpectedly deep inside an extractor (e.g. a yt-dlp
+    # internal bug hitting `int('')` while parsing a platform's response) -
+    # its message is raw Python internals, not something meant for a user to
+    # read, unlike a DownloadError/InstagramAuthError/etc. that this
+    # codebase (or yt-dlp itself) deliberately raises with a real
+    # explanation. Never let the former leak through as the final fallback
+    # below.
+    is_trusted_message = type(error).__module__ != "builtins"
     
     # Instagram profile / user failures
     is_ig_profile = classify.is_instagram_profile_url(url)
     if is_ig_profile or "instagram:user" in lower or "instagram:profile" in lower or ("unable to extract data" in lower and "instagram" in url.lower()):
         return "❌ Lỗi: Không thể lấy danh sách từ tài khoản Instagram này do giới hạn bảo mật. Vui lòng tải từng bài viết (Post/Reel) hoặc kiểm tra lại Cookies trong Settings."
 
-    # Instagram, TikTok, Facebook private/login required errors
+    # A platform (TikTok especially) temporarily rate-limiting/blocking this
+    # machine's IP is a distinct failure from a private account and deserves
+    # its own clear message - lumping it into "Private account" below is
+    # actively misleading. Checked before the private/login patterns since
+    # "blocked" can otherwise get masked by an unrelated coincidental match.
+    if "ip address is blocked" in lower or "blocked from accessing" in lower:
+        return "❌ Lỗi: IP của bạn đang tạm thời bị nền tảng này chặn/giới hạn. Vui lòng thử lại sau ít phút hoặc đổi mạng."
+
+    # Instagram, TikTok, Facebook private/login required errors. "302"/"400"
+    # match an HTTP status code via a word boundary - a bare substring check
+    # used to false-positive on those digits appearing inside an unrelated
+    # video ID (e.g. "...5400105274..." contains "400"), misreporting a
+    # completely different failure (confirmed live on a real TikTok video)
+    # as "Private account".
     is_private_or_login = (
-        "login" in lower or 
-        "cookie" in lower or 
-        "confirm your identity" in lower or 
-        "requires logged-in session" in lower or 
-        "private video" in lower or 
-        "private account" in lower or 
-        "only available for registered users" in lower or 
+        "login" in lower or
+        "cookie" in lower or
+        "confirm your identity" in lower or
+        "requires logged-in session" in lower or
+        "private video" in lower or
+        "private account" in lower or
+        "only available for registered users" in lower or
         "empty media response" in lower or
-        "302" in lower or
-        "400" in lower or
+        re.search(r"\b(?:302|400)\b", lower) or
         "redirect" in lower
     )
     is_major_platform = any(p in url.lower() for p in ("instagram", "tiktok", "facebook", "fb.watch", "fb.com"))
-    
+
     if is_major_platform and is_private_or_login:
         return "❌ Lỗi: Không thể tải video từ tài khoản Private (Kín). OmniFlow hiện tại chỉ hỗ trợ tải nội dung Public (Công khai)."
 
@@ -204,16 +225,21 @@ def describe_extraction_error(url, error, cookies_path=None):
     if "unable to extract data" in lower or "traceback" in lower or "report this issue" in lower or "github.com" in lower:
         return "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung."
         
+    generic_fallback = "❌ Lỗi: Không thể xử lý liên kết này. Vui lòng kiểm tra lại link hoặc thử lại sau."
+    if not is_trusted_message:
+        return generic_fallback
+
     message = message.removeprefix("ERROR: ")
     first_sentence = message.split(". ")[0].strip()
     if "github" in first_sentence.lower() or "report this issue" in first_sentence.lower():
         return "❌ Lỗi: Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau."
 
     # Last resort: an exception with no usable message at all (e.g. a bare
-    # `raise ValueError()`) reaching this point means every earlier, more
-    # specific mapping above missed it - still say something actionable
-    # instead of the old bare "Invalid link or private video" dead end.
-    return first_sentence or "❌ Lỗi: Không thể xử lý liên kết này. Vui lòng kiểm tra lại link hoặc thử lại sau."
+    # `raise SomeCustomError()`) reaching this point means every earlier,
+    # more specific mapping above missed it - still say something
+    # actionable instead of the old bare "Invalid link or private video"
+    # dead end.
+    return first_sentence or generic_fallback
 
 
 def _format_label_height(f):

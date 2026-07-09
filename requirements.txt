@@ -6,6 +6,14 @@ pywebview
 # is no longer used by any code path.
 yt-dlp
 
+# yt-dlp's TikTok extractor (and others with heavy anti-bot measures) uses
+# this to impersonate a real Chrome's TLS/HTTP fingerprint. Without it
+# installed, yt-dlp logs "attempting impersonation, but no impersonate
+# target is available" and TikTok extraction is far more likely to be
+# blocked/challenged - confirmed live (2026-07-09): a real TikTok video hit
+# an internal yt-dlp parsing crash without curl_cffi installed.
+curl_cffi
+
 # Primary resolver for Instagram profile/reels listings (yt-dlp's
 # instagram:user extractor is blocked by Meta) - see backend/instagram.py.
 instaloader

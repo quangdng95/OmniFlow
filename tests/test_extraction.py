@@ -122,6 +122,28 @@ def test_describe_extraction_error_special_cases_instagram_private_post_message(
     assert "Không thể tải video từ tài khoản Private" in message
 
 
+def test_describe_extraction_error_ip_blocked_is_not_reported_as_private_account():
+    # Regression: reported live on a real TikTok video. The bare substring
+    # check for "400" used to match the digits embedded inside the video
+    # ID ("...5400105274...") and misreport an IP block as "Private
+    # account" - a completely different, actionable-differently failure.
+    error = yt_dlp.utils.DownloadError(
+        "ERROR: [TikTok] 7632605400105274: Your IP address is blocked from accessing this post"
+    )
+    message = describe_extraction_error("https://www.tiktok.com/@x/video/7632605400105274", error)
+    assert "IP" in message
+    assert "Private" not in message
+
+
+def test_describe_extraction_error_real_http_400_still_maps_to_private_account():
+    # The word-boundary fix must not break the legitimate case: a real
+    # "HTTP Error 400" (with actual word boundaries around the digits)
+    # still maps to the private/login-required message as before.
+    error = yt_dlp.utils.DownloadError("ERROR: [Instagram] abc: HTTP Error 400: Bad Request")
+    message = describe_extraction_error("https://www.instagram.com/p/abc/", error)
+    assert "Không thể tải video từ tài khoản Private" in message
+
+
 def test_describe_extraction_error_instagram_cookies_without_session_flags_the_file(tmp_path):
     cookies_file = tmp_path / "cookies.txt"
     cookies_file.write_text("# no session in here\n")

@@ -153,17 +153,36 @@ def test_check_link_invalid_link(client, monkeypatch):
     assert resp.get_json()["error"] == "no such video"
 
 
-def test_check_link_unexpected_exception_is_described_not_hidden(client, monkeypatch):
-    # An unexpected (non-DownloadError) exception now still goes through
-    # describe_extraction_error instead of being swallowed into a bare
-    # "Invalid link or private video" dead end - its own message survives.
+def test_check_link_bare_builtin_exception_never_leaks_raw_message(client, monkeypatch):
+    # Regression: a bare builtin exception (e.g. a yt-dlp internal bug
+    # hitting `int('')` while parsing a platform's response - reported live
+    # for a TikTok video) used to leak its raw Python message straight to
+    # the user ("invalid literal for int() with base 10: ''"). Only a
+    # trusted exception type (DownloadError, InstagramAuthError, etc. -
+    # something this codebase or yt-dlp deliberately raises with a real
+    # explanation) gets its message surfaced; a bare builtin always gets
+    # the generic fallback instead.
     def raise_error(url):
-        raise RuntimeError("something unrelated broke")
+        raise ValueError("invalid literal for int() with base 10: ''")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
+    resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@x/video/123"})
+    assert resp.status_code == 400
+    assert "invalid literal" not in resp.get_json()["error"]
+    assert "Không thể xử lý liên kết" in resp.get_json()["error"]
+
+
+def test_check_link_trusted_exception_message_is_described_not_hidden(client, monkeypatch):
+    # A yt-dlp DownloadError (or other trusted type) is deliberately raised
+    # with a real explanation, so it still surfaces instead of being
+    # swallowed into a generic dead end.
+    def raise_error(url):
+        raise yt_dlp.utils.DownloadError("ERROR: something specific and real broke")
 
     monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
     resp = client.post("/api/check", json={"url": "https://example.com/dead"})
     assert resp.status_code == 400
-    assert resp.get_json()["error"] == "something unrelated broke"
+    assert resp.get_json()["error"] == "something specific and real broke"
 
 
 def test_check_link_instagram_with_no_session_anywhere_says_so_immediately(client):
