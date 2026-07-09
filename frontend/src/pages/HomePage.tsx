@@ -327,7 +327,13 @@ const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
             qualityDisabled={checking || downloadState === "downloading" || busy}
           />
 
-          {checking && <CheckingStatusCard seconds={checkSeconds} onCancel={handleCancelCheck} />}
+          {checking && (
+            <CheckingStatusCard
+              seconds={checkSeconds}
+              onCancel={handleCancelCheck}
+              showKeychainHint={isLocal() && /instagram|instagr\.am|threads\.(com|net)/i.test(url)}
+            />
+          )}
 
           {!checking && !checkResult && (
             <AnimatedSection className="flex flex-col gap-8 text-[#1f2937] w-full">

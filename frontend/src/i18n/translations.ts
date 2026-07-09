@@ -18,7 +18,7 @@ export interface Translations {
     removeUrl: string;
     checkFailedRetryHint: string; // appended to a failed check's error message
   };
-  checkingStatus: { checkingLink: string; cancel: string };
+  checkingStatus: { checkingLink: string; cancel: string; keychainHint: string };
   playlist: {
     heading: string;
     empty: string;
@@ -126,7 +126,12 @@ const en: Translations = {
     removeUrl: "Remove URL",
     checkFailedRetryHint: "Please clear the URL and paste the link again to try once more.",
   },
-  checkingStatus: { checkingLink: "Checking Link…", cancel: "Cancel" },
+  checkingStatus: {
+    checkingLink: "Checking Link…",
+    cancel: "Cancel",
+    keychainHint:
+      "🔐 macOS may ask for Keychain permission to read your Instagram/Threads login from your browser — this is expected, click \"Always Allow\" so it only happens once.",
+  },
   playlist: {
     heading: "Select items to download",
     empty: "This story has no downloadable video content.",
@@ -319,7 +324,12 @@ const vi: Translations = {
     removeUrl: "Gỡ đường dẫn",
     checkFailedRetryHint: "Vui lòng xoá đường dẫn và dán lại link để thử lại.",
   },
-  checkingStatus: { checkingLink: "Đang kiểm tra đường dẫn…", cancel: "Huỷ" },
+  checkingStatus: {
+    checkingLink: "Đang kiểm tra đường dẫn…",
+    cancel: "Huỷ",
+    keychainHint:
+      "🔐 macOS có thể hỏi quyền Keychain để đọc phiên đăng nhập Instagram/Threads từ trình duyệt của bạn — đây là điều bình thường, hãy chọn \"Always Allow\" để chỉ cần cấp quyền một lần.",
+  },
   playlist: {
     heading: "Chọn các mục để tải",
     empty: "Story này không có video nào để tải.",
