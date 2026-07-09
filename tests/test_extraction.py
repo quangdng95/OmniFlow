@@ -122,6 +122,24 @@ def test_describe_extraction_error_special_cases_instagram_private_post_message(
     assert "Không thể tải video từ tài khoản Private" in message
 
 
+def test_describe_extraction_error_network_failure_gets_its_own_message():
+    # ConnectionError/TimeoutError/socket.gaierror are bare builtin
+    # exceptions (module "builtins"/"socket"), so without a dedicated check
+    # they'd otherwise fall into the generic "something broke" fallback -
+    # hiding a real "you're offline" failure behind a message that gives no
+    # actionable hint. Regression guard for the case reported live where
+    # every link failed identically on one specific machine.
+    import socket
+
+    for error in (
+        ConnectionError("Connection refused"),
+        TimeoutError("timed out"),
+        socket.gaierror("Name or service not known"),
+    ):
+        message = describe_extraction_error("https://www.youtube.com/watch?v=abc", error)
+        assert "kết nối mạng" in message
+
+
 def test_describe_extraction_error_ip_blocked_is_not_reported_as_private_account():
     # Regression: reported live on a real TikTok video. The bare substring
     # check for "400" used to match the digits embedded inside the video

@@ -215,6 +215,12 @@ def check_link():
         error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
         return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, config.get_cookies_path())}), 400
     except Exception as e:
+        # An exception here that ISN'T a yt_dlp.utils.DownloadError is
+        # always unexpected (see describe_extraction_error's trusted-type
+        # check, which hides its raw message from the user) - log the full
+        # traceback so a failure that's otherwise invisible once packaged
+        # still leaves something diagnosable.
+        paths.log_exception(f"check_link ({cls.platform}): {url}", e)
         error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
         return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, config.get_cookies_path())}), 400
 

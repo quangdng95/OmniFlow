@@ -7,6 +7,7 @@ single) and shapes the results for the frontend.
 """
 
 import re
+import socket
 
 import yt_dlp
 
@@ -175,6 +176,18 @@ def extract_video_info(cls):
 def describe_extraction_error(url, error, cookies_path=None):
     message = str(error)
     lower = message.lower()
+
+    # A failure to even reach the network (no internet, DNS lookup failed,
+    # a firewall/VPN silently dropping the connection, the request timing
+    # out) is its own distinct, user-actionable case - and these are ALSO
+    # bare builtin exceptions (ConnectionError/TimeoutError/socket.gaierror
+    # all have __module__ == "builtins"), so without checking for them
+    # first they'd otherwise fall into the generic "something broke"
+    # fallback below, hiding a "you're offline" failure behind a message
+    # that doesn't say so.
+    if isinstance(error, (ConnectionError, TimeoutError, socket.gaierror)):
+        return "❌ Lỗi: Không thể kết nối mạng để xử lý liên kết này. Vui lòng kiểm tra kết nối Internet (hoặc tường lửa/VPN) rồi thử lại."
+
     # A bare builtin exception (ValueError, KeyError, TypeError, ...) means
     # something broke unexpectedly deep inside an extractor (e.g. a yt-dlp
     # internal bug hitting `int('')` while parsing a platform's response) -
@@ -184,7 +197,7 @@ def describe_extraction_error(url, error, cookies_path=None):
     # explanation. Never let the former leak through as the final fallback
     # below.
     is_trusted_message = type(error).__module__ != "builtins"
-    
+
     # Instagram profile / user failures
     is_ig_profile = classify.is_instagram_profile_url(url)
     if is_ig_profile or "instagram:user" in lower or "instagram:profile" in lower or ("unable to extract data" in lower and "instagram" in url.lower()):
