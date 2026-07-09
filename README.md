@@ -137,7 +137,9 @@ leave your machine.
 
 ## Roadmap
 
-Known gaps, tracked honestly rather than hidden:
+Known gaps, tracked honestly rather than hidden.
+
+**macOS app polish**
 
 - [ ] Native `arm64` `ffmpeg` for the Apple Silicon build, so it no longer needs Rosetta 2 at
   runtime (the Intel build's `ffmpeg` is already native)
@@ -145,6 +147,24 @@ Known gaps, tracked honestly rather than hidden:
   first launch
 - [ ] LinkedIn native document/slide-deck (PDF) post support
 - [ ] Windows / Linux builds
+
+**Platform expansion**
+
+- [ ] Chrome extension — send the active tab's URL straight to the already-running desktop app
+  (it talks to the same local API on `127.0.0.1:5001`) instead of copy-pasting
+- [ ] A convenient way to reach OmniFlow from a phone on the same network as your Mac (e.g. an
+  iOS Shortcut, or a simple mobile-friendly page) while the desktop app is running
+- [ ] Native Android app
+- [ ] Native iOS app
+
+> **On the two native mobile app items:** these are early and exploratory, not committed.
+> `yt-dlp` is a Python tool, and this project's whole design deliberately avoids a central server
+> (see [Disclaimer](.github/DISCLAIMER.md)) so each download runs locally, on the user's own
+> machine — that constraint doesn't disappear just because the device is a phone. Both the App
+> Store and Play Store have a well-documented history of rejecting or removing "video downloader"
+> apps over copyright/ToS concerns, so a native mobile app may end up needing to ship outside the
+> official stores (sideloading, TestFlight-style distribution) rather than assuming normal store
+> availability.
 
 ## Contributing
 
