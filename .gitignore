@@ -8,6 +8,9 @@ node_modules/
 # PyInstaller packaging artifacts (see OmniFlow.spec / rules/packaging.md)
 build/
 dist/
+build-*/
+dist-*/
+.venv-*/
 
 # Internal working notes for AI coding agents / local runtime state —
 # not needed by end users of the published app, kept local-only.

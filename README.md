@@ -47,7 +47,10 @@ platforms creators, designers, and researchers actually pull reference material 
 
 ## Installation
 
-1. Download the latest `OmniFlow.dmg` from [Releases](../../releases).
+1. Go to [Releases](../../releases/latest) and download the `.dmg` matching your Mac's chip
+   (Apple menu → **About This Mac** tells you which):
+   - **OmniFlow-AppleSilicon.dmg** — for M1/M2/M3/M4 Macs
+   - **OmniFlow-Intel.dmg** — for Intel Macs
 2. Open the `.dmg` and drag **OmniFlow** into `Applications`.
 3. On first launch, macOS may warn that the app is from an unidentified developer (it isn't
    notarized) — right-click the app and choose **Open** once to bypass this.
