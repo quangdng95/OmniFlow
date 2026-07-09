@@ -129,6 +129,7 @@ def browse_file():
 
 
 INSTAGRAM_LOCAL_ONLY_ERROR = "Instagram downloads are only available when running OmniFlow locally on your own machine."
+INSTAGRAM_NO_SESSION_ERROR = "❌ Lỗi: Không tìm thấy phiên đăng nhập Instagram nào trên trình duyệt của máy này. Vui lòng đăng nhập Instagram trên Chrome/Safari/Brave (hoặc thêm cookies.txt thủ công trong Settings) rồi thử lại."
 THREADS_LOCAL_ONLY_ERROR = "Threads downloads are only available when running OmniFlow locally on your own machine."
 THREADS_AUTH_ERROR = "❌ Lỗi: Cần một trình duyệt đã đăng nhập Threads (threads.com) trên máy này để tải bài viết. Vui lòng đăng nhập rồi thử lại."
 THREADS_EXTRACT_ERROR = "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung."
@@ -158,20 +159,28 @@ def check_link():
         return jsonify({"error": THREADS_LOCAL_ONLY_ERROR}), 403
 
     # Instagram posts/reels/tv go through our own resolver (so photos and
-    # carousels work at all) ONLY if we have a valid cookies file.
-    # Otherwise (or if custom resolver fails), we fall through to yt-dlp.
+    # carousels work at all). A resolver failure falls through to yt-dlp as a
+    # last resort, but yt-dlp's generic Instagram scraping routinely fails
+    # with an unhelpful "Unable to extract data" and no real reason - so the
+    # resolver's own (usually far more specific) error is kept and preferred
+    # over yt-dlp's if that fallback also fails, instead of being discarded.
+    ig_resolver_error = None
     if cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL:
         candidates = cookies.instagram_cookiefile_candidates()
-        if candidates:
-            try:
-                media = instagram.fetch_instagram_media_any(url, candidates)
-                return jsonify(instagram.instagram_check_response(url, media))
-            except Exception as e:
-                # Fall through to yt-dlp path below
-                print(f"Custom resolver failed: {e}. Falling through to yt-dlp.")
-                pass
-            finally:
-                cookies._cleanup_temp_cookiefiles(candidates)
+        if not candidates:
+            # No Instagram session anywhere (Settings or any local browser) -
+            # yt-dlp's anonymous fallback below is essentially guaranteed to
+            # fail too, with a far less helpful message, so say the real
+            # reason immediately instead of wasting a round trip on it.
+            return jsonify({"error": INSTAGRAM_NO_SESSION_ERROR}), 400
+        try:
+            media = instagram.fetch_instagram_media_any(url, candidates)
+            return jsonify(instagram.instagram_check_response(url, media))
+        except Exception as e:
+            ig_resolver_error = e
+            print(f"Custom resolver failed: {e}. Falling through to yt-dlp.")
+        finally:
+            cookies._cleanup_temp_cookiefiles(candidates)
 
     # Threads has no yt-dlp/gallery-dl support at all (MISTAKES.md, 2026-07-07),
     # so unlike Instagram there is no fallback path to fall through to - a
@@ -203,8 +212,11 @@ def check_link():
                 return jsonify(instagram.instagram_check_response(url, media))
             except Exception:
                 pass
-        return jsonify({"error": extraction.describe_extraction_error(url, e, config.get_cookies_path())}), 400
+        error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
+        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, config.get_cookies_path())}), 400
     except Exception:
+        if ig_resolver_error is not None:
+            return jsonify({"error": extraction.describe_extraction_error(url, ig_resolver_error, config.get_cookies_path())}), 400
         return jsonify({"error": "Invalid link or private video"}), 400
 
     if not info:

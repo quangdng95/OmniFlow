@@ -163,17 +163,15 @@ def test_check_link_unexpected_exception_falls_back_to_generic_message(client, m
     assert resp.get_json()["error"] == "Invalid link or private video"
 
 
-def test_check_link_instagram_login_required_shows_clear_explanation(client, monkeypatch):
-    def raise_error(url):
-        raise yt_dlp.utils.DownloadError(
-            "ERROR: [Instagram] abc: Instagram sent an empty media response. "
-            "Check if this post is accessible in your browser without being logged-in."
-        )
-
-    monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
+def test_check_link_instagram_with_no_session_anywhere_says_so_immediately(client):
+    # No manual cookies configured and (per the autouse fixture in conftest)
+    # no browser session found either - the custom resolver is never even
+    # attempted, and neither is the yt-dlp fallback (which would fail anyway
+    # with a far less helpful "Unable to extract data"): the real reason is
+    # surfaced right away instead.
     resp = client.post("/api/check", json={"url": "https://www.instagram.com/p/abc/"})
     assert resp.status_code == 400
-    assert "Không thể tải video từ tài khoản Private" in resp.get_json()["error"]
+    assert "Không tìm thấy phiên đăng nhập Instagram" in resp.get_json()["error"]
 
 
 def test_check_link_instagram_with_no_session_cookies_file_flags_the_file(client, monkeypatch, tmp_path):
@@ -181,12 +179,33 @@ def test_check_link_instagram_with_no_session_cookies_file_flags_the_file(client
     cookies_file.write_text("# no session in here\n")
     save_session(os.path.expanduser("~/Downloads"), str(cookies_file))
 
-    def raise_error(url):
-        raise yt_dlp.utils.DownloadError(
-            "ERROR: [Instagram] abc: Instagram sent an empty media response."
-        )
+    # The configured file has no real session and (per the autouse fixture)
+    # no browser session is found either, so there's still no valid
+    # candidate at all - same "no session" message as having no file
+    # configured, not a generic extraction failure.
+    resp = client.post("/api/check", json={"url": "https://www.instagram.com/p/abc/"})
+    assert resp.status_code == 400
+    assert "Không tìm thấy phiên đăng nhập Instagram" in resp.get_json()["error"]
 
-    monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
+
+def test_check_link_instagram_resolver_failure_is_preferred_over_ytdlps_generic_error(client, monkeypatch, tmp_path):
+    # A candidate DOES exist (a valid-looking cookies file), so the custom
+    # resolver runs and fails with something specific; when the yt-dlp
+    # fallback also fails, the resolver's own reason must win over yt-dlp's
+    # generic "Unable to extract data" - that message used to be discarded
+    # entirely (see check_link's ig_resolver_error handling).
+    cookies_file = tmp_path / "cookies.txt"
+    cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
+    save_session(os.path.expanduser("~/Downloads"), str(cookies_file))
+
+    def resolver_fails(url, candidates):
+        raise InstagramAuthError("Instagram requires a logged-in session (cookies).")
+
+    def ytdlp_fails_generically(cls):
+        raise yt_dlp.utils.DownloadError("ERROR: Unable to extract data; please report this issue")
+
+    monkeypatch.setattr(instagram_module, "fetch_instagram_media_any", resolver_fails)
+    monkeypatch.setattr(extraction_module, "extract_video_info", ytdlp_fails_generically)
     resp = client.post("/api/check", json={"url": "https://www.instagram.com/p/abc/"})
     assert resp.status_code == 400
     assert "Không thể tải video từ tài khoản Private" in resp.get_json()["error"]
