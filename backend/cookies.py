@@ -9,7 +9,7 @@ import http.cookiejar
 import os
 import tempfile
 
-from backend import config
+from backend import config, paths
 
 
 # macOS user-data directories for the Chromium-family browsers. yt-dlp's
@@ -153,6 +153,15 @@ def cookiefiles_from_browsers(domain="instagram.com"):
 
     cookiefiles = []
     seen_sessions = set()
+    # Every failure below used to be silently discarded, so a machine where
+    # cookie extraction never worked (wrong Keychain state, browser_cookie3
+    # version mismatch, a locked/corrupt cookie DB, ...) left zero trace
+    # anywhere - "no session found" with no way to tell why. We only care
+    # about the *reason* when the whole function ends up empty-handed (the
+    # common case, one attempt per browser succeeding, is not worth logging),
+    # so failures are collected here and reported as one consolidated
+    # diagnostic entry at the end instead of spamming the log per attempt.
+    errors = []
 
     for browser, src_path in db_paths:
         temp_path = None
@@ -161,11 +170,11 @@ def cookiefiles_from_browsers(domain="instagram.com"):
             fd, temp_path = tempfile.mkstemp(prefix=f"omniflow-raw-{browser}-", suffix=".db")
             os.close(fd)
             shutil.copy2(src_path, temp_path)
-            
+
             fn = getattr(browser_cookie3, browser, None)
             if not fn:
                 continue
-                
+
             # browser_cookie3 decrypts the macOS Keychain "Chrome Safe Storage" key itself
             # - a wholly separate implementation from yt-dlp's --cookies-from-browser.
             jar = fn(cookie_file=temp_path, domain_name=domain)
@@ -174,9 +183,10 @@ def cookiefiles_from_browsers(domain="instagram.com"):
             if session and session not in seen_sessions:
                 seen_sessions.add(session)
                 cookiefiles.append(_write_cookies_txt(cookie_map, domain))
+            elif not session:
+                errors.append(f"{browser} ({os.path.basename(src_path)}): no {domain} sessionid cookie (not logged in)")
         except Exception as e:
-            # Gracefully ignore failures for specific profiles/browsers
-            pass
+            errors.append(f"{browser} ({os.path.basename(src_path)}): {e!r}")
         finally:
             if temp_path and os.path.exists(temp_path):
                 try:
@@ -195,8 +205,15 @@ def cookiefiles_from_browsers(domain="instagram.com"):
                 if session and session not in seen_sessions:
                     seen_sessions.add(session)
                     cookiefiles.append(_write_cookies_txt(cookie_map, domain))
-        except Exception:
-            pass
+        except Exception as e:
+            errors.append(f"{name} (default profile): {e!r}")
+
+    if not cookiefiles:
+        detail = "; ".join(errors) if errors else f"{len(db_paths)} profile(s) scanned, none had a {domain} sessionid"
+        paths.log_exception(
+            f"cookiefiles_from_browsers(domain={domain!r}): extracted 0 sessions",
+            RuntimeError(detail),
+        )
 
     return cookiefiles
 

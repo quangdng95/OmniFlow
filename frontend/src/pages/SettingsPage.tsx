@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Folder } from "lucide-react";
+import { Folder, ScrollText } from "lucide-react";
+import { toast } from "sonner";
 import { type Page } from "../components/Header";
 import SectionCard from "../components/SectionCard";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { api } from "../api";
 import { useLanguage } from "../i18n/LanguageContext";
 import type { Language } from "../i18n/translations";
@@ -45,6 +47,15 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
   const handlePathChange = async (newVal: string) => {
     setPath(newVal);
     await api.updateSettings({ path: newVal });
+  };
+
+  const handleOpenLogs = async () => {
+    try {
+      const { has_logs } = await api.openLogs();
+      toast.success(has_logs ? t.settingsPage.exportLogs.opened : t.settingsPage.exportLogs.noLogsYet);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   return (
@@ -97,6 +108,25 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
                   {t.settingsPage.targetPath.rememberPath}
                 </label>
               </div>
+            </SectionCard>
+          )}
+
+          {isLocal() && (
+            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
+              <p className="text-base font-semibold text-slate-800 m-0">
+                {t.settingsPage.exportLogs.heading}
+              </p>
+              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
+                {t.settingsPage.exportLogs.description}
+              </p>
+              <Button
+                onClick={handleOpenLogs}
+                variant="outline"
+                className="w-fit border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 hover:text-[#0d9585]"
+              >
+                <ScrollText className="h-4 w-4" />
+                {t.settingsPage.exportLogs.button}
+              </Button>
             </SectionCard>
           )}
 

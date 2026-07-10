@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from backend import cookies as cookies_module
 from backend.config import cookies_file_has_instagram_session
 from backend import instagram as instagram_module
+from backend import paths as paths_module
 
 
 # ---- auto cookie extraction (_write_cookies_txt / cookiefiles_from_browsers) ----
@@ -71,3 +72,53 @@ def test_cookiefiles_from_browsers_returns_empty_without_browser_cookie3(no_brow
     # Simulate browser_cookie3 not being importable.
     monkeypatch.setitem(sys.modules, "browser_cookie3", None)
     assert real("instagram.com") == []
+
+
+def test_cookiefiles_from_browsers_logs_diagnostics_when_everything_fails(no_browser_cookie_scan, monkeypatch):
+    # Every per-browser attempt used to fail silently (bare except: pass), so a
+    # machine where extraction never worked left zero trace anywhere. This
+    # pins the fix: when the function ends up empty-handed, it must report the
+    # real reason via paths.log_exception instead of swallowing it.
+    real = no_browser_cookie_scan
+    monkeypatch.setattr(cookies_module, "CHROMIUM_BROWSER_DIRS", {})
+
+    def failing(cookie_file=None, domain_name=""):
+        raise RuntimeError("keychain locked")
+
+    fake_module = types.SimpleNamespace(
+        chrome=failing, brave=failing, edge=failing, chromium=failing,
+        vivaldi=failing, opera=failing, safari=failing, firefox=failing,
+    )
+    monkeypatch.setitem(sys.modules, "browser_cookie3", fake_module)
+
+    logged = []
+    monkeypatch.setattr(paths_module, "log_exception", lambda context, error: logged.append((context, str(error))))
+
+    result = real("instagram.com")
+
+    assert result == []
+    assert len(logged) == 1
+    context, detail = logged[0]
+    assert "instagram.com" in context
+    assert "keychain locked" in detail
+
+
+def test_cookiefiles_from_browsers_does_not_log_when_a_session_is_found(no_browser_cookie_scan, monkeypatch):
+    real = no_browser_cookie_scan
+    monkeypatch.setattr(cookies_module, "CHROMIUM_BROWSER_DIRS", {})
+
+    def fake_chrome(cookie_file=None, domain_name=""):
+        return [SimpleNamespace(name="sessionid", value="ok", domain=".instagram.com")]
+
+    monkeypatch.setitem(sys.modules, "browser_cookie3", types.SimpleNamespace(chrome=fake_chrome))
+
+    logged = []
+    monkeypatch.setattr(paths_module, "log_exception", lambda context, error: logged.append((context, error)))
+
+    paths = real("instagram.com")
+    try:
+        assert len(paths) == 1
+        assert logged == []
+    finally:
+        for p in paths:
+            os.remove(p)

@@ -755,3 +755,18 @@ def open_folder():
         return jsonify({"error": LOCAL_ONLY_ERROR}), 403
     subprocess.run(["open", config.load_session()["path"]])
     return jsonify({"ok": True})
+
+
+@app.post("/api/open-logs")
+def open_logs():
+    # Diagnostic logs (paths.log_exception) are the only trace left of a
+    # failure the UI deliberately hides behind a friendly generic message
+    # (extraction.describe_extraction_error) - a packaged .app has no visible
+    # stdout, so this is how a user can hand the real cause back to us
+    # instead of just a screenshot of "couldn't process this link".
+    if not is_local_request():
+        return jsonify({"error": LOCAL_ONLY_ERROR}), 403
+    os.makedirs(paths.LOG_DIR, exist_ok=True)
+    log_file = os.path.join(paths.LOG_DIR, "errors.log")
+    subprocess.run(["open", paths.LOG_DIR])
+    return jsonify({"ok": True, "has_logs": os.path.isfile(log_file) and os.path.getsize(log_file) > 0})

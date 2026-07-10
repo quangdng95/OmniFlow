@@ -531,6 +531,26 @@ def test_get_clipboard_rejected_when_remote(client):
     assert resp.status_code == 403
 
 
+def test_open_logs_rejected_when_remote(client):
+    resp = client.post("/api/open-logs", headers={"Host": "example.com"})
+    assert resp.status_code == 403
+
+
+def test_open_logs_reports_whether_a_log_file_exists(client, tmp_path, monkeypatch):
+    log_dir = tmp_path / "logs"
+    monkeypatch.setattr(paths, "LOG_DIR", str(log_dir))
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: None)
+
+    resp = client.post("/api/open-logs")
+    assert resp.status_code == 200
+    assert resp.get_json() == {"ok": True, "has_logs": False}
+    assert log_dir.is_dir()  # created even though nothing has been logged yet
+
+    (log_dir / "errors.log").write_text("--- some error ---\n")
+    resp = client.post("/api/open-logs")
+    assert resp.get_json() == {"ok": True, "has_logs": True}
+
+
 # ---- Instagram is local-only ----
 
 

@@ -12,6 +12,12 @@ build-*/
 dist-*/
 .venv-*/
 
+# Cross-arch (Intel) build toolchain - micromamba binary + its x86_64 Python
+# env, used to PyInstaller-build dist-x86_64/ under Rosetta on this arm64 dev
+# machine. Not needed by end users, and envs/ alone is ~280MB.
+bin/
+envs/
+
 # Internal working notes for AI coding agents / local runtime state —
 # not needed by end users of the published app, kept local-only.
 .claude/

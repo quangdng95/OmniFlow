@@ -94,6 +94,13 @@ export interface Translations {
       option500: string;
       optionAll: string;
     };
+    exportLogs: {
+      heading: string;
+      description: string;
+      button: string;
+      noLogsYet: string;
+      opened: string;
+    };
   };
   terms: {
     heading: string;
@@ -249,6 +256,13 @@ const en: Translations = {
       option200: "200 items",
       option500: "500 items",
       optionAll: "All items (Slowest, could hit rate limits)",
+    },
+    exportLogs: {
+      heading: "Diagnostic Logs",
+      description: "If check/download keeps failing with a generic error, open the log folder below and send us the errors.log file — it records the real cause even when the app only shows a friendly message.",
+      button: "Open Log Folder",
+      noLogsYet: "No errors have been logged on this machine yet.",
+      opened: "Log folder opened.",
     },
   },
   terms: {
@@ -447,6 +461,13 @@ const vi: Translations = {
       option200: "200 video",
       option500: "500 video",
       optionAll: "Tất cả video (Chậm nhất, có thể bị giới hạn chặn)",
+    },
+    exportLogs: {
+      heading: "Nhật ký chẩn đoán",
+      description: "Nếu việc check/tải liên tục báo lỗi chung chung, hãy mở thư mục log bên dưới và gửi file errors.log cho chúng tôi — file này ghi lại nguyên nhân thật sự ngay cả khi app chỉ hiển thị một thông báo thân thiện.",
+      button: "Mở thư mục Log",
+      noLogsYet: "Chưa có lỗi nào được ghi lại trên máy này.",
+      opened: "Đã mở thư mục log.",
     },
   },
   terms: {
