@@ -178,6 +178,28 @@ def check_link():
             return jsonify(instagram.instagram_check_response(url, media))
         except Exception as e:
             ig_resolver_error = e
+            # An auth failure here (which describe_extraction_error's
+            # is_private_or_login check maps to "Private account") is
+            # ambiguous: Instagram's private API answers "please log in" for
+            # an invalid/expired session the SAME way it does for a
+            # genuinely private post, so this codebase cannot actually tell
+            # the two apart from the response alone. What CAN be told apart
+            # is which candidate source failed - if the manual Settings
+            # cookies.txt was involved (a config value with no UI to view or
+            # clear it since that field was removed from Settings, so a
+            # long-stale file can silently keep overriding fresh browser
+            # sessions), that's a strong hint the real cause is a dead saved
+            # session, not the target account's privacy.
+            manual_path = config.get_cookies_path()
+            source = (
+                "manual Settings cookies.txt (config.json cookies_path - no UI exists to view/clear this)"
+                if manual_path and manual_path in candidates
+                else f"{len(candidates)} browser-auto-extracted session(s)"
+            )
+            paths.log_exception(
+                f"check_link Instagram resolver failed for all {len(candidates)} candidate(s), source: {source}",
+                e,
+            )
             print(f"Custom resolver failed: {e}. Falling through to yt-dlp.")
         finally:
             cookies._cleanup_temp_cookiefiles(candidates)
