@@ -14,6 +14,19 @@
 
 ---
 
+## Download
+
+Not sure which chip your Mac has? Apple menu (top-left) → **About This Mac**.
+
+<p align="center">
+  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Download-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Download for Apple Silicon (M1/M2/M3/M4)" /></a>
+  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Download-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Download for Intel Mac" /></a>
+</p>
+
+These links always point at the latest release. See [Installation](#installation) below for what to do after downloading — including the one-time macOS security prompts on first launch.
+
+---
+
 ## What it does
 
 OmniFlow extracts and downloads high-quality, watermark-free video, audio, and images from the
@@ -59,13 +72,15 @@ platforms creators, designers, and researchers actually pull reference material 
 
 ## Installation
 
-1. Go to [Releases](../../releases/latest) and download the `.dmg` matching your Mac's chip
-   (Apple menu → **About This Mac** tells you which):
+1. Download the `.dmg` matching your Mac's chip — see [Download](#download) above, or grab it
+   from [Releases](../../releases/latest):
    - **OmniFlow-AppleSilicon.dmg** — for M1/M2/M3/M4 Macs
    - **OmniFlow-Intel.dmg** — for Intel Macs
 2. Open the `.dmg` and drag **OmniFlow** into `Applications`.
-3. On first launch, macOS may warn that the app is from an unidentified developer (it isn't
-   notarized) — right-click the app and choose **Open** once to bypass this.
+3. On first launch, macOS will show one or two security prompts (an "unidentified developer"
+   warning, and — only if you plan to download private Instagram/Threads content — a Keychain
+   permission request). Both are normal, one-time, and explained step-by-step in
+   [First Launch & macOS Security Warnings](docs/FIRST_LAUNCH.md).
 
 Prefer to build it yourself? See [Building from source](#building-from-source) below.
 
@@ -150,10 +165,10 @@ Known gaps, tracked honestly rather than hidden.
 
 **Platform expansion**
 
-- [ ] Chrome extension — send the active tab's URL straight to the already-running desktop app
-  (it talks to the same local API on `127.0.0.1:5001`) instead of copy-pasting
-- [ ] A convenient way to reach OmniFlow from a phone on the same network as your Mac (e.g. an
-  iOS Shortcut, or a simple mobile-friendly page) while the desktop app is running
+- [ ] Chrome extension — click a button in your browser to send the video you're watching
+  straight to OmniFlow, no copy-pasting the link needed
+- [ ] A convenient way to send a link to OmniFlow from your phone while it's running on your Mac
+  (e.g. an iOS Shortcut, or a simple mobile-friendly page)
 - [ ] Native Android app
 - [ ] Native iOS app
 
@@ -166,6 +181,20 @@ Known gaps, tracked honestly rather than hidden.
 > official stores (sideloading, TestFlight-style distribution) rather than assuming normal store
 > availability.
 
+## Troubleshooting
+
+Hit a security warning on first launch, or a check/download that keeps failing? Two guides cover
+this in detail, step by step:
+
+- **[First Launch & macOS Security Warnings](docs/FIRST_LAUNCH.md)** — the "unidentified
+  developer" warning and the Keychain permission prompt you may see the first time you open the
+  app or download from Instagram/Threads.
+- **[Troubleshooting Check/Download Failures](docs/TROUBLESHOOTING.md)** — what to do when a link
+  won't check or a download keeps failing, including how to use the built-in **Diagnostic Logs**
+  and **Reset App Data** tools in Settings.
+
+If those don't resolve it, see [Support & Issues](#support--issues) below.
+
 ## Contributing
 
 Contributions are welcome:
@@ -177,8 +206,15 @@ Contributions are welcome:
 
 ## Support & Issues
 
-Found a bug or have a feature request? Open an issue on
-[GitHub Issues](https://github.com/quangdng95/OmniFlow/issues).
+Still stuck after checking the [Troubleshooting](#troubleshooting) guides above? Open an issue on
+[GitHub Issues](https://github.com/quangdng95/OmniFlow/issues) — include:
+
+- The link you were trying to download (if it's not private/sensitive)
+- Your Mac's chip (Apple Silicon or Intel) and macOS version
+- The contents of `errors.log`, if there is one — Settings → **Diagnostic Logs** → **Open Log
+  Folder**
+
+Have a feature request instead? Open an issue for that too.
 
 ## Disclaimer
 
