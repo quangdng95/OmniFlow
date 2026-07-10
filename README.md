@@ -105,6 +105,9 @@ Pick:   Best
 Get:    Never Gonna Give You Up.mp4  (in ~/Downloads)
 ```
 
+Not sure what to try first? [**Example Links**](docs/EXAMPLE_LINKS.md) has one ready-to-paste
+example per supported platform.
+
 ## Building from source
 
 **Requirements:** Node.js, Python 3.9+, npm.

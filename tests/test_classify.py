@@ -92,6 +92,34 @@ OWNER_URL_CASES = [
         {"platform": "Threads", "kind": LinkKind.THREADS_POST, "is_multi": False, "shortcode": "DaTf9pqiaMW"},
         id="threads-image-post",
     ),
+    # ---- 2026-07-10 batch (.claude/rules/test-urls.md) - new shapes only;
+    # near-duplicates of an already-covered pattern above are exercised live
+    # instead of duplicating an offline case here.
+    pytest.param(
+        "https://www.youtube.com/watch?v=quQwf-B6uSE",
+        {"platform": "YouTube", "kind": LinkKind.SINGLE, "is_multi": False},
+        id="youtube-single-plain-watch-no-list-param",
+    ),
+    pytest.param(
+        # Bare 1-segment profile path, no "/reels/" suffix - distinct from the
+        # "instagram-profile-reels" case above, which has the suffix.
+        "https://www.instagram.com/wimbledon/",
+        {"platform": "Instagram", "kind": LinkKind.INSTAGRAM_PROFILE,
+         "is_multi": True, "username": "wimbledon"},
+        id="instagram-profile-bare-no-reels-suffix",
+    ),
+    pytest.param(
+        "https://x.com/yui540/status/2074033238293856397?s=20",
+        {"platform": "X", "kind": LinkKind.SINGLE, "is_multi": False},
+        id="x-status-single",
+    ),
+    pytest.param(
+        # "share/r/<id>" short-link shape, distinct from the "/reel/<id>"
+        # fixture above.
+        "https://www.facebook.com/share/r/17nieUfjTL/",
+        {"platform": "Facebook", "kind": LinkKind.SINGLE, "is_multi": False},
+        id="facebook-share-r-shape",
+    ),
 ]
 
 
