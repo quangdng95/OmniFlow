@@ -74,7 +74,7 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
     <div className="w-full select-none">
       <div className="w-full flex flex-col gap-4">
           {/* Title */}
-          <h2 className="text-xl font-bold text-slate-800 text-center py-2">
+          <h2 className="text-xl font-bold text-slate-800 text-center m-0">
             {t.header.settings.title}
           </h2>
 
@@ -83,7 +83,7 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
               <p className="text-base font-semibold text-slate-800 m-0">
                 {t.settingsPage.targetPath.heading}
               </p>
-              
+
               <div className="flex flex-col gap-2.5 w-full">
                 <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
                   <span className="text-red-500 font-bold mr-1">*</span>
@@ -120,40 +120,6 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
                   {t.settingsPage.targetPath.rememberPath}
                 </label>
               </div>
-            </SectionCard>
-          )}
-
-          {isLocal() && (
-            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
-              <p className="text-base font-semibold text-slate-800 m-0">
-                {t.settingsPage.exportLogs.heading}
-              </p>
-              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
-                {t.settingsPage.exportLogs.description}
-              </p>
-              <Button
-                onClick={handleOpenLogs}
-                variant="outline"
-                className="w-fit border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 hover:text-[#0d9585]"
-              >
-                <ScrollText className="h-4 w-4" />
-                {t.settingsPage.exportLogs.button}
-              </Button>
-            </SectionCard>
-          )}
-
-          {isLocal() && (
-            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
-              <p className="text-base font-semibold text-slate-800 m-0">
-                {t.settingsPage.resetSettings.heading}
-              </p>
-              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
-                {t.settingsPage.resetSettings.description}
-              </p>
-              <Button onClick={handleResetSettings} variant="destructive" className="w-fit">
-                <RotateCcw className="h-4 w-4" />
-                {t.settingsPage.resetSettings.button}
-              </Button>
             </SectionCard>
           )}
 
@@ -236,6 +202,40 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
               </div>
             </RadioGroup>
           </SectionCard>
+
+          {isLocal() && (
+            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
+              <p className="text-base font-semibold text-slate-800 m-0">
+                {t.settingsPage.exportLogs.heading}
+              </p>
+              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
+                {t.settingsPage.exportLogs.description}
+              </p>
+              <Button
+                onClick={handleOpenLogs}
+                variant="outline"
+                className="w-fit border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 hover:text-[#0d9585]"
+              >
+                <ScrollText className="h-4 w-4" />
+                {t.settingsPage.exportLogs.button}
+              </Button>
+            </SectionCard>
+          )}
+
+          {isLocal() && (
+            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
+              <p className="text-base font-semibold text-slate-800 m-0">
+                {t.settingsPage.resetSettings.heading}
+              </p>
+              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
+                {t.settingsPage.resetSettings.description}
+              </p>
+              <Button onClick={handleResetSettings} variant="destructive" className="w-fit">
+                <RotateCcw className="h-4 w-4" />
+                {t.settingsPage.resetSettings.button}
+              </Button>
+            </SectionCard>
+          )}
 
       </div>
     </div>

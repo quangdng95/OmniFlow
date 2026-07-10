@@ -29,7 +29,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t: translations[language] }}>
       {children}
-      <Toaster position="top-center" />
+      <Toaster position="top-center" closeButton />
     </LanguageContext.Provider>
   );
 };

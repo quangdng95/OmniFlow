@@ -342,24 +342,23 @@ const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
                 <p className="text-sm font-medium text-slate-600 m-0">
                   {t.home.introLines[0]}
                 </p>
-                <p className="text-xs text-slate-400 m-0">
+                <p className="text-xs text-slate-600 m-0">
                   {t.home.introLines[1]} • {t.home.introLines[2]}
                 </p>
               </div>
 
               {/* Supported Platforms */}
               <div className="flex flex-col items-center gap-3 select-none">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <h3 className="text-base font-bold text-slate-800 text-center m-0">
                   Supported Platforms
-                </span>
+                </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
                   {platforms.map((p) => (
                     <div
                       key={p.name}
-                      className="flex flex-col items-center gap-2 p-3 bg-white border border-slate-200/50 rounded-xl cursor-default transition-all duration-200 hover:translate-y-[-1.5px] hover:shadow-sm hover:border-[#0d9585]"
+                      className="flex items-center justify-center p-3 bg-slate-50 border border-slate-300 rounded-xl cursor-default transition-all duration-200 hover:translate-y-[-1.5px] hover:shadow-sm hover:border-[#0d9585]"
                     >
-                      <img src={p.icon} alt={p.name} className="h-6 w-auto object-contain" />
-                      <span className="text-[10px] font-bold text-slate-500">{p.name}</span>
+                      <img src={p.icon} alt={p.name} className="h-5 w-auto object-contain" />
                     </div>
                   ))}
                 </div>

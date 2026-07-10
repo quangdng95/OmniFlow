@@ -26,9 +26,9 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <div className="w-full max-w-[680px] flex flex-col gap-4 items-center">
+      <div className="w-full flex flex-col gap-4 items-center">
         {/* Navigation */}
-        <div className="flex gap-6 items-center justify-center w-full">
+        <div className="w-full max-w-[680px] flex gap-6 items-center justify-center">
           {navItems.map((item) => {
             const isActive = active === item.key;
             return (
@@ -37,8 +37,8 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
                 variant={isActive ? "default" : "secondary"}
                 size="sm"
                 className={`font-medium ${
-                  isActive 
-                    ? "bg-[#171717] text-[#fafafa] shadow-sm" 
+                  isActive
+                    ? "bg-[#171717] text-[#fafafa] shadow-sm"
                     : "bg-[#f5f5f5] text-[#171717] hover:bg-neutral-200"
                 }`}
                 onClick={() => onNavigate(item.key)}
@@ -49,12 +49,12 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
           })}
         </div>
 
-        {/* Divider */}
+        {/* Divider - full-bleed, spans the header's true width (not capped to the 680px content column) */}
         <div className="w-full h-px bg-neutral-200" />
 
         {/* Logo, Title & Description (Home Page Only) */}
         {active === "home" && (
-          <>
+          <div className="w-full max-w-[680px] flex flex-col gap-4 items-center">
             <Logo size="large" />
             <div className="flex flex-col gap-2 items-center text-center select-none">
               <h1 className="font-semibold text-xl text-[#334155] leading-snug">
@@ -64,7 +64,7 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
                 {t.header.home.descriptionLine1} {t.header.home.descriptionLine2}
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </motion.div>
