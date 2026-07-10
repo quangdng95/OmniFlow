@@ -66,6 +66,14 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
             </div>
           </div>
         )}
+
+        {/* Page title (Settings / Terms of Use) - lives inside the header's
+            own box, not floating separately on the page background below it */}
+        {active !== "home" && (
+          <h2 className="w-full max-w-[680px] text-xl font-bold text-slate-800 text-center select-none">
+            {active === "settings" ? t.header.settings.title : t.header.terms.title}
+          </h2>
+        )}
       </div>
     </motion.div>
   );

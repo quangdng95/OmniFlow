@@ -73,11 +73,6 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
   return (
     <div className="w-full select-none">
       <div className="w-full flex flex-col gap-4">
-          {/* Title */}
-          <h2 className="text-xl font-bold text-slate-800 text-center m-0">
-            {t.header.settings.title}
-          </h2>
-
           {isLocal() && (
             <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
               <p className="text-base font-semibold text-slate-800 m-0">

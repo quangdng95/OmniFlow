@@ -11,11 +11,6 @@ const TermsPage = ({ onNavigate: _onNavigate }: TermsPageProps) => {
   return (
     <div className="w-full select-none">
       <div className="w-full flex flex-col gap-4">
-          {/* Title */}
-          <h2 className="text-xl font-bold text-slate-800 text-center m-0">
-            {t.header.terms.title}
-          </h2>
-
           <SectionCard className="p-6 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-6 text-slate-800">
             {/* Header info */}
             <div className="flex flex-col gap-2 border-b border-neutral-100 pb-4">
