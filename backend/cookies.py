@@ -107,7 +107,11 @@ def cookiefiles_from_browsers(domain="instagram.com"):
         return []
 
     # Enumerate all target cookies database paths we want to read
-    # Each entry is a tuple: (browser_name, source_db_path)
+    # Each entry is a tuple: (browser_name, profile_label, source_db_path). The
+    # profile_label (e.g. "Default"/"Profile 1") only exists so a diagnostic
+    # message can say WHICH profile came up empty - os.path.basename(src_path)
+    # alone is always just "Cookies"/"Network" for every Chromium profile, so
+    # without this a multi-profile machine's log can't tell them apart.
     db_paths = []
 
     # 1. Chromium family profiles
@@ -119,7 +123,7 @@ def cookiefiles_from_browsers(domain="instagram.com"):
         if browser == "opera":
             candidate = os.path.join(base_dir, "Cookies")
             if os.path.isfile(candidate):
-                db_paths.append(("opera", candidate))
+                db_paths.append(("opera", "(root)", candidate))
         try:
             entries = os.listdir(base_dir)
         except OSError:
@@ -131,7 +135,7 @@ def cookiefiles_from_browsers(domain="instagram.com"):
             if os.path.isdir(profile_dir):
                 db_file = _profile_cookie_db(profile_dir)
                 if db_file:
-                    db_paths.append((browser, db_file))
+                    db_paths.append((browser, name, db_file))
 
     # 2. Firefox profiles
     firefox_base = os.path.expanduser("~/Library/Application Support/Firefox/Profiles")
@@ -142,14 +146,14 @@ def cookiefiles_from_browsers(domain="instagram.com"):
                 if os.path.isdir(p_path):
                     candidate = os.path.join(p_path, "cookies.sqlite")
                     if os.path.isfile(candidate):
-                        db_paths.append(("firefox", candidate))
+                        db_paths.append(("firefox", name, candidate))
         except OSError:
             pass
 
     # 3. Safari (special case: binarycookies file, not SQLite database, but let's list it so we can try loading it)
     safari_cookie_file = os.path.expanduser("~/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies")
     if os.path.isfile(safari_cookie_file):
-        db_paths.append(("safari", safari_cookie_file))
+        db_paths.append(("safari", "(root)", safari_cookie_file))
 
     cookiefiles = []
     seen_sessions = set()
@@ -163,7 +167,7 @@ def cookiefiles_from_browsers(domain="instagram.com"):
     # diagnostic entry at the end instead of spamming the log per attempt.
     errors = []
 
-    for browser, src_path in db_paths:
+    for browser, profile_label, src_path in db_paths:
         temp_path = None
         try:
             # Copy file to temp location to bypass SQLite database locks
@@ -184,9 +188,21 @@ def cookiefiles_from_browsers(domain="instagram.com"):
                 seen_sessions.add(session)
                 cookiefiles.append(_write_cookies_txt(cookie_map, domain))
             elif not session:
-                errors.append(f"{browser} ({os.path.basename(src_path)}): no {domain} sessionid cookie (not logged in)")
+                # Distinguish "browser has zero cookies at all for this domain"
+                # (points at a Keychain decrypt failure - browser_cookie3 ran
+                # without raising, but every cookie value came back empty/wrong)
+                # from "some cookies matched but not the login one" (points at
+                # a genuinely logged-out/wrong profile) - the two need very
+                # different next steps to fix, so collapsing them into one
+                # generic "not logged in" message (as before) hid which one
+                # this actually is.
+                other_names = sorted(cookie_map.keys())
+                errors.append(
+                    f"{browser}/{profile_label}: {len(cookie_map)} {domain} cookie(s) read, "
+                    f"no sessionid among them ({other_names if other_names else 'zero cookies matched this domain at all'})"
+                )
         except Exception as e:
-            errors.append(f"{browser} ({os.path.basename(src_path)}): {e!r}")
+            errors.append(f"{browser}/{profile_label}: {e!r}")
         finally:
             if temp_path and os.path.exists(temp_path):
                 try:

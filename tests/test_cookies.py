@@ -1,6 +1,7 @@
 """Unit tests for backend.cookies - temp cookiefile hygiene + browser extraction."""
 
 import os
+import shutil
 import sys
 import types
 from types import SimpleNamespace
@@ -101,6 +102,37 @@ def test_cookiefiles_from_browsers_logs_diagnostics_when_everything_fails(no_bro
     context, detail = logged[0]
     assert "instagram.com" in context
     assert "keychain locked" in detail
+
+
+def test_cookiefiles_from_browsers_diagnostic_names_the_profile_and_other_cookies(no_browser_cookie_scan, monkeypatch):
+    # Pins the 2026-07-10 diagnostic upgrade: a real Intel-Mac log showed
+    # "chrome (Cookies): no sessionid (not logged in)" with no way to tell
+    # whether Chrome had ZERO cookies for the domain (Keychain decrypt
+    # silently failing) or just some non-auth cookies (wrong/logged-out
+    # profile) - the message must now name the profile and list whatever
+    # cookies WERE found, so that distinction is visible in errors.log.
+    real = no_browser_cookie_scan
+    monkeypatch.setattr(cookies_module, "_profile_cookie_db", lambda profile_dir: "/fake/Cookies")
+    monkeypatch.setattr(cookies_module, "CHROMIUM_BROWSER_DIRS", {"chrome": "/fake"})
+    monkeypatch.setattr(os.path, "isdir", lambda p: True)
+    monkeypatch.setattr(os, "listdir", lambda p: ["Profile 1"])
+    monkeypatch.setattr(shutil, "copy2", lambda *a, **k: None)
+
+    def chrome_missing_sessionid(cookie_file=None, domain_name=""):
+        return [SimpleNamespace(name="csrftoken", value="c", domain=".instagram.com")]
+
+    monkeypatch.setitem(sys.modules, "browser_cookie3", types.SimpleNamespace(chrome=chrome_missing_sessionid))
+
+    logged = []
+    monkeypatch.setattr(paths_module, "log_exception", lambda context, error: logged.append(str(error)))
+
+    result = real("instagram.com")
+
+    assert result == []
+    assert len(logged) == 1
+    assert "chrome/Profile 1" in logged[0]
+    assert "1 instagram.com cookie(s) read" in logged[0]
+    assert "csrftoken" in logged[0]
 
 
 def test_cookiefiles_from_browsers_does_not_log_when_a_session_is_found(no_browser_cookie_scan, monkeypatch):
