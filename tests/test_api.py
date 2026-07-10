@@ -551,6 +551,34 @@ def test_open_logs_reports_whether_a_log_file_exists(client, tmp_path, monkeypat
     assert resp.get_json() == {"ok": True, "has_logs": True}
 
 
+def test_reset_settings_rejected_when_remote(client):
+    resp = client.post("/api/reset-settings", headers={"Host": "example.com"})
+    assert resp.status_code == 403
+
+
+def test_reset_settings_deletes_config_file_and_returns_defaults(client, tmp_path):
+    cookies_file = tmp_path / "cookies.txt"
+    cookies_file.write_text(".instagram.com\tTRUE\t/\tTRUE\t1799999999\tsessionid\tabc123\n")
+    custom_dir = tmp_path / "MyDownloads"
+    custom_dir.mkdir()
+    save_session(str(custom_dir), str(cookies_file), playlist_limit_val=200)
+    assert os.path.exists(config.CONFIG_FILE)
+
+    resp = client.post("/api/reset-settings")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["cookies_path"] == ""
+    assert data["playlist_limit"] == 100
+    assert not os.path.exists(config.CONFIG_FILE)
+
+
+def test_reset_settings_is_a_no_op_when_no_config_file_exists(client):
+    assert not os.path.exists(config.CONFIG_FILE)
+    resp = client.post("/api/reset-settings")
+    assert resp.status_code == 200
+    assert resp.get_json()["cookies_path"] == ""
+
+
 # ---- Instagram is local-only ----
 
 

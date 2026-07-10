@@ -6,6 +6,29 @@ import shutil
 import sys
 import traceback
 
+import certifi
+
+# A Python interpreter built inside a Homebrew or conda/micromamba
+# environment (as this project's build machines are - both a Homebrew-based
+# arm64 .venv and a micromamba-based x86_64 env for the Intel build) bakes in
+# an OpenSSL default certificate search path relative to THAT environment
+# (e.g. "/opt/homebrew/etc/openssl@3/cert.pem", or a conda env's own
+# "envs/x86_64/ssl/cert.pem"). Once frozen into a standalone .app via
+# PyInstaller, that path travels with the binary but the FILE does not - so
+# on any end-user machine without that exact Homebrew/conda layout, every
+# bare urllib/ssl HTTPS connection (the Instagram/Threads/LinkedIn resolvers
+# all use raw urllib.request, not requests) fails with
+# "CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate"
+# (confirmed live 2026-07-10, MISTAKES.md - reproduced on both the arm64 and
+# Intel builds via ssl.get_default_verify_paths()). certifi is already
+# bundled in the frozen app (a yt-dlp dependency, auto-collected by
+# PyInstaller's own certifi hook), so point Python's global SSL default there
+# unconditionally, before any other backend module (all of which import this
+# one early) can open a connection. Costs nothing in dev - certifi's bundle
+# is a valid, current CA list either way.
+os.environ["SSL_CERT_FILE"] = certifi.where()
+os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
+
 PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
 # The repo root — where server.py, config.json (dev), frontend/ and the
 # vendored ffmpeg live. This file sits one level down (backend/), so anchor

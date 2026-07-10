@@ -64,6 +64,33 @@ class Classification:
         return self.kind in (LinkKind.YOUTUBE_PLAYLIST, LinkKind.YOUTUBE_MIX, LinkKind.INSTAGRAM_PROFILE)
 
 
+_URL_IN_TEXT_RE = re.compile(r"https?://\S+")
+_URL_TRAILING_PUNCTUATION = ".,;:!?)]}\"'、。"  # incl. full-width 、。
+
+
+def extract_url_from_text(raw):
+    # A platform's own "Share" button often copies a whole text block, not a
+    # bare URL - RedNote in particular prepends the post title, hashtags, and
+    # decorative emoji before the actual link ("88 【...】 😆 xxx 😆
+    # https://www.xiaohongshu.com/..."). Pulling out just the URL here (once,
+    # at the single entry point every route already calls) means every route
+    # gets this for free instead of failing outright because the "url" field
+    # wasn't a URL at all. A plain pasted URL (the common case) round-trips
+    # unchanged, since the regex matches the whole remaining string anyway.
+    if not raw:
+        return raw
+    match = _URL_IN_TEXT_RE.search(raw)
+    if not match:
+        return raw.strip()
+    url = match.group(0)
+    # Strip punctuation a share caption commonly tacks on right after the
+    # link (a sentence's closing period, a bracket closing surrounding
+    # markup) that was never part of the URL itself.
+    while url and url[-1] in _URL_TRAILING_PUNCTUATION:
+        url = url[:-1]
+    return url
+
+
 def normalize_rednote_url(url):
     # yt-dlp mishandles the rednote.com domain (no thumbnail, only "Best");
     # its xiaohongshu.com equivalent works fully (MISTAKES.md blacklist §4).
@@ -224,10 +251,10 @@ def entry_index_from_url(url):
 
 def classify_url(raw_url):
     # THE single source of truth for what a link is. Decision order mirrors the
-    # routes' historical precedence: RedNote rewrite → platform → Instagram
-    # (shortcode → story → profile) → YouTube list= (Mix vs playlist) →
-    # playlist/channel/handle path shapes → single.
-    url = normalize_rednote_url((raw_url or "").strip())
+    # routes' historical precedence: extract-URL-from-pasted-text → RedNote
+    # rewrite → platform → Instagram (shortcode → story → profile) → YouTube
+    # list= (Mix vs playlist) → playlist/channel/handle path shapes → single.
+    url = normalize_rednote_url(extract_url_from_text((raw_url or "").strip()))
     platform = get_platform_info(url)
 
     kind = LinkKind.SINGLE

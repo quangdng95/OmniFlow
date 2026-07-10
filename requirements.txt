@@ -27,6 +27,16 @@ requests
 # when Keychain blocks yt-dlp.
 browser_cookie3
 
+# backend/paths.py points Python's global SSL_CERT_FILE at this package's
+# bundled CA list at startup - a PyInstaller-frozen Python built inside a
+# Homebrew/conda env otherwise bakes in a cert search path that only exists
+# on the BUILD machine, breaking every raw urllib HTTPS call (Instagram/
+# Threads/LinkedIn resolvers) on a real end-user machine. Was already an
+# indirect dependency (yt-dlp/requests pull it in), but code now imports it
+# directly, so it needs to be a real requirement, not an implicit one - see
+# the curl_cffi entry above for why that distinction matters here.
+certifi
+
 # Testing (tests/test_server.py)
 pytest
 

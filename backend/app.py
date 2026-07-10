@@ -792,3 +792,24 @@ def open_logs():
     log_file = os.path.join(paths.LOG_DIR, "errors.log")
     subprocess.run(["open", paths.LOG_DIR])
     return jsonify({"ok": True, "has_logs": os.path.isfile(log_file) and os.path.getsize(log_file) > 0})
+
+
+@app.post("/api/reset-settings")
+def reset_settings():
+    # A stale saved value (most concretely: cookies_path pointing at a long-
+    # dead manually-configured cookies.txt from early testing - see
+    # MISTAKES.md, 2026-07-10) can silently keep overriding fresh state with
+    # zero UI to inspect or clear it, since that field's own Settings row was
+    # removed at some point. Deleting config.json and letting load_session()
+    # regenerate its defaults is the fix a user was told to do by hand
+    # (quit the app, delete the file, relaunch) - this does the same thing
+    # from inside the app instead, since most users have no idea that file
+    # exists or where to find it.
+    if not is_local_request():
+        return jsonify({"error": LOCAL_ONLY_ERROR}), 403
+    try:
+        if os.path.exists(config.CONFIG_FILE):
+            os.remove(config.CONFIG_FILE)
+    except OSError:
+        pass
+    return jsonify(config.load_session())

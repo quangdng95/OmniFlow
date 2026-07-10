@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Folder, ScrollText } from "lucide-react";
+import { Folder, RotateCcw, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { type Page } from "../components/Header";
 import SectionCard from "../components/SectionCard";
@@ -53,6 +53,18 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
     try {
       const { has_logs } = await api.openLogs();
       toast.success(has_logs ? t.settingsPage.exportLogs.opened : t.settingsPage.exportLogs.noLogsYet);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const handleResetSettings = async () => {
+    if (!window.confirm(t.settingsPage.resetSettings.confirm)) return;
+    try {
+      const settings = await api.resetSettings();
+      setPath(settings.path);
+      setPlaylistLimit(settings.playlist_limit ?? 100);
+      toast.success(t.settingsPage.resetSettings.done);
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -126,6 +138,21 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
               >
                 <ScrollText className="h-4 w-4" />
                 {t.settingsPage.exportLogs.button}
+              </Button>
+            </SectionCard>
+          )}
+
+          {isLocal() && (
+            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
+              <p className="text-base font-semibold text-slate-800 m-0">
+                {t.settingsPage.resetSettings.heading}
+              </p>
+              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
+                {t.settingsPage.resetSettings.description}
+              </p>
+              <Button onClick={handleResetSettings} variant="destructive" className="w-fit">
+                <RotateCcw className="h-4 w-4" />
+                {t.settingsPage.resetSettings.button}
               </Button>
             </SectionCard>
           )}

@@ -108,6 +108,35 @@ def test_owner_rednote_url_is_rewritten_to_xiaohongshu():
     assert cls.extraction_url == cls.url
 
 
+def test_extract_url_from_text_pulls_url_out_of_rednote_share_caption():
+    # RedNote's own "Share" button copies title + hashtags + emoji ahead of
+    # the real link, not a bare URL - the owner hit this exact real example.
+    raw = (
+        "88 【岁末的西贡某个角落 - SFVN | 小红书 - 你的生活兴趣社区】 😆 HcQEAeLAuw1RoAT 😆 "
+        "https://www.xiaohongshu.com/discovery/item/678bb418000000001602aa02"
+        "?source=webshare&xhsshare=pc_web&xsec_token=AB2jV_KkkD_KjGae1c-abw8c61oN206_OadoWsAFjQOJE="
+        "&xsec_source=pc_share"
+    )
+    cls = classify_url(raw)
+    assert cls.url == (
+        "https://www.xiaohongshu.com/discovery/item/678bb418000000001602aa02"
+        "?source=webshare&xhsshare=pc_web&xsec_token=AB2jV_KkkD_KjGae1c-abw8c61oN206_OadoWsAFjQOJE="
+        "&xsec_source=pc_share"
+    )
+    assert cls.platform == "RedNote"
+
+
+def test_extract_url_from_text_strips_trailing_sentence_punctuation():
+    cls = classify_url("check this out: https://www.youtube.com/watch?v=jNQXAC9IVRw.")
+    assert cls.url == "https://www.youtube.com/watch?v=jNQXAC9IVRw"
+
+
+def test_extract_url_from_text_leaves_a_bare_url_unchanged():
+    url = "https://www.tiktok.com/@user/video/123"
+    cls = classify_url(url)
+    assert cls.url == url
+
+
 def test_owner_mix_url_keeps_the_watch_url_for_extraction():
     # A Mix only resolves through its seed watch URL - no playlist?list= rewrite.
     url = OWNER_URL_CASES[1].values[0]

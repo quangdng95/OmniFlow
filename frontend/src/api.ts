@@ -56,5 +56,7 @@ export const api = {
 
   openLogs: () => request<{ ok: true; has_logs: boolean }>("/api/open-logs", { method: "POST" }),
 
+  resetSettings: () => request<Settings>("/api/reset-settings", { method: "POST" }),
+
   getClipboard: () => request<{ text: string }>("/api/clipboard"),
 };

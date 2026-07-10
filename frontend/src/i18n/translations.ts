@@ -101,6 +101,13 @@ export interface Translations {
       noLogsYet: string;
       opened: string;
     };
+    resetSettings: {
+      heading: string;
+      description: string;
+      button: string;
+      confirm: string;
+      done: string;
+    };
   };
   terms: {
     heading: string;
@@ -263,6 +270,13 @@ const en: Translations = {
       button: "Open Log Folder",
       noLogsYet: "No errors have been logged on this machine yet.",
       opened: "Log folder opened.",
+    },
+    resetSettings: {
+      heading: "Reset App Data",
+      description: "If check/download keeps failing for no clear reason, clearing OmniFlow's saved settings (download path, saved cookies, etc.) and starting fresh can help — this does not delete any of your downloaded files.",
+      button: "Clear Cache & Reset Settings",
+      confirm: "This will reset your save folder, language, and saved settings back to default. Continue?",
+      done: "Settings have been reset.",
     },
   },
   terms: {
@@ -468,6 +482,13 @@ const vi: Translations = {
       button: "Mở thư mục Log",
       noLogsYet: "Chưa có lỗi nào được ghi lại trên máy này.",
       opened: "Đã mở thư mục log.",
+    },
+    resetSettings: {
+      heading: "Đặt lại dữ liệu ứng dụng",
+      description: "Nếu việc check/tải liên tục báo lỗi không rõ nguyên nhân, xóa cấu hình đã lưu của OmniFlow (thư mục lưu, cookies đã lưu, v.v.) và bắt đầu lại từ đầu có thể giúp ích — thao tác này không xóa bất kỳ file đã tải nào của bạn.",
+      button: "Xóa Cache & Đặt lại Cài đặt",
+      confirm: "Thao tác này sẽ đặt lại thư mục lưu, ngôn ngữ và các cài đặt đã lưu về mặc định. Tiếp tục?",
+      done: "Đã đặt lại cài đặt.",
     },
   },
   terms: {
