@@ -135,6 +135,77 @@ def test_cookiefiles_from_browsers_diagnostic_names_the_profile_and_other_cookie
     assert "csrftoken" in logged[0]
 
 
+def test_cookiefiles_from_browsers_copies_wal_and_shm_sidecars(no_browser_cookie_scan, monkeypatch, tmp_path):
+    # Chrome's Cookies DB runs in SQLite WAL mode - a recently-written cookie
+    # (e.g. a login done minutes ago) can live only in the "-wal" sidecar
+    # until the next checkpoint. Copying only the main file can silently
+    # produce a snapshot missing exactly that cookie, with no exception (see
+    # 2026-07-10 MISTAKES.md - this is what a real Intel Mac hit). Pins that
+    # the sidecars get copied alongside the main db file when present, and
+    # cleaned up afterward same as the main temp file.
+    real = no_browser_cookie_scan
+    profile_dir = tmp_path / "Chrome" / "Default"
+    profile_dir.mkdir(parents=True)
+    (profile_dir / "Cookies").write_bytes(b"main-db-content")
+    (profile_dir / "Cookies-wal").write_bytes(b"wal-content")
+    (profile_dir / "Cookies-shm").write_bytes(b"shm-content")
+
+    monkeypatch.setattr(cookies_module, "CHROMIUM_BROWSER_DIRS", {"chrome": str(tmp_path / "Chrome")})
+
+    seen = {}
+
+    def fake_chrome(cookie_file=None, domain_name=""):
+        # The unconditional "fallback to browser defaults" loop also calls
+        # this with cookie_file=None (reading the live path directly, no
+        # copy involved) - only the cookie_file=temp_path call is what this
+        # test is about, so the None call is a harmless no-op here.
+        if cookie_file is not None:
+            seen["path"] = cookie_file
+            assert os.path.isfile(cookie_file + "-wal"), "wal sidecar was not copied alongside the main db"
+            assert os.path.isfile(cookie_file + "-shm"), "shm sidecar was not copied alongside the main db"
+        return [SimpleNamespace(name="sessionid", value="ok", domain=".instagram.com")]
+
+    monkeypatch.setitem(sys.modules, "browser_cookie3", types.SimpleNamespace(chrome=fake_chrome))
+
+    paths = real("instagram.com")
+    try:
+        assert len(paths) == 1
+        assert seen.get("path")
+        assert not os.path.exists(seen["path"])
+        assert not os.path.exists(seen["path"] + "-wal")
+        assert not os.path.exists(seen["path"] + "-shm")
+    finally:
+        for p in paths:
+            os.remove(p)
+
+
+def test_cookiefiles_from_browsers_fallback_loop_also_logs_missing_sessionid(no_browser_cookie_scan, monkeypatch):
+    # The "fallback to browser defaults" loop reads the browser's LIVE file
+    # directly (no copy at all) - it used to silently discard a "found
+    # cookies but no sessionid" result with zero logging, the same blind spot
+    # the main loop had before the first 2026-07-10 fix. This loop matters
+    # precisely because it's immune to the WAL-copy issue above (no copy
+    # involved), so its result is what proves/disproves that theory. Pins
+    # that it's no longer a silent dead end.
+    real = no_browser_cookie_scan
+    monkeypatch.setattr(cookies_module, "CHROMIUM_BROWSER_DIRS", {})
+
+    def chrome_missing_sessionid(cookie_file=None, domain_name=""):
+        return [SimpleNamespace(name="csrftoken", value="c", domain=".instagram.com")]
+
+    monkeypatch.setitem(sys.modules, "browser_cookie3", types.SimpleNamespace(chrome=chrome_missing_sessionid))
+
+    logged = []
+    monkeypatch.setattr(paths_module, "log_exception", lambda context, error: logged.append(str(error)))
+
+    result = real("instagram.com")
+
+    assert result == []
+    assert len(logged) == 1
+    assert "chrome/live-default" in logged[0]
+    assert "csrftoken" in logged[0]
+
+
 def test_cookiefiles_from_browsers_does_not_log_when_a_session_is_found(no_browser_cookie_scan, monkeypatch):
     real = no_browser_cookie_scan
     monkeypatch.setattr(cookies_module, "CHROMIUM_BROWSER_DIRS", {})

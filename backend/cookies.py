@@ -81,6 +81,25 @@ def _write_cookies_txt(cookie_map, domain="instagram.com"):
     return path
 
 
+def _read_domain_cookies(fn, domain, cookie_file=None):
+    # Shared by both scan loops below. Returns (cookies matching `domain`,
+    # total cookie count across ALL domains in the jar) - the total is what
+    # lets a diagnostic message distinguish "browser_cookie3 read nothing at
+    # all from this file" (points at a decrypt/access failure) from "it read
+    # plenty, just nothing for this specific domain" (points at a genuinely
+    # logged-out account or a stale/incomplete copy - see the WAL note below).
+    jar = fn(cookie_file=cookie_file, domain_name=domain)
+    all_cookies = list(jar)
+    cookie_map = {c.name: c.value for c in all_cookies if domain in (c.domain or "")}
+    return cookie_map, len(all_cookies)
+
+
+def _describe_missing_sessionid(cookie_map, total_jar_count, domain):
+    if cookie_map:
+        return f"{len(cookie_map)} {domain} cookie(s) read, no sessionid among them ({sorted(cookie_map.keys())})"
+    return f"0 {domain} cookie(s) read (jar had {total_jar_count} cookie(s) total for other domains)"
+
+
 def _cleanup_temp_cookiefiles(paths):
     # Delete only the temp cookiefiles WE generated from browser cookies - they
     # carry a live session token, so they shouldn't linger in /tmp once used. The
@@ -170,10 +189,25 @@ def cookiefiles_from_browsers(domain="instagram.com"):
     for browser, profile_label, src_path in db_paths:
         temp_path = None
         try:
-            # Copy file to temp location to bypass SQLite database locks
+            # Copy file to temp location to bypass SQLite database locks.
+            # Chrome's cookies DB runs in SQLite WAL mode, so a recently
+            # written cookie (e.g. a session set by a login done minutes ago)
+            # can still be sitting in the "-wal" sidecar rather than the main
+            # file until Chrome next checkpoints it - copying only the main
+            # file can silently yield a snapshot that's missing exactly the
+            # cookie we're looking for. Copy the sidecars too when present so
+            # sqlite3 can merge them on open, same as it would for the live
+            # file.
             fd, temp_path = tempfile.mkstemp(prefix=f"omniflow-raw-{browser}-", suffix=".db")
             os.close(fd)
             shutil.copy2(src_path, temp_path)
+            for suffix in ("-wal", "-shm"):
+                sidecar = src_path + suffix
+                if os.path.isfile(sidecar):
+                    try:
+                        shutil.copy2(sidecar, temp_path + suffix)
+                    except OSError:
+                        pass
 
             fn = getattr(browser_cookie3, browser, None)
             if not fn:
@@ -181,46 +215,40 @@ def cookiefiles_from_browsers(domain="instagram.com"):
 
             # browser_cookie3 decrypts the macOS Keychain "Chrome Safe Storage" key itself
             # - a wholly separate implementation from yt-dlp's --cookies-from-browser.
-            jar = fn(cookie_file=temp_path, domain_name=domain)
-            cookie_map = {c.name: c.value for c in jar if domain in (c.domain or "")}
+            cookie_map, total = _read_domain_cookies(fn, domain, cookie_file=temp_path)
             session = cookie_map.get("sessionid")
             if session and session not in seen_sessions:
                 seen_sessions.add(session)
                 cookiefiles.append(_write_cookies_txt(cookie_map, domain))
             elif not session:
-                # Distinguish "browser has zero cookies at all for this domain"
-                # (points at a Keychain decrypt failure - browser_cookie3 ran
-                # without raising, but every cookie value came back empty/wrong)
-                # from "some cookies matched but not the login one" (points at
-                # a genuinely logged-out/wrong profile) - the two need very
-                # different next steps to fix, so collapsing them into one
-                # generic "not logged in" message (as before) hid which one
-                # this actually is.
-                other_names = sorted(cookie_map.keys())
-                errors.append(
-                    f"{browser}/{profile_label}: {len(cookie_map)} {domain} cookie(s) read, "
-                    f"no sessionid among them ({other_names if other_names else 'zero cookies matched this domain at all'})"
-                )
+                errors.append(f"{browser}/{profile_label}: {_describe_missing_sessionid(cookie_map, total, domain)}")
         except Exception as e:
             errors.append(f"{browser}/{profile_label}: {e!r}")
         finally:
-            if temp_path and os.path.exists(temp_path):
-                try:
-                    os.remove(temp_path)
-                except OSError:
-                    pass
+            for suffix in ("", "-wal", "-shm"):
+                p = temp_path + suffix if temp_path else None
+                if p and os.path.exists(p):
+                    try:
+                        os.remove(p)
+                    except OSError:
+                        pass
 
-    # Fallback to browser defaults if no profiles could be read or to cover other setups
+    # Fallback to browser defaults if no profiles could be read or to cover
+    # other setups. Unlike the loop above, this reads the browser's LIVE
+    # default-profile file directly (no manual copy at all) - so if this also
+    # comes up with 0 cookies for the domain, that rules out the WAL/copy
+    # explanation entirely and points at decrypt/access failure instead.
     for name in ("chrome", "brave", "edge", "chromium", "vivaldi", "opera", "safari", "firefox"):
         try:
             fn = getattr(browser_cookie3, name, None)
             if fn:
-                jar = fn(domain_name=domain)
-                cookie_map = {c.name: c.value for c in jar if domain in (c.domain or "")}
+                cookie_map, total = _read_domain_cookies(fn, domain)
                 session = cookie_map.get("sessionid")
                 if session and session not in seen_sessions:
                     seen_sessions.add(session)
                     cookiefiles.append(_write_cookies_txt(cookie_map, domain))
+                elif not session:
+                    errors.append(f"{name}/live-default: {_describe_missing_sessionid(cookie_map, total, domain)}")
         except Exception as e:
             errors.append(f"{name} (default profile): {e!r}")
 
