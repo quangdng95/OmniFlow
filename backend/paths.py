@@ -29,6 +29,25 @@ import certifi
 os.environ["SSL_CERT_FILE"] = certifi.where()
 os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 
+# yt-dlp's YoutubeDL.__init__ always calls load_all_plugins(), which - even
+# though this project ships zero yt-dlp plugins - still walks
+# default_plugin_paths() to figure out where a plugin package *would* live.
+# That path calls platform.mac_ver()[0] to decide between a "legacy" and
+# normal executable-path naming scheme (yt_dlp/update.py), then feeds
+# whatever it gets straight into int() with no guard for an empty result.
+# Confirmed live 2026-07-11 (MISTAKES.md) on a real M1 Air: platform.mac_ver()
+# returns ('', ('', '', ''), 'arm64') on that specific machine (it returns a
+# real version string like ('26.5.2', ...) on this dev machine, which is
+# exactly why this was never reproducible here) - splitting '' on '[-.]'
+# yields [''], and int('') raises ValueError, crashing every single
+# extract_video_info() call - including a plain YouTube watch link - with no
+# way to work around it from the calling side. yt-dlp's own plugin loader
+# already supports skipping itself entirely via this env var (checked first
+# thing in yt_dlp/plugins.py's load_plugins(), before any of the crashing
+# code ever runs) - since this project never uses yt-dlp plugins, there is no
+# downside to always disabling plugin loading outright.
+os.environ["YTDLP_NO_PLUGINS"] = "1"
+
 PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
 # The repo root — where server.py, config.json (dev), frontend/ and the
 # vendored ffmpeg live. This file sits one level down (backend/), so anchor
