@@ -1,7 +1,7 @@
 # Remote Web Access — Design Spec
 
 **Date:** 2026-08-29
-**Status:** Draft v2, revised after owner review (see §10 for what changed)
+**Status:** Draft v3, revised after two rounds of owner review (see §10 and §11 for what changed)
 
 ## 1. Problem & Goals
 
@@ -91,9 +91,10 @@ remote_web/
 │   ├── jobs.py              # GET /api/progress/<id>, POST /api/cancel/<id>,
 │   │                          GET /api/download-file/<id> (single file OR batch .zip)
 │   ├── settings.py          # GET/POST /api/settings (language only)
-│   └── health.py             # GET /health — see §4.6
+│   └── health.py             # GET /health + GET /api/health/detail — see §4.6
 ├── zipper.py               # Batch-job .zip assembly, ZIP_STORED (see §5)
-├── reaper.py                # Background sweep of finished-but-unfetched temp dirs
+├── reaper.py                # Filesystem-mtime sweep of stale temp dirs (§5.4) - no
+│                              dependency on in-memory job state, survives restarts
 ├── ffmpeg_locator.py          # resolve_ffmpeg_binary() — architecture-aware, see §5.1
 ├── config.py                # Trust token/secret-key loading, remote server port, temp
 │                              root, cookie max-age
@@ -207,19 +208,37 @@ truthfully.
 The token's own entropy already makes brute-forcing it computationally infeasible; this
 lockout is cheap defense-in-depth against scanning noise, not the primary protection.
 
-### 4.6 `GET /health` (new — addresses review feedback on operational visibility)
+### 4.6 Health checks — public liveness vs. trusted detail (revised — addresses review feedback)
 
-Unauthenticated (see §4.4), returns:
-- `{"status": "ok"}` if the process is up — the baseline "is the tunnel/Mac even alive"
-  check.
-- `ffmpeg`: whether `ffmpeg_locator.resolve_ffmpeg_binary()` (§5.1) found a binary that
-  actually executes on this machine.
-- `instagram_cookies` / `threads_cookies`: whether `backend.cookies`/`backend.threads`'s
-  existing candidate-discovery functions currently find a live, readable browser
-  session — directly surfaces the Keychain-popup failure mode from §6.3 *before* the
-  owner is away from the Mac and actually needs it, rather than discovering it mid-use.
-- `temp_dir_disk_free_mb`: remaining space where job temp dirs/zips are staged — an early
-  signal before the reaper (§5.2) can't keep up or the disk genuinely fills.
+v2 put every diagnostic behind one unauthenticated `/health` route — including whether an
+Instagram session is currently live. That's real reconnaissance value for anyone who
+merely finds the tunnel's hostname (a public HTTPS URL is discoverable by internet-wide
+scanners regardless of whether anyone was ever told it), even before Cloudflare Access
+(§4.7) gets a chance to block them: it confirms "this is a live OmniFlow instance with an
+active Instagram session" is worth attacking, before they've authenticated at all. Split
+into two routes instead:
+
+- **`GET /health`** — unauthenticated (exempt in §4.4, same as before), so an external
+  uptime monitor can still ping it with no credentials. Returns only
+  `{"status": "ok"}` if the process is up. No detail, nothing to learn from it beyond
+  "something is listening."
+- **`GET /api/health/detail`** — behind the normal trust gate (§4.4), same as every other
+  `/api/*` route. Returns the full diagnostic payload from v2:
+  - `ffmpeg`: whether `ffmpeg_locator.resolve_ffmpeg_binary()` (§5.1) found a binary that
+    actually executes on this machine.
+  - `instagram_cookies` / `threads_cookies`: whether `backend.cookies`/`backend.threads`'s
+    existing candidate-discovery functions currently find a live, readable browser
+    session — directly surfaces the Keychain-popup failure mode from §6.5 *before* the
+    owner is away from the Mac and actually needs it, rather than discovering it mid-use.
+    **Cached** for 5 minutes (`remote_web/config.py`-configurable) rather than
+    re-checked on every hit — an automated monitor pinging this frequently shouldn't
+    hammer Keychain access repeatedly, both for overhead and to avoid any risk of
+    re-triggering a permission-prompt reset.
+  - `temp_dir_disk_free_mb`: remaining space where job temp dirs/zips are staged — an
+    early signal before the reaper (§5.4) can't keep up or the disk genuinely fills.
+
+  No secrets (the token, the signing key, filesystem paths) appear in either response —
+  status flags only, even behind the trust gate.
 
 No secrets or paths leaked in the response — this is a status page, not a debug dump.
 
@@ -258,12 +277,19 @@ resolve_ffmpeg_binary():
     return the path, or None with a clear reason if it fails
 ```
 
+**Verified, not assumed (review feedback flagged this specific risk):** confirmed both
+binaries actually exist in the repo right now — `ffmpeg` (arm64, 440 KB) and
+`ffmpeg-x86_64` (x86_64, 80 MB), both tracked in Git LFS
+(`git lfs ls-files` → `e499399d32 * ffmpeg`, `872adac66b * ffmpeg-x86_64`), both already
+pushed. If the dedicated Mac turns out to be Intel, the x86_64 binary this design depends
+on is genuinely there, not a symmetry assumption.
+
 The resolved path is passed explicitly into `backend.download.build_download_options`/
 `download_one_video`/`ensure_h264` as their existing `ffmpeg_bin` parameter — all three
 already take it as a plain argument, never hardcode a lookup internally (confirmed by
 reading `backend/download.py` this session), so no shared code needs to change at all.
 Checked at startup (fail loud in the process log if unresolvable) and surfaced via
-`/health` (§4.6) — never silently discovered only when a download fails.
+`/api/health/detail` (§4.6) — never silently discovered only when a download fails.
 
 ### 5.2 Single item (video/photo/post)
 
@@ -293,29 +319,45 @@ Checked at startup (fail loud in the process log if unresolvable) and surfaced v
    `extraction` logic, unmodified).
 2. `POST /api/download-batch` → downloads selected items into one shared temp dir
    (reusing `backend.download.download_one_video`/`download_direct_url` and the
-   `BATCH_CONCURRENCY`-parallel pattern `backend/app.py` already uses) → once every item
-   finishes (or the job is cancelled), `zipper.py` bundles the temp dir's files into a
-   single `<job_id>.zip` using stdlib `zipfile` with **`ZIP_STORED`** (no compression) —
-   the contents are already-compressed video/image files, so `ZIP_DEFLATE` (the module's
-   default) would burn CPU on the (older) deployment Mac for no size reduction.
-3. `GET /api/download-file/<job_id>` detects a batch job (checks whether the job produced
+   `BATCH_CONCURRENCY`-parallel pattern `backend/app.py` already uses).
+3. **Incremental zipping, not batch-at-the-end (revised — addresses review feedback on
+   peak disk usage):** v2 assembled the `.zip` only after every item finished, meaning
+   every raw file *and* the zip coexisted on disk at once — on a batch large enough,
+   roughly double the batch's real size, on the machine least able to spare it. Instead,
+   `zipper.py` keeps one `zipfile.ZipFile` open (mode `"a"`, **`ZIP_STORED`** — no
+   compression; the contents are already-compressed video/image files, so `ZIP_DEFLATE`,
+   the module's default, would just burn CPU on the older deployment Mac for no size
+   reduction) for the duration of the batch job. As each item's download completes,
+   `zipper.py` immediately `write()`s it into the archive and deletes the raw file. Peak
+   disk usage is bounded by roughly `BATCH_CONCURRENCY` (3) in-flight raw files plus the
+   zip's current size, not the whole batch's total size.
+4. `GET /api/download-file/<job_id>` detects a batch job (checks whether the job produced
    a `.zip` vs. a single file) and streams whichever exists, deleting the temp dir
    afterward either way. The frontend needs no changes here — it already just links to
    this same route for a finished job; only the payload's `Content-Type`/filename differ.
 
-### 5.4 Temp-dir/zip cleanup (new — addresses review feedback)
+### 5.4 Temp-dir/zip cleanup (revised — addresses review feedback)
 
 Every job stages into its own temp dir; today's `backend/app.py` remote-mode code already
 accepts an orphan risk here for the rare "closed the tab" case (documented as "a minor
 gap" in `.claude/rules/web-app.md`) — acceptable there because it's a rare edge case atop
 an otherwise-local, disk-rich deployment. `remote_web` runs on an older machine
 continuously, so unfetched temp dirs accumulating over weeks is a real, not theoretical,
-risk of filling the disk. `remote_web/reaper.py` runs a lightweight background thread
+risk of filling the disk.
+
+v2's reaper design consulted `backend.jobs.jobs` (in-memory) to decide which temp dirs
+were stale — broken by construction: a `launchd` restart (§6 step 8, already a documented
+trade-off) wipes that dict, so every temp dir created before the most recent restart has
+no job record left to check against, and a job-dict-driven reaper would never even know
+they exist. `remote_web/reaper.py` instead sweeps the temp-dir root directly on the
+**filesystem**, independent of any in-memory state: a lightweight background thread
 (started once at app startup, sleeping between sweeps — no external scheduler/cron
-needed) that deletes any job's temp dir once it's been in a terminal state (`done`,
-`error`, or `cancelled`) for longer than a configurable window (default 30 minutes —
-enough time to actually tap "download" on a phone, short enough not to matter for disk
-space). Surfaced indirectly via `/health`'s `temp_dir_disk_free_mb`.
+needed, and no job-dict dependency to go stale) deletes any subdirectory under the temp
+root whose most-recently-modified file is older than a configurable window (default 30
+minutes — enough time to actually tap "download" on a phone, short enough not to matter
+for disk space). This correctly catches both a finished-but-unfetched job **and** any
+directory orphaned by a mid-download restart, using one mechanism instead of two.
+Surfaced indirectly via `/api/health/detail`'s `temp_dir_disk_free_mb`.
 
 ### 5.5 Cancellation
 
@@ -343,23 +385,22 @@ machine:
    `browser_cookie3`-based auto-extraction the native app already uses), and manually
    trigger one Instagram check once to walk through any first-time Keychain permission
    prompt while someone is physically present to click "Always Allow" — a prompt that
-   appears later with nobody watching just fails silently (see §6.3 below and `/health`
-   in §4.6).
+   appears later with nobody watching just fails silently (see §6.5 below and
+   `/api/health/detail` in §4.6).
 7. Run `python3 -m remote_web.app` **from the repo root** — binds `127.0.0.1:5050` only.
    Must be run this way (not `python3 remote_web/app.py`): the `-m` form is what puts the
    repo root on `sys.path`, which is what makes `import backend` resolve at all; a plain
    script-path invocation would only put `remote_web/`'s own directory on the path.
-8. Install as a `launchd` agent (`~/Library/LaunchAgents/com.omniflow.remoteweb.plist`,
-   `RunAtLoad` + `KeepAlive`) so it restarts on crash/reboot without a logged-in terminal
-   session. The plist's `WorkingDirectory` key **must** be set to the repo root (launchd
-   does not go through a shell, so there's no CWD to inherit otherwise) and
-   `ProgramArguments` must use the same `-m remote_web.app` form as step 7, for the same
-   `sys.path` reason. **Known trade-off, documented not hidden:** a restart clears the
-   in-memory
-   `backend.jobs.jobs` dict and the brute-force lockout counter (§4.5) — any in-flight
-   download's progress is lost and a lockout resets to zero. Acceptable for personal use;
-   would need persistent storage (SQLite, a file) to survive restarts, which is out of
-   scope for v1.
+8. Install as a `launchd` **agent** (`~/Library/LaunchAgents/com.omniflow.remoteweb.plist`,
+   `RunAtLoad` + `KeepAlive`), **not** a LaunchDaemon — deliberately, see §6.4 for why a
+   Daemon actively breaks Instagram/Threads. The plist's `WorkingDirectory` key **must**
+   be set to the repo root (launchd does not go through a shell, so there's no CWD to
+   inherit otherwise) and `ProgramArguments` must use the same `-m remote_web.app` form
+   as step 7, for the same `sys.path` reason. **Known trade-off, documented not hidden:**
+   a restart clears the in-memory `backend.jobs.jobs` dict and the brute-force lockout
+   counter (§4.5) — any in-flight download's progress is lost and a lockout resets to
+   zero. Acceptable for personal use; would need persistent storage (SQLite, a file) to
+   survive restarts, which is out of scope for v1.
 9. Install `cloudflared`, authenticate, create a named tunnel pointed at
    `127.0.0.1:5050`, then `cloudflared service install` for the same auto-start/restart
    behavior.
@@ -368,15 +409,62 @@ machine:
     separate product from the app itself.
 11. Disable macOS sleep on this Mac (System Settings → Energy, or a `caffeinate` wrapper
     in the launchd plist) so the tunnel doesn't silently drop.
+12. Enable **Automatic Login** for this account (System Settings → Users & Groups →
+    Login Options) and confirm **FileVault is off** on this Mac. Both are required for
+    the deployment to actually survive an unattended reboot — see §6.4 for why; skipping
+    either one means a random forced restart (power blip, a macOS security update that
+    demands a reboot) leaves the service down until someone physically visits the Mac,
+    directly defeating the "always reachable" goal in §1.
 
-### 6.3 Ongoing maintenance note
+### 6.4 Why Automatic Login + no FileVault are required, not optional (new — addresses review feedback)
+
+A real conflict exists between two of this design's own requirements that v2 didn't
+resolve: "survives an unattended reboot" and "can read the login Keychain for
+Instagram/Threads cookies."
+
+- **`LaunchAgent`** (§6 step 8) only starts once a GUI user session begins — after a
+  reboot with nobody physically logging in, it simply never starts, `RunAtLoad`/
+  `KeepAlive` notwithstanding. This is exactly the failure mode this whole project exists
+  to avoid: discovering, from a phone far from home, that the service has been down since
+  a reboot nobody was there for.
+- **Switching to a `LaunchDaemon`** (`/Library/LaunchDaemons`, starts before any login,
+  survives reboot unconditionally) looks like the fix, but isn't: a Daemon runs with no
+  GUI session at all, and macOS's login Keychain is only unlocked as part of *that*
+  specific user's interactive login — `browser_cookie3`'s Keychain decryption (the same
+  mechanism `backend/cookies.py` already relies on for the native app) would fail for
+  every Instagram/Threads request, unconditionally, the moment nothing has logged in
+  since boot. A Daemon trades "survives reboot" for "Instagram/Threads permanently
+  broken until someone logs in anyway" — no net improvement.
+- **The actual fix:** keep the `LaunchAgent` (§6 step 8, unchanged), but enable
+  **Automatic Login** for the dedicated account. macOS performs that login itself at
+  boot, with no one present, which both unlocks the login Keychain (satisfying
+  `browser_cookie3`) *and* starts the GUI session the `LaunchAgent` needs — one setting
+  resolves both halves of the conflict using stock macOS behavior, no custom code.
+- **The catch: FileVault.** If FileVault (whole-disk encryption) is enabled on this Mac,
+  its own pre-boot passphrase prompt gates the *entire* boot process, before Automatic
+  Login (or anything else) ever runs — no amount of login configuration works around it,
+  since the disk itself can't be read until someone types the passphrase at a screen no
+  one is looking at. FileVault and "survives an unattended reboot" are mutually
+  exclusive on macOS, full stop. §1's "always reachable" goal requires FileVault to
+  stay **off** on this specific dedicated Mac.
+- **Accepted trade-off, stated plainly:** Automatic Login without FileVault means anyone
+  with physical access to this Mac gets straight into the account, no password, and the
+  disk is unencrypted at rest. For a dedicated machine whose only real secrets are an
+  Instagram/Threads browser session and this deployment's own trust token/secret key
+  (§4.2–§4.3, both revocable), this is a reasonable trade for the stated goal — but it's
+  a real security posture change from "a normal Mac," worth the owner consciously
+  accepting rather than discovering later. If physical security of the dedicated Mac's
+  location can't be guaranteed, this whole "always reachable" goal may need revisiting
+  rather than working around FileVault.
+
+### 6.5 Ongoing maintenance note
 
 Every macOS or browser (Chrome/Brave/Edge) update on the dedicated Mac can reset the
 Keychain permission `browser_cookie3` relies on, re-triggering the one-time consent
 prompt from step 6 — but with nobody physically present to click it, Instagram/Threads
 extraction fails silently from that point on (still logged to `errors.log` via
 `backend.paths.log_exception`, reused unmodified, but nobody's watching that file either
-unless they think to look). `/health` (§4.6) is the mitigation: check it after any update
+unless they think to look). `/api/health/detail` (§4.6) is the mitigation: check it after any update
 to that Mac, or periodically, rather than only discovering the failure mid-use.
 
 Full step-by-step commands go in `remote_web/README.md` during implementation, not
@@ -395,7 +483,7 @@ Additions specific to this deployment:
   `error` status with a specific message, same pattern `backend/app.py`'s existing batch
   failure handling uses.
 - ffmpeg unresolvable (§5.1) → fails loud at startup (process log), also reflected in
-  `/health`, rather than surfacing only as a mysterious per-download failure.
+  `/api/health/detail`, rather than surfacing only as a mysterious per-download failure.
 - Tunnel/Cloudflare-level failures (Mac asleep, `cloudflared` crashed) are outside the
   app's control — the phone would simply see a connection failure. `remote_web/README.md`
   documents the launchd + sleep-prevention setup specifically to minimize this.
@@ -411,19 +499,24 @@ Additions specific to this deployment:
   `backend.download.download_one_video`, etc.) to verify `/api/check`/`/api/download`
   work for a representative platform and that Instagram/Threads are **not** rejected
   (the one behavior that must differ from `backend/app.py`).
-- `remote_web/tests/test_zipper.py` — a batch job's temp dir zips correctly, preserves
-  filenames, uses `ZIP_STORED` (assert on the resulting archive's compression type, not
-  just that a zip exists), handles an empty/failed-item edge case.
-- `remote_web/tests/test_reaper.py` — a stale terminal-state job's temp dir gets deleted
-  after the configured window; an in-progress or freshly-completed job's does not.
+- `remote_web/tests/test_zipper.py` — items appended incrementally end up correctly
+  archived with filenames preserved, uses `ZIP_STORED` (assert on the resulting
+  archive's compression type, not just that a zip exists), each source file is deleted
+  immediately after being added (not just at the end), handles an empty/failed-item edge
+  case.
+- `remote_web/tests/test_reaper.py` — a temp dir whose newest file is older than the
+  configured window gets deleted; one with a recent modification time does not; a
+  simulated "orphaned by restart" dir (no corresponding entry in `backend.jobs.jobs` at
+  all) is still correctly swept, proving the mtime-only design doesn't depend on job
+  state surviving a restart.
 - `remote_web/tests/test_ffmpeg_locator.py` — picks `ffmpeg` vs `ffmpeg-x86_64` correctly
   per `platform.machine()`, mirrors `tests/test_paths.py`'s existing pattern for
   simulating a wrong-architecture exec failure.
 - Manual live checklist (recorded in `remote_web/README.md`, not automated): access via
   a real Cloudflare Tunnel URL from an actual phone; confirm an unlocked device can
   check+download a single item and a playlist; confirm a browser without the trust
-  cookie is rejected; confirm Instagram/Threads work end-to-end; check `/health` reports
-  everything green.
+  cookie is rejected; confirm Instagram/Threads work end-to-end; check
+  `/api/health/detail` reports everything green.
 - `pytest` for the existing suite (`tests/`) must stay green and untouched by this work
   — a fast, mechanical check that nothing in `backend/` was accidentally modified.
 
@@ -454,8 +547,8 @@ addressed above:
   throughout `backend/download.py` (not hardcoded), designed `ffmpeg_locator.py` to
   resolve and pass it explicitly, entirely inside `remote_web/` (§5.1).
 - **Critical:** silent Keychain-consent failure on an unattended machine → documented as
-  an operational risk (§6.3) and given a concrete mitigation (`/health`'s cookie-status
-  fields, §4.6).
+  an operational risk (originally §6.3, now §6.5 after v3's renumbering) and given a
+  concrete mitigation (`/health`'s cookie-status fields, §4.6).
 - **Should-fix:** orphaned temp dirs/zips (§5.4, new `reaper.py`), documented in-memory
   state loss on restart (§6 step 8), trust cookie expiry + revocation (§4.2, §4.3),
   explicit `SameSite=Lax` (§4.2), `ZIP_STORED` instead of default DEFLATE (§5.3).
@@ -464,3 +557,28 @@ addressed above:
 - **Self-caught during this revision (not from owner feedback):** the previously-approved
   folder name `remote-web/` can't actually be imported as a Python package (hyphens are
   invalid in dotted module paths) — renamed to `remote_web/` throughout, see §9.1.
+
+## 11. Changelog (v2 → v3, second owner review round)
+
+- **Critical:** `LaunchAgent` vs. login-Keychain vs. surviving an unattended reboot were
+  three requirements in tension that v2 never actually reconciled → root-caused in new
+  §6.4: a `LaunchAgent` doesn't start without a GUI login, a `LaunchDaemon` starts but
+  can't reach the login Keychain at all: neither alone satisfies both "always reachable"
+  and "Instagram/Threads work." Resolved by keeping the `LaunchAgent` and requiring
+  Automatic Login (§6 step 12) — plus the FileVault caveat that follows from it (FileVault
+  gates the whole boot behind an unattended pre-boot prompt no login setting can bypass),
+  stated as an explicit, accepted security trade-off rather than left implicit.
+- **Critical:** `ffmpeg-x86_64`'s existence was asserted, not confirmed → actually checked
+  the repo and Git LFS state before writing this revision; both binaries are real (§5.1).
+- **Should-fix:** reaper redesigned from job-dict-driven (silently blind to anything
+  orphaned by a `launchd` restart, since that wipes the dict it was consulting) to a plain
+  filesystem `mtime` sweep of the temp-dir root — one mechanism that can't go stale (§5.4).
+- **Should-fix:** `/health` split into a public, contentless liveness check and a
+  trust-gated `/api/health/detail` carrying the actual diagnostic payload — the previous
+  single unauthenticated route leaked "this instance has a live Instagram session" to
+  anyone who found the URL, before any auth layer even applied (§4.6).
+- **Should-fix:** batch zipping changed from all-items-then-zip to incremental
+  write-then-delete-source per item, capping peak disk usage near `BATCH_CONCURRENCY`
+  in-flight files instead of the whole batch's total size (§5.3).
+- **Minor:** the cookie-liveness check inside `/api/health/detail` is now cached (5
+  minutes) instead of re-querying Keychain on every hit (§4.6).
