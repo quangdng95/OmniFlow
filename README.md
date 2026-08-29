@@ -10,6 +10,8 @@
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#installation)
   [![Latest Release](https://img.shields.io/github/v/release/quangdng95/OmniFlow)](../../releases/latest)
+
+  **English** · [Tiếng Việt](README.vi.md)
 </div>
 
 ---
@@ -48,7 +50,7 @@ platforms creators, designers, and researchers actually pull reference material 
 | Platform | Single item | Bulk / multi-item | Notes |
 |---|---|---|---|
 | YouTube | ✅ Video, audio-only | ✅ Playlist, channel, Mix/Radio | |
-| TikTok | ✅ Video | — | |
+| TikTok | ✅ Video, Photo Mode slideshow | — | |
 | Instagram | ✅ Post, Reel, photo | ✅ Carousel, Story, profile/Reels | Private content needs a logged-in browser session |
 | Facebook | ✅ Reel | — | |
 | RedNote (Xiaohongshu) | ✅ Video, image | — | |
