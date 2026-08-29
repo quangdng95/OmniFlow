@@ -128,8 +128,8 @@ fi
 
 # 6. Clean up temporary build files
 echo -e "${BLUE}Cleaning up temporary build artifacts...${NC}"
-rm -rf build/
-echo -e "${GREEN}Temporary build/ folder removed.${NC}"
+rm -rf build/ .ffmpeg_stage/
+echo -e "${GREEN}Temporary build/ and .ffmpeg_stage/ folders removed.${NC}"
 
 echo -e "\n${GREEN}=== Build Completed Successfully! ===${NC}"
 echo -e "You can find and run your app here:"

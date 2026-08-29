@@ -2,7 +2,9 @@
 
 import datetime
 import os
+import platform
 import shutil
+import subprocess
 import sys
 import traceback
 
@@ -89,6 +91,28 @@ def log_exception(context, error):
         pass
 
 
+# macOS's kernel-level "wrong CPU architecture for this binary" errno - what
+# a wrong-architecture ffmpeg (e.g. the Intel build's binary on an Apple
+# Silicon Mac with no Rosetta 2 installed) fails with the moment anything
+# tries to exec it. Confirmed live 2026-08-29 (MISTAKES.md) while building
+# the arm64-native ffmpeg. Existence and the +x bit both pass fine for a
+# wrong-architecture binary - only an actual exec attempt reveals this.
+_BAD_CPU_TYPE_ERRNO = 86
+
+
+def _ffmpeg_exec_error(path):
+    # None if the binary genuinely runs; the OSError itself (so the caller
+    # can inspect .errno) if the exec attempt failed outright - as opposed to
+    # ffmpeg running and printing its own error, which "-version" never does.
+    try:
+        subprocess.run([path, "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        return None
+    except OSError as e:
+        return e
+    except subprocess.SubprocessError as e:
+        return e
+
+
 def get_ffmpeg_path():
     local_ffmpeg = resource_path("ffmpeg")
     if os.path.exists(local_ffmpeg):
@@ -99,7 +123,7 @@ def get_ffmpeg_path():
                 os.chmod(local_ffmpeg, 0o755)
             except OSError:
                 pass
-        if os.access(local_ffmpeg, os.X_OK):
+        if os.access(local_ffmpeg, os.X_OK) and _ffmpeg_exec_error(local_ffmpeg) is None:
             return local_ffmpeg
     # The vendored ffmpeg should always be found above - this system-PATH
     # fallback exists only as a last resort. On a dev machine with ffmpeg
@@ -114,3 +138,23 @@ def get_ffmpeg_path():
         RuntimeError(f"bundled ffmpeg not usable at {local_ffmpeg!r}"),
     )
     return system_ffmpeg
+
+
+def ffmpeg_unavailable_message():
+    # Called only after get_ffmpeg_path() has already returned falsy (bundled
+    # AND system-PATH ffmpeg both failed) - gives the most specific,
+    # actionable message available instead of a one-size-fits-all "ffmpeg
+    # missing" that doesn't help a user whose actual problem is "wrong .app
+    # for their Mac's chip" (the most common real cause on Apple Silicon
+    # without Rosetta 2 installed).
+    local_ffmpeg = resource_path("ffmpeg")
+    err = _ffmpeg_exec_error(local_ffmpeg)
+    if isinstance(err, OSError) and err.errno == _BAD_CPU_TYPE_ERRNO:
+        machine = platform.machine()
+        wanted_dmg = "OmniFlow-AppleSilicon.dmg" if machine == "arm64" else "OmniFlow-Intel.dmg"
+        return (
+            "❌ Lỗi: Bản OmniFlow này không tương thích với chip của máy Mac bạn đang dùng "
+            f"(kiến trúc {machine}). Vui lòng tải đúng bản dành cho máy bạn "
+            f"({wanted_dmg}) tại trang GitHub Releases của OmniFlow."
+        )
+    return "❌ Lỗi: Không tìm thấy FFmpeg khả dụng. Vui lòng cài FFmpeg (brew install ffmpeg) hoặc tải lại OmniFlow."

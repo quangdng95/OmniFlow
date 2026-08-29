@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 import yt_dlp
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, paths, threads
+from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, paths, threads, tiktok
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
@@ -133,6 +133,27 @@ INSTAGRAM_NO_SESSION_ERROR = "❌ Lỗi: Không tìm thấy phiên đăng nhập
 THREADS_LOCAL_ONLY_ERROR = "Threads downloads are only available when running OmniFlow locally on your own machine."
 THREADS_AUTH_ERROR = "❌ Lỗi: Cần một trình duyệt đã đăng nhập Threads (threads.com) trên máy này để tải bài viết. Vui lòng đăng nhập rồi thử lại."
 THREADS_EXTRACT_ERROR = "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung."
+# LinkedIn's native document/slide-deck (PDF) post type has no known resolver
+# (see MISTAKES.md - no example URL to reverse-engineer against yet). This is
+# surfaced as its own specific message rather than falling through to
+# whatever unrelated error yt-dlp happens to raise for the same URL, so the
+# user knows the real reason instead of a generic "couldn't process this link".
+LINKEDIN_DOCUMENT_POST_ERROR = "❌ Lỗi: Bài đăng LinkedIn dạng tài liệu/slide (PDF) hiện chưa được OmniFlow hỗ trợ tải. OmniFlow hiện chỉ hỗ trợ bài đăng LinkedIn dạng video hoặc ảnh."
+
+
+def _save_single_cdn_image(job_id, save_dir, title, cdn_url):
+    # Shared tail for the LinkedIn og:image and TikTok Photo Mode single-item
+    # fallbacks in start_download's run(): save one resolved CDN url as a
+    # .jpg and mark the job done. yt_dlp.utils.DownloadCancelled propagates
+    # through unchanged so each caller keeps its own cancel handling.
+    jpg_path = download.get_unique_filename(save_dir, title, "jpg")
+    jobs.jobs[job_id]["filename"] = os.path.basename(jpg_path)
+    jobs.jobs[job_id]["filepath"] = jpg_path
+    download.download_direct_url(cdn_url, jpg_path, job_id)
+    jobs.jobs[job_id]["percent"] = 100
+    jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
+    jobs.jobs[job_id]["status"] = "done"
+
 
 @app.post("/api/check")
 def check_link():
@@ -231,6 +252,21 @@ def check_link():
         if cls.platform == "LinkedIn":
             try:
                 media = linkedin.fetch_linkedin_image_post(url)
+                return jsonify(instagram.instagram_check_response(url, media))
+            except linkedin.LinkedInUnsupportedPostError:
+                return jsonify({"error": LINKEDIN_DOCUMENT_POST_ERROR}), 400
+            except Exception:
+                pass
+        # yt-dlp has no extractor at all for a TikTok Photo Mode post (a
+        # slideshow, not a video) - it raises a bare "Unsupported URL" here.
+        # Fall back to the tikwm.com resolver (backend/tiktok.py) before
+        # giving up. Gated on that specific message (not every DownloadError)
+        # so a real TikTok video that fails for an unrelated reason (deleted,
+        # private, geo-blocked) doesn't also pay for a doomed second network
+        # call to the third-party resolver.
+        if cls.platform == "TikTok" and "unsupported url" in str(e).lower():
+            try:
+                media = tiktok.fetch_tiktok_photo_post(url)
                 return jsonify(instagram.instagram_check_response(url, media))
             except Exception:
                 pass
@@ -428,54 +464,9 @@ def start_download():
         threading.Thread(target=run_threads, daemon=True).start()
         return jsonify({"job_id": job_id})
 
-    # LinkedIn posts can be either a video (yt-dlp's LinkedInIE handles it
-    # below) or a plain image (no <video> tag - needs the custom og:image
-    # resolver instead). Try the cheap image resolver first; a post with no
-    # og:image (a real video post, or an unsupported document/slide-deck post)
-    # falls through to the standard yt-dlp pipeline, which raises its own
-    # DownloadError for a document post rather than silently mis-downloading it.
-    if cls.platform == "LinkedIn":
-        try:
-            linkedin_media = linkedin.fetch_linkedin_image_post(url)
-        except Exception:
-            linkedin_media = None
-        if linkedin_media:
-            job_id = uuid.uuid4().hex
-            jobs.jobs[job_id] = {
-                "status": "running", "percent": 0, "text": "Starting...",
-                "filename": None, "filepath": None, "cancelled": False,
-            }
-
-            def run_linkedin_image():
-                try:
-                    cdn_url = linkedin_media["items"][0].get("url")
-                    if not cdn_url:
-                        raise ValueError("No downloadable media found")
-                    final_output_path = download.get_unique_filename(save_dir, title, "jpg")
-                    jobs.jobs[job_id]["filename"] = os.path.basename(final_output_path)
-                    jobs.jobs[job_id]["filepath"] = final_output_path
-                    download.download_direct_url(cdn_url, final_output_path, job_id)
-                except yt_dlp.utils.DownloadCancelled:
-                    jobs._remove_job_file(job_id)
-                    jobs.jobs[job_id]["text"] = "Cancelled"
-                    jobs.jobs[job_id]["status"] = "cancelled"
-                    return
-                except Exception as e:
-                    print(f"[download] job {job_id} (linkedin image) failed: {e}")
-                    jobs._remove_job_file(job_id)
-                    jobs.jobs[job_id]["text"] = str(e) or "Download failed"
-                    jobs.jobs[job_id]["status"] = "error"
-                    return
-                jobs.jobs[job_id]["percent"] = 100
-                jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
-                jobs.jobs[job_id]["status"] = "done"
-
-            threading.Thread(target=run_linkedin_image, daemon=True).start()
-            return jsonify({"job_id": job_id})
-
     ffmpeg_bin = paths.get_ffmpeg_path()
     if not ffmpeg_bin:
-        return jsonify({"error": "FFmpeg missing! Run 'brew install ffmpeg'"}), 400
+        return jsonify({"error": paths.ffmpeg_unavailable_message()}), 400
 
     ext = "mp3" if "Audio" in quality else "mp4"
     final_output_path = download.get_unique_filename(save_dir, title, ext)
@@ -537,6 +528,51 @@ def start_download():
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
         except yt_dlp.utils.DownloadError as e:
+            # yt-dlp's LinkedInIE only handles a post with a <video> tag - an
+            # image-only LinkedIn post fails here with "Unable to extract
+            # video", so fall back to the custom og:image resolver. Only
+            # reached after yt-dlp's own attempt already failed (a real video
+            # post always succeeds above and never reaches this at all) -
+            # this ordering matters: the same og:image tag LinkedIn serves
+            # for a real image post is ALSO present as a video's thumbnail on
+            # a real video post's page, so trying the image resolver before
+            # yt-dlp (the original ordering here) could silently download a
+            # video post's thumbnail instead of the actual video (found live
+            # 2026-08-29, MISTAKES.md, while adding LinkedIn document-post
+            # detection - fixed by matching /api/check's already-safe order).
+            if cls.platform == "LinkedIn":
+                try:
+                    linkedin_media = linkedin.fetch_linkedin_image_post(url)
+                    _save_single_cdn_image(job_id, save_dir, title, linkedin_media["items"][0]["url"])
+                    return
+                except yt_dlp.utils.DownloadCancelled:
+                    jobs.jobs[job_id]["status"] = "cancelled"
+                    jobs.jobs[job_id]["text"] = "Cancelled"
+                    return
+                except linkedin.LinkedInUnsupportedPostError:
+                    jobs.jobs[job_id]["status"] = "error"
+                    jobs.jobs[job_id]["text"] = LINKEDIN_DOCUMENT_POST_ERROR
+                    return
+                except Exception:
+                    pass  # fall through to the friendly error below
+            # A TikTok Photo Mode post (a slideshow, not a video) has no
+            # yt-dlp extractor at all - only reached here because the
+            # general yt-dlp attempt above already failed, so a normal
+            # TikTok video download never pays the third-party resolver's
+            # cost. See backend/tiktok.py for why tikwm.com is used here.
+            # Gated on that specific message so a real video that fails for
+            # an unrelated reason doesn't also pay for a doomed second call.
+            if cls.platform == "TikTok" and "unsupported url" in str(e).lower():
+                try:
+                    tiktok_media = tiktok.fetch_tiktok_photo_post(url)
+                    _save_single_cdn_image(job_id, save_dir, title, tiktok_media["items"][0]["url"])
+                    return
+                except yt_dlp.utils.DownloadCancelled:
+                    jobs.jobs[job_id]["status"] = "cancelled"
+                    jobs.jobs[job_id]["text"] = "Cancelled"
+                    return
+                except Exception:
+                    pass  # fall through to the friendly error below
             # Same friendly-message treatment as /api/check - without this,
             # a download failure shows yt-dlp's raw CLI-flag-laden message
             # (--cookies-from-browser, GitHub issue templates) instead of the
@@ -605,9 +641,14 @@ def start_batch_download():
 
     ffmpeg_bin = paths.get_ffmpeg_path()
     if not ffmpeg_bin:
-        return jsonify({"error": "FFmpeg missing! Run 'brew install ffmpeg'"}), 400
+        return jsonify({"error": paths.ffmpeg_unavailable_message()}), 400
 
     is_ig_carousel = cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL
+    # A TikTok Photo Mode carousel has no dedicated classify.py LinkKind (see
+    # backend/tiktok.py) - the /api/check response only ever returns
+    # type:"playlist" for a TikTok URL via that Photo Mode fallback, so
+    # reaching here with platform TikTok reliably means one.
+    is_tiktok_photo = cls.platform == "TikTok"
 
     job_id = uuid.uuid4().hex
     total = len(items)
@@ -646,7 +687,7 @@ def start_batch_download():
                 recompute_overall()
 
             try:
-                if is_ig_carousel:
+                if is_ig_carousel or is_tiktok_photo:
                     idx = item.get("entry_index") or (i + 1)
                     node = media_holder["media"]["items"][idx - 1]
                     cdn_url = node.get("url")
@@ -687,6 +728,10 @@ def start_batch_download():
                 if not ig_candidates:
                     raise instagram.InstagramAuthError("Instagram requires a logged-in session (cookies).")
                 media_holder["media"] = instagram.fetch_instagram_media_any(url, ig_candidates)
+            elif is_tiktok_photo:
+                # Same one-resolve-reuse-across-slides pattern as the Instagram
+                # carousel above (backend/tiktok.py).
+                media_holder["media"] = tiktok.fetch_tiktok_photo_post(url)
 
             # Download BATCH_CONCURRENCY items at once. download_item swallows its
             # own per-item errors, so a future never raises here.

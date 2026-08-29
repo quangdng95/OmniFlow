@@ -5,12 +5,44 @@
 #
 # Build:  pyinstaller OmniFlow.spec --noconfirm
 # Output: dist/OmniFlow.app
+import os
+import platform
+import shutil
+
 from PyInstaller.utils.hooks import collect_all
+
+# Two vendored ffmpeg binaries live at the repo root: `ffmpeg` (arm64-native,
+# built with dylibbundler from Homebrew's own ffmpeg so it's self-contained
+# via its sibling ffmpeg-libs/ dylibs - no Homebrew needed at runtime; see
+# MISTAKES.md 2026-08-29) for Apple Silicon, and `ffmpeg-x86_64` (statically
+# linked codecs, zero external dylib deps) for Intel. Build on the machine
+# matching the target architecture - this spec picks the matching source
+# automatically via platform.machine(), so the same spec produces a
+# correctly-native app on either kind of Mac without manual file-swapping.
+# The bundled file must always be literally named "ffmpeg"
+# (get_ffmpeg_path()'s resource_path("ffmpeg") expectation), so the chosen
+# source is staged under that name before PyInstaller ever sees it.
+_IS_ARM64 = platform.machine() == "arm64"
+_FFMPEG_SOURCE = "ffmpeg" if _IS_ARM64 else "ffmpeg-x86_64"
+_STAGE_DIR = ".ffmpeg_stage"
+_STAGED_FFMPEG = os.path.join(_STAGE_DIR, "ffmpeg")
+os.makedirs(_STAGE_DIR, exist_ok=True)
+shutil.copy2(_FFMPEG_SOURCE, _STAGED_FFMPEG)
+os.chmod(_STAGED_FFMPEG, 0o755)
 
 datas = [
     ("frontend/dist", "frontend/dist"),  # the built UI server.py serves
-    ("ffmpeg", "."),                     # vendored ffmpeg (get_ffmpeg_path restores +x)
+    (_STAGED_FFMPEG, "."),               # vendored ffmpeg (get_ffmpeg_path restores +x)
 ]
+if _IS_ARM64:
+    # The arm64 build is only self-contained because its Mach-O load
+    # commands point at @executable_path/libs/*.dylib (dylibbundler output) -
+    # without bundling ./libs as a sibling of the executable too, it crashes
+    # immediately with "Library not loaded" (confirmed live 2026-08-29,
+    # MISTAKES.md - a folder-name mismatch reproduced exactly this). The
+    # x86_64 binary needs no equivalent - confirmed via `otool -L` it only
+    # links system frameworks (its codecs are statically linked in).
+    datas.append(("libs/*.dylib", "libs"))
 binaries = []
 hiddenimports = []
 

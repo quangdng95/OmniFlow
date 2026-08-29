@@ -159,11 +159,14 @@ Known gaps, tracked honestly rather than hidden.
 
 **macOS app polish**
 
-- [ ] Native `arm64` `ffmpeg` for the Apple Silicon build, so it no longer needs Rosetta 2 at
-  runtime (the Intel build's `ffmpeg` is already native)
+- [x] Native `arm64` `ffmpeg` for the Apple Silicon build, so it no longer needs Rosetta 2 at
+  runtime (both the Apple Silicon and Intel builds now ship a native binary for their own chip)
 - [ ] Code signing + notarization, so macOS stops warning about an unidentified developer on
-  first launch
-- [ ] LinkedIn native document/slide-deck (PDF) post support
+  first launch — needs a paid Apple Developer account; see [First Launch](docs/FIRST_LAUNCH.md)
+  for the free one-time workaround in the meantime
+- [ ] LinkedIn native document/slide-deck (PDF) post support — still no known resolver (needs a
+  real example URL to reverse-engineer against), but the app now tells you clearly when a link is
+  this unsupported post type instead of a generic error
 - [ ] Windows / Linux builds
 
 **Platform expansion**

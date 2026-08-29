@@ -22,6 +22,7 @@ from backend import cookies as cookies_module
 from backend import jobs as jobs_module
 from backend import threads as threads_module
 from backend import linkedin as linkedin_module
+from backend import tiktok as tiktok_module
 from backend.config import (
     load_session,
     resolve_save_dir,
@@ -686,6 +687,98 @@ def test_check_link_linkedin_video_post_unaffected(client, monkeypatch):
     assert resp.get_json()["title"] == "A LinkedIn video"
 
 
+def test_check_link_linkedin_document_post_gets_a_specific_friendly_message(client, monkeypatch):
+    # LinkedIn's native document/slide-deck (PDF) post type has no known
+    # resolver (MISTAKES.md) - this must surface as its own specific
+    # message, not whatever unrelated error yt-dlp happens to raise.
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("Unable to extract video")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+
+    def raise_unsupported(url):
+        raise linkedin_module.LinkedInUnsupportedPostError("No image found")
+
+    monkeypatch.setattr(linkedin_module, "fetch_linkedin_image_post", raise_unsupported)
+    resp = client.post("/api/check", json={"url": "https://www.linkedin.com/posts/someone_activity-123-abcd"})
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == app_module.LINKEDIN_DOCUMENT_POST_ERROR
+
+
+# ---- TikTok: yt-dlp video path, custom Photo Mode fallback for slideshow posts ----
+
+
+def test_check_link_tiktok_photo_falls_back_to_resolver(client, monkeypatch):
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("Unsupported URL: https://www.tiktok.com/@someone/photo/123")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_photo_post",
+        lambda url: {"title": "A post", "items": [{"kind": "image", "url": "http://cdn/i.jpg", "thumbnail": "http://cdn/cover.jpg"}]},
+    )
+    resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/photo/123"})
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["type"] == "video"
+    assert body["kind"] == "image"
+
+
+def test_check_link_tiktok_photo_multi_image_returns_playlist(client, monkeypatch):
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("Unsupported URL: https://www.tiktok.com/@someone/photo/123")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_photo_post",
+        lambda url: {"title": "A post", "items": [
+            {"kind": "image", "url": "http://cdn/1.jpg", "thumbnail": "http://cdn/cover.jpg"},
+            {"kind": "image", "url": "http://cdn/2.jpg", "thumbnail": "http://cdn/cover.jpg"},
+        ]},
+    )
+    resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/photo/123"})
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["type"] == "playlist"
+    assert [it["entry_index"] for it in body["items"]] == [1, 2]
+
+
+def test_check_link_tiktok_video_post_unaffected(client, monkeypatch):
+    # A real TikTok video never reaches the Photo Mode fallback - the standard
+    # yt-dlp path handles it exactly like every other platform, and the
+    # third-party resolver is never even called.
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda cls: {"title": "A TikTok video", "formats": []})
+
+    def fail_if_called(url):
+        raise AssertionError("fetch_tiktok_photo_post should not be called for a working video URL")
+
+    monkeypatch.setattr(tiktok_module, "fetch_tiktok_photo_post", fail_if_called)
+    resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/video/123"})
+    assert resp.status_code == 200
+    assert resp.get_json()["title"] == "A TikTok video"
+
+
+def test_check_link_tiktok_real_video_failure_skips_the_photo_resolver(client, monkeypatch):
+    # A TikTok video that fails for an unrelated reason (deleted, private,
+    # geo-blocked) must not pay for a doomed second network call to the
+    # third-party Photo Mode resolver - only the exact "Unsupported URL"
+    # message (yt-dlp's own "no extractor matched this URL at all" signal)
+    # should trigger the fallback.
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("This video is unavailable")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+
+    def fail_if_called(url):
+        raise AssertionError("fetch_tiktok_photo_post should not be called for a non-'Unsupported URL' failure")
+
+    monkeypatch.setattr(tiktok_module, "fetch_tiktok_photo_post", fail_if_called)
+    resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/video/123"})
+    assert resp.status_code == 400
+
+
 def test_start_download_threads_saves_with_correct_extension(client, monkeypatch, tmp_path):
     monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
     monkeypatch.setattr(threads_module, "threads_cookiefile_candidates", lambda: ["/acct.txt"])
@@ -716,7 +809,25 @@ def test_start_download_threads_saves_with_correct_extension(client, monkeypatch
 
 
 def test_start_download_linkedin_image_saves_as_jpg(client, monkeypatch, tmp_path):
+    # The general yt-dlp attempt runs first (unaffected for a real video
+    # post - see the ordering-fix test below); only its failure triggers the
+    # image-post fallback.
     monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+
+    class MockYoutubeDL:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def download(self, urls):
+            raise yt_dlp.utils.DownloadError("Unable to extract video")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
     monkeypatch.setattr(
         linkedin_module,
         "fetch_linkedin_image_post",
@@ -724,23 +835,225 @@ def test_start_download_linkedin_image_saves_as_jpg(client, monkeypatch, tmp_pat
     )
     monkeypatch.setattr(download_module, "download_direct_url", lambda cdn_url, output_path, job_id: None)
 
-    class SyncThread:
-        def __init__(self, target=None, daemon=None):
-            self._target = target
-
-        def start(self):
-            self._target()
-
-    monkeypatch.setattr(threading, "Thread", SyncThread)
-
     resp = client.post(
         "/api/download",
         json={"url": "https://www.linkedin.com/posts/someone_activity-123-abcd", "title": "My Post", "quality": "Best"},
     )
     assert resp.status_code == 200
     job_id = resp.get_json()["job_id"]
+
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+
     assert jobs_module.jobs[job_id]["status"] == "done"
     assert jobs_module.jobs[job_id]["filename"].endswith(".jpg")
+
+
+def test_start_download_linkedin_video_post_is_unaffected_by_the_image_fallback(client, monkeypatch, tmp_path):
+    # Regression test for a real bug found live 2026-08-29 (MISTAKES.md): a
+    # real LinkedIn video post's page ALSO serves an og:image tag (the
+    # video's thumbnail) - trying the image resolver before yt-dlp used to
+    # silently download that thumbnail instead of the actual video. yt-dlp
+    # succeeding must mean the image resolver is never even consulted.
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+
+    class MockYoutubeDL:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def download(self, urls):
+            return None
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
+    monkeypatch.setattr(download_module, "ensure_h264", lambda *a, **k: None)
+
+    def fail_if_called(url):
+        raise AssertionError("fetch_linkedin_image_post should not be called for a working video download")
+
+    monkeypatch.setattr(linkedin_module, "fetch_linkedin_image_post", fail_if_called)
+
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.linkedin.com/posts/someone_activity-123-abcd", "title": "My Video", "quality": "Best"},
+    )
+    job_id = resp.get_json()["job_id"]
+
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+
+    assert jobs_module.jobs[job_id]["status"] == "done"
+
+
+def test_start_download_linkedin_document_post_gets_a_specific_friendly_message(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+
+    class MockYoutubeDL:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def download(self, urls):
+            raise yt_dlp.utils.DownloadError("Unable to extract video")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
+
+    def raise_unsupported(url):
+        raise linkedin_module.LinkedInUnsupportedPostError("No image found")
+
+    monkeypatch.setattr(linkedin_module, "fetch_linkedin_image_post", raise_unsupported)
+
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.linkedin.com/posts/someone_activity-123-abcd", "title": "A doc post", "quality": "Best"},
+    )
+    job_id = resp.get_json()["job_id"]
+
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+
+    assert jobs_module.jobs[job_id]["status"] == "error"
+    assert jobs_module.jobs[job_id]["text"] == app_module.LINKEDIN_DOCUMENT_POST_ERROR
+
+
+def test_start_download_tiktok_photo_falls_back_and_saves_as_jpg(client, monkeypatch, tmp_path):
+    # The generic yt-dlp attempt runs first (unaffected for a normal TikTok
+    # video); only its failure triggers the Photo Mode fallback, so a normal
+    # video download never pays the third-party resolver's cost.
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+
+    class MockYoutubeDL:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def download(self, urls):
+            raise yt_dlp.utils.DownloadError("Unsupported URL: https://www.tiktok.com/@someone/photo/123")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_photo_post",
+        lambda url: {"title": "A post", "items": [{"kind": "image", "url": "http://cdn/i.jpg", "thumbnail": "http://cdn/cover.jpg"}]},
+    )
+    monkeypatch.setattr(download_module, "download_direct_url", lambda cdn_url, output_path, job_id: None)
+
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.tiktok.com/@someone/photo/123", "title": "My Post", "quality": "Best"},
+    )
+    assert resp.status_code == 200
+    job_id = resp.get_json()["job_id"]
+
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+
+    assert jobs_module.jobs[job_id]["status"] == "done"
+    assert jobs_module.jobs[job_id]["filename"].endswith(".jpg")
+
+
+def test_start_download_tiktok_video_unaffected_by_photo_fallback(client, monkeypatch, tmp_path):
+    # A normal TikTok video download that succeeds never even looks at the
+    # Photo Mode resolver.
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+
+    class MockYoutubeDL:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def download(self, urls):
+            return None
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
+    monkeypatch.setattr(download_module, "ensure_h264", lambda *a, **k: None)
+
+    def fail_if_called(url):
+        raise AssertionError("fetch_tiktok_photo_post should not be called for a working video download")
+
+    monkeypatch.setattr(tiktok_module, "fetch_tiktok_photo_post", fail_if_called)
+
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.tiktok.com/@someone/video/123", "title": "My Video", "quality": "Best"},
+    )
+    assert resp.status_code == 200
+    job_id = resp.get_json()["job_id"]
+
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+
+    assert jobs_module.jobs[job_id]["status"] == "done"
+
+
+def test_start_download_tiktok_real_video_failure_skips_the_photo_resolver(client, monkeypatch, tmp_path):
+    # Same guard as the /api/check test above, on the download route: a
+    # TikTok video failing for an unrelated reason must not also pay for a
+    # doomed second network call to the third-party Photo Mode resolver.
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+
+    class MockYoutubeDL:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def download(self, urls):
+            raise yt_dlp.utils.DownloadError("This video is unavailable")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
+
+    def fail_if_called(url):
+        raise AssertionError("fetch_tiktok_photo_post should not be called for a non-'Unsupported URL' failure")
+
+    monkeypatch.setattr(tiktok_module, "fetch_tiktok_photo_post", fail_if_called)
+
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.tiktok.com/@someone/video/123", "title": "My Video", "quality": "Best"},
+    )
+    job_id = resp.get_json()["job_id"]
+
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+
+    assert jobs_module.jobs[job_id]["status"] == "error"
 
 
 # ---- remote downloads stage into a temp dir, not the configured folder ----
@@ -1203,3 +1516,53 @@ def test_start_batch_download_skips_a_failing_item_and_keeps_going(client, monke
     assert job["status"] == "done"
     assert job["saved_count"] == 2
     assert "1 failed" in job["text"]
+
+
+def test_start_batch_download_tiktok_photo_carousel_picks_each_slide(client, monkeypatch, tmp_path):
+    # A multi-image TikTok Photo Mode post renders as a playlist (like an
+    # Instagram carousel) - each row's entry_index picks the matching CDN
+    # image out of one shared resolve, same media_holder pattern as Instagram.
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path)})
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_photo_post",
+        lambda url: {"title": "A post", "items": [
+            {"kind": "image", "url": "http://cdn/1.jpg", "thumbnail": "http://cdn/cover.jpg"},
+            {"kind": "image", "url": "http://cdn/2.jpg", "thumbnail": "http://cdn/cover.jpg"},
+        ]},
+    )
+
+    downloaded = []
+
+    def fake_download_direct_url(cdn_url, output_path, job_id, on_progress=None):
+        downloaded.append(cdn_url)
+        with open(output_path, "wb") as f:
+            f.write(b"x")
+        if on_progress:
+            on_progress(100)
+
+    monkeypatch.setattr(download_module, "download_direct_url", fake_download_direct_url)
+
+    resp = client.post(
+        "/api/download-batch",
+        json={
+            "url": "https://www.tiktok.com/@someone/photo/123",
+            "quality": "Best",
+            "items": [
+                {"title": "A post (1)", "entry_index": 1},
+                {"title": "A post (2)", "entry_index": 2},
+            ],
+        },
+    )
+    job_id = resp.get_json()["job_id"]
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+
+    job = jobs_module.jobs[job_id]
+    assert job["status"] == "done"
+    assert job["saved_count"] == 2
+    assert set(downloaded) == {"http://cdn/1.jpg", "http://cdn/2.jpg"}
