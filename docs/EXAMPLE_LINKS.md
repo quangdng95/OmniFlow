@@ -1,6 +1,6 @@
 # Example Links
 
-**English** · [Tiếng Việt](EXAMPLE_LINKS.vi.md)
+**🇬🇧 English&nbsp;&nbsp;|&nbsp;&nbsp;[🇻🇳 Tiếng Việt](EXAMPLE_LINKS.vi.md)**
 
 Not sure what to paste first? Copy any link below straight into OmniFlow to see it in action —
 one example per supported platform.

@@ -11,7 +11,7 @@
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#cài-đặt)
   [![Latest Release](https://img.shields.io/github/v/release/quangdng95/OmniFlow)](../../releases/latest)
 
-  [English](README.md) · **Tiếng Việt**
+  **[🇬🇧 English](README.md)&nbsp;&nbsp;|&nbsp;&nbsp;🇻🇳 Tiếng Việt**
 </div>
 
 ---
@@ -132,13 +132,13 @@ cd frontend && npm install && cd ..
 **Chạy ở chế độ dev** (hot-reload, backend Flask trên `:5001` + frontend Vite trên `:5173`):
 
 ```bash
-./dev.sh
+./scripts/dev.sh
 ```
 
 **Build app macOS độc lập** (tạo ra `dist/OmniFlow.app` và `dist/OmniFlow.dmg`):
 
 ```bash
-./build.sh
+./scripts/build.sh
 ```
 
 ## Tech stack

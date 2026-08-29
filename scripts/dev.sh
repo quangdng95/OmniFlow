@@ -2,7 +2,8 @@
 # ---------------------------------------------------------------------------
 # dev.sh  —  Start OmniFlow in development mode (hot-reload)
 #
-# Usage: ./dev.sh
+# Usage: ./scripts/dev.sh (from the repo root, or from anywhere - it
+# self-locates the repo root either way)
 #
 # Starts:
 #   • Flask backend  → http://127.0.0.1:5001  (full API: check, download, …)
@@ -12,7 +13,9 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
+# This script lives in scripts/, one level below the repo root - go up one
+# more than $(dirname "$0") to land on the actual root.
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 # ── Check .venv ─────────────────────────────────────────────────────────────
 if [[ ! -f "$REPO_ROOT/.venv/bin/python" ]]; then

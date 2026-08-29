@@ -1,6 +1,6 @@
 # Troubleshooting Check/Download Failures
 
-**English** · [Tiếng Việt](TROUBLESHOOTING.vi.md)
+**🇬🇧 English&nbsp;&nbsp;|&nbsp;&nbsp;[🇻🇳 Tiếng Việt](TROUBLESHOOTING.vi.md)**
 
 If pasting a link into OmniFlow fails to check, or a download keeps failing, this guide walks
 through the most common causes and the two built-in tools that make this diagnosable instead of a

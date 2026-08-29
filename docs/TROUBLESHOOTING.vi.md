@@ -1,6 +1,6 @@
 # Xử lý lỗi Check/Tải file
 
-[English](TROUBLESHOOTING.md) · **Tiếng Việt**
+**[🇬🇧 English](TROUBLESHOOTING.md)&nbsp;&nbsp;|&nbsp;&nbsp;🇻🇳 Tiếng Việt**
 
 Nếu dán link vào OmniFlow mà check không được, hoặc việc tải cứ lỗi hoài, hướng dẫn này đi qua các
 nguyên nhân phổ biến nhất và hai công cụ có sẵn giúp bạn chẩn đoán thay vì phải đoán mò.

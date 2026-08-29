@@ -1,6 +1,6 @@
 # First Launch & macOS Security Warnings
 
-**English** · [Tiếng Việt](FIRST_LAUNCH.vi.md)
+**🇬🇧 English&nbsp;&nbsp;|&nbsp;&nbsp;[🇻🇳 Tiếng Việt](FIRST_LAUNCH.vi.md)**
 
 OmniFlow isn't notarized by Apple (that requires a paid $99/year Apple Developer account), so
 macOS shows a couple of one-time security prompts the first time you use it. Neither one means

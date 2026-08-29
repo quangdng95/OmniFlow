@@ -1,6 +1,6 @@
 # Link ví dụ
 
-[English](EXAMPLE_LINKS.md) · **Tiếng Việt**
+**[🇬🇧 English](EXAMPLE_LINKS.md)&nbsp;&nbsp;|&nbsp;&nbsp;🇻🇳 Tiếng Việt**
 
 Chưa biết thử dán link gì trước? Copy bất kỳ link nào bên dưới và dán thẳng vào OmniFlow để xem
 app hoạt động ra sao — một ví dụ cho mỗi nền tảng được hỗ trợ.

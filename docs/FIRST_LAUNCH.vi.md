@@ -1,6 +1,6 @@
 # Cảnh báo bảo mật macOS khi mở app lần đầu
 
-[English](FIRST_LAUNCH.md) · **Tiếng Việt**
+**[🇬🇧 English](FIRST_LAUNCH.md)&nbsp;&nbsp;|&nbsp;&nbsp;🇻🇳 Tiếng Việt**
 
 OmniFlow chưa được Apple notarize (việc này cần một tài khoản Apple Developer trả phí $99/năm),
 nên macOS sẽ hiện một vài cảnh báo bảo mật chỉ xuất hiện một lần trong lần đầu bạn dùng app. Cả
