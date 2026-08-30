@@ -10,7 +10,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new Error("Can't reach the OmniFlow server. Make sure it's running, then reload this page.");
   }
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    // A route that doesn't exist on the server currently answering this
+    // request (e.g. a local-only endpoint like /api/clipboard called
+    // against a remote_web deployment, which never registers it) returns a
+    // plain HTML 404 page, not JSON - never let that leak as a raw
+    // "Unexpected token '<'" JSON.parse error.
+    throw new Error(`Request failed${res.ok ? "" : ` (${res.status})`}.`);
+  }
   if (!res.ok) {
     throw new Error(data.error || "Request failed");
   }
