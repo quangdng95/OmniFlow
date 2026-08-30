@@ -113,3 +113,78 @@ def test_check_playlist_returns_items(client, monkeypatch):
     body = resp.get_json()
     assert body["type"] == "playlist"
     assert len(body["items"]) == 2
+
+
+# ---- /api/download ----
+
+import threading
+import time
+
+from backend import download as download_module
+from backend import jobs as jobs_module
+
+
+@pytest.fixture(autouse=True)
+def clear_jobs():
+    jobs_module.jobs.clear()
+    yield
+    jobs_module.jobs.clear()
+
+
+def _wait_for_job(job_id, timeout=5):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        job = jobs_module.jobs.get(job_id)
+        if job and job["status"] in ("done", "error", "cancelled"):
+            return job
+        time.sleep(0.02)
+    raise AssertionError(f"job {job_id} never finished: {jobs_module.jobs.get(job_id)}")
+
+
+def test_download_requires_trust():
+    remote_app.config["TESTING"] = True
+    anon_client = remote_app.test_client()
+    resp = anon_client.post("/api/download", json={"url": "https://www.youtube.com/watch?v=jNQXAC9IVRw", "title": "x", "quality": "Best"})
+    assert resp.status_code == 401
+
+
+def test_download_missing_ffmpeg_returns_friendly_error(client, monkeypatch, tmp_path):
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: None)
+    resp = client.post("/api/download", json={"url": "https://www.youtube.com/watch?v=jNQXAC9IVRw", "title": "x", "quality": "Best"})
+    assert resp.status_code == 400
+    assert "FFmpeg" in resp.get_json()["error"]
+
+
+def test_download_always_stages_into_a_temp_dir_not_a_configured_folder(client, monkeypatch, tmp_path):
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+
+    captured = {}
+
+    def fake_ydl_download(opts):
+        class FakeYDL:
+            def __enter__(self_inner):
+                return self_inner
+
+            def __exit__(self_inner, *a):
+                return False
+
+            def download(self_inner, urls):
+                captured["outtmpl"] = opts["outtmpl"]
+                out_path = opts["outtmpl"].replace(".%(ext)s", ".mp4")
+                with open(out_path, "wb") as f:
+                    f.write(b"fake mp4 bytes")
+
+        return FakeYDL()
+
+    import yt_dlp
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", fake_ydl_download)
+    monkeypatch.setattr(download_module, "ensure_h264", lambda *a, **k: None)
+
+    resp = client.post("/api/download", json={"url": "https://www.youtube.com/watch?v=jNQXAC9IVRw", "title": "test video", "quality": "Best"})
+    assert resp.status_code == 200
+    job_id = resp.get_json()["job_id"]
+    job = _wait_for_job(job_id)
+    assert job["status"] == "done"
+    assert str(tmp_path) in job["filepath"]
