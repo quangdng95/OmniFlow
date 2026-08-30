@@ -43,3 +43,20 @@ def test_root_path_is_not_gated_by_trust(client):
     # the trust gate (401), whatever else it returns.
     resp = client.get("/")
     assert resp.status_code != 401
+
+
+def test_root_path_redirects_untrusted_visitor_to_unlock(client):
+    # A first-time phone visitor has no way to discover /unlock except being
+    # told the URL by hand otherwise - the React app would load and just
+    # 401 silently on every /api/* call (final-review finding #2).
+    resp = client.get("/")
+    assert resp.status_code == 302
+    assert resp.headers["Location"] == "/unlock"
+
+
+def test_root_path_serves_index_html_once_trusted(client):
+    token = config.get_or_create_token()
+    client.post("/unlock", data={"token": token})
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "Location" not in resp.headers

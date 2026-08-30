@@ -269,6 +269,50 @@ def test_download_batch_deletes_raw_files_as_it_goes(client, monkeypatch, tmp_pa
     assert not os.path.exists(written_paths[0])
 
 
+def test_download_batch_touches_the_zip_during_the_run(client, monkeypatch, tmp_path):
+    # final-review finding #3: recompute_overall() must call zipper.touch()
+    # on every progress tick (not only when an item finishes), so an
+    # in-flight batch's zip_dir never goes stale enough for reaper.py's
+    # mtime sweep to reap it mid-batch. Light integration check only - the
+    # reaper interaction itself is already covered by test_reaper.py.
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+
+    touch_calls = []
+    original_touch = zipper_module.BatchZipper.touch
+
+    def spy_touch(self):
+        touch_calls.append(True)
+        return original_touch(self)
+
+    monkeypatch.setattr(zipper_module.BatchZipper, "touch", spy_touch)
+
+    def fake_download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
+        if on_progress:
+            on_progress(50)
+        out = os.path.join(save_dir, f"{title}.mp4")
+        with open(out, "wb") as f:
+            f.write(b"fake video")
+        if on_progress:
+            on_progress(100)
+        return out
+
+    monkeypatch.setattr(download_module, "download_one_video", fake_download_one_video)
+
+    resp = client.post("/api/download-batch", json={
+        "url": "https://www.youtube.com/playlist?list=PL1",
+        "quality": "Best",
+        "items": [{"title": "Video A", "url": "https://youtube.com/watch?v=a"}],
+    })
+    job_id = resp.get_json()["job_id"]
+    job = _wait_for_job(job_id)
+    assert job["status"] == "done"
+    # At least one on_progress tick (percent=50) plus the final done tick
+    # both go through recompute_overall(), so touch() must fire more than
+    # once across the run.
+    assert len(touch_calls) >= 2
+
+
 def test_download_batch_partial_failure_still_saves_the_rest(client, monkeypatch, tmp_path):
     monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
     monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")

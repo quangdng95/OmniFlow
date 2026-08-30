@@ -81,3 +81,31 @@ def test_a_failed_item_never_reaches_add_and_delete_and_leaves_the_zip_valid(tmp
     with zipfile.ZipFile(zip_path) as zf:
         assert zf.testzip() is None
         assert zf.namelist() == ["ok.mp4"]
+
+
+def test_touch_refreshes_the_zip_files_mtime(tmp_path):
+    # final-review finding #3: this is the heartbeat that must keep zip_dir
+    # fresh in reaper.py's mtime-based sweep even before any single item
+    # finishes and gets add_and_delete()'d.
+    zip_path = str(tmp_path / "batch.zip")
+    z = BatchZipper(zip_path)
+    # Force the file artificially stale first, so a real clock advance isn't
+    # needed - deterministic and instant, no time.sleep() required.
+    old_time = 1_000_000
+    os.utime(zip_path, (old_time, old_time))
+    assert os.path.getmtime(zip_path) == old_time
+
+    z.touch()
+
+    assert os.path.getmtime(zip_path) > old_time
+    z.close()
+
+
+def test_touch_is_a_no_op_when_the_zip_file_is_missing(tmp_path):
+    # Defensive: touch() must never raise even if the underlying file is
+    # gone (e.g. a race with cleanup) - it swallows OSError.
+    zip_path = str(tmp_path / "batch.zip")
+    z = BatchZipper(zip_path)
+    z.close()
+    os.remove(zip_path)
+    z.touch()  # must not raise

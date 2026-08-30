@@ -439,6 +439,12 @@ def start_batch_download():
         zipper = zipper_module.BatchZipper(zip_path)
 
         def recompute_overall():
+            # Heartbeat (final-review finding #3): called on every per-item
+            # progress tick via on_progress below, plus after each item
+            # finishes/fails - so this fires continuously throughout the
+            # batch's whole duration, keeping zip_dir's mtime fresh even
+            # before any single item completes and gets add_and_delete()'d.
+            zipper.touch()
             jobs.jobs[job_id]["percent"] = min(100.0, sum(p["percent"] for p in prog) / total)
             jobs.jobs[job_id]["item"] = sum(1 for p in prog if p["status"] in ("done", "error"))
 

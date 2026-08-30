@@ -52,3 +52,14 @@ class BatchZipper:
     def close(self):
         with self._lock:
             self._zf.close()
+
+    def touch(self):
+        # Keeps zip_dir's mtime fresh while a batch is actively downloading,
+        # even before any single item finishes and gets add_and_delete()'d -
+        # otherwise reaper.py's mtime-based sweep (spec §5.4) could reap an
+        # in-flight batch whose items each take longer than
+        # REAPER_STALE_MINUTES to download, silently losing the whole job.
+        try:
+            os.utime(self.zip_path, None)
+        except OSError:
+            pass

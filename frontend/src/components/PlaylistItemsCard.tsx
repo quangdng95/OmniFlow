@@ -28,6 +28,7 @@ interface PlaylistItemsCardProps {
   onDownloadItems: (rowIndices: number[], quality: string) => void;
   onCancel?: () => void;
   onOpenFolder?: () => void;
+  downloadUrl?: string;
 }
 
 const isAvailable = (item: PlaylistItem) => item.is_available !== false;
@@ -46,6 +47,7 @@ const PlaylistItemsCard = ({
   onDownloadItems,
   onCancel,
   onOpenFolder,
+  downloadUrl,
 }: PlaylistItemsCardProps) => {
   const { t } = useLanguage();
 
@@ -238,11 +240,11 @@ const PlaylistItemsCard = ({
             </div>
 
             {/* Action Buttons */}
-            <div className={`w-full ${failedCount > 0 && onOpenFolder ? "grid grid-cols-2 gap-3" : "flex"}`}>
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
               {failedCount > 0 && (
                 <Button
                   onClick={() => downloadRows(failedIndices)}
-                  className="w-full bg-red-50 hover:bg-red-100 text-red-600 border-none shadow-none gap-1.5 rounded-lg font-semibold py-2"
+                  className="flex-1 w-full bg-red-50 hover:bg-red-100 text-red-600 border-none shadow-none gap-1.5 rounded-lg font-semibold py-2"
                 >
                   <RefreshCw className="h-4 w-4" />
                   {t.playlist.retry}
@@ -251,11 +253,19 @@ const PlaylistItemsCard = ({
               {onOpenFolder && (
                 <Button
                   onClick={onOpenFolder}
-                  className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold py-2"
+                  className="flex-1 w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold py-2"
                 >
                   <FolderOpen className="h-4 w-4" />
                   {t.downloadSuccess.openFolder}
                 </Button>
+              )}
+              {downloadUrl && (
+                <a href={downloadUrl} className="flex-1">
+                  <Button className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold py-2">
+                    <Download className="h-4 w-4" />
+                    {t.downloadSuccess.download}
+                  </Button>
+                </a>
               )}
             </div>
           </div>

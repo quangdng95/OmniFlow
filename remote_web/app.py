@@ -8,7 +8,7 @@ Python import.
 
 import sys
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, redirect, request, send_from_directory
 
 from backend import paths
 from remote_web import config, ffmpeg_locator, reaper, trust
@@ -44,6 +44,8 @@ def _referrer_policy(response):
 
 @app.get("/")
 def index():
+    if not trust.is_trusted_request(request):
+        return redirect("/unlock")
     return send_from_directory(paths.WEB_DIR, "index.html")
 
 
