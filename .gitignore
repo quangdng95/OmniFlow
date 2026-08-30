@@ -29,5 +29,10 @@ session.md
 config.json
 .logs/
 
+# remote_web's own runtime state - trust token/secret key + job temp dirs,
+# never committed (see docs/superpowers/specs/2026-08-29-remote-web-access-design.md)
+remote_web/.state.json
+remote_web/.tmp/
+
 # Isolated git worktrees used for subagent-driven plan execution
 .worktrees/
