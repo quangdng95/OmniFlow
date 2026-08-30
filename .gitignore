@@ -28,3 +28,6 @@ MISTAKES.md
 session.md
 config.json
 .logs/
+
+# Isolated git worktrees used for subagent-driven plan execution
+.worktrees/
