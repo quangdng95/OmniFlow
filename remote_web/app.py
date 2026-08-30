@@ -11,7 +11,7 @@ import sys
 from flask import Flask, jsonify, request, send_from_directory
 
 from backend import paths
-from remote_web import config, ffmpeg_locator, trust
+from remote_web import config, ffmpeg_locator, reaper, trust
 from remote_web.routes import health as health_routes
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
@@ -55,6 +55,7 @@ def _check_ffmpeg_at_startup():
 
 
 _check_ffmpeg_at_startup()
+reaper.start_background_sweeper()
 
 if __name__ == "__main__":
     # debug=False (and therefore no reloader) is deliberate: the Werkzeug
