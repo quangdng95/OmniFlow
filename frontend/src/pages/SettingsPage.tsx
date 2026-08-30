@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { ChangeEvent } from "react";
 import { Folder, RotateCcw, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { type Page } from "../components/Header";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "../api";
 import { useLanguage } from "../i18n/LanguageContext";
 import type { Language } from "../i18n/translations";
+import type { CookiesStatus } from "../types";
 import { isLocal } from "../isLocal";
 
 interface SettingsPageProps {
@@ -21,11 +23,14 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
   const [path, setPath] = useState("");
   const [rememberPath, setRememberPath] = useState(true);
   const [playlistLimit, setPlaylistLimit] = useState(100);
+  const [cookiesStatus, setCookiesStatus] = useState<CookiesStatus | null>(null);
+  const [selectedCookiesFile, setSelectedCookiesFile] = useState<File | null>(null);
 
   useEffect(() => {
     void api.getSettings().then((settings) => {
       setPath(settings.path);
       setPlaylistLimit(settings.playlist_limit ?? 100);
+      setCookiesStatus(settings.cookies_status ?? null);
     });
   }, []);
 
@@ -47,6 +52,22 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
   const handlePathChange = async (newVal: string) => {
     setPath(newVal);
     await api.updateSettings({ path: newVal });
+  };
+
+  const handleCookiesFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSelectedCookiesFile(e.target.files?.[0] ?? null);
+  };
+
+  const handleUploadCookies = async () => {
+    if (!selectedCookiesFile) return;
+    try {
+      const { cookies_status } = await api.uploadCookies(selectedCookiesFile);
+      setCookiesStatus(cookies_status);
+      setSelectedCookiesFile(null);
+      toast.success(t.settingsPage.cookiesUpload.uploadedOk);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   const handleOpenLogs = async () => {
@@ -115,6 +136,37 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
                   {t.settingsPage.targetPath.rememberPath}
                 </label>
               </div>
+            </SectionCard>
+          )}
+
+          {!isLocal() && (
+            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
+              <p className="text-base font-semibold text-slate-800 m-0">
+                {t.settingsPage.cookiesUpload.heading}
+              </p>
+              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
+                {t.settingsPage.cookiesUpload.description}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                <input
+                  type="file"
+                  accept=".txt"
+                  onChange={handleCookiesFileChange}
+                  className="flex-1 text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold"
+                />
+                <Button
+                  onClick={handleUploadCookies}
+                  disabled={!selectedCookiesFile}
+                  className="w-fit bg-[#0d9585] text-white hover:bg-[#0d9585]/90"
+                >
+                  {t.settingsPage.cookiesUpload.upload}
+                </Button>
+              </div>
+              <p className="text-xs text-slate-500 m-0">
+                {cookiesStatus === "valid" && t.settingsPage.cookiesUpload.statusValid}
+                {cookiesStatus === "no_session" && t.settingsPage.cookiesUpload.statusNoSession}
+                {(cookiesStatus === "none" || cookiesStatus === null) && t.settingsPage.cookiesUpload.statusNone}
+              </p>
             </SectionCard>
           )}
 

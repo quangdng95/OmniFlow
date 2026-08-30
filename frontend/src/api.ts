@@ -33,6 +33,32 @@ export const api = {
   updateSettings: (patch: Partial<Settings>) =>
     request<Settings>("/api/settings", { method: "POST", body: JSON.stringify(patch) }),
 
+  // multipart/form-data upload - deliberately doesn't reuse request<T>(),
+  // which always sets Content-Type: application/json (wrong for a file
+  // upload: the browser must set its own multipart boundary header). The
+  // error-handling shape intentionally mirrors request<T>()'s own logic so
+  // upload failures degrade exactly as gracefully as every other API call's.
+  uploadCookies: async (file: File): Promise<{ cookies_status: CookiesStatus }> => {
+    const formData = new FormData();
+    formData.append("cookies", file);
+    let res: Response;
+    try {
+      res = await fetch("/api/settings/cookies", { method: "POST", body: formData });
+    } catch {
+      throw new Error("Can't reach the OmniFlow server. Make sure it's running, then reload this page.");
+    }
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error(`Request failed${res.ok ? "" : ` (${res.status})`}.`);
+    }
+    if (!res.ok) {
+      throw new Error(data.error || "Upload failed");
+    }
+    return data as { cookies_status: CookiesStatus };
+  },
+
   browseFolder: () => request<{ path: string }>("/api/browse", { method: "POST" }),
 
   browseFile: () =>
