@@ -240,7 +240,13 @@ const PlaylistItemsCard = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <div
+              className={
+                downloadUrl
+                  ? "flex flex-col sm:flex-row gap-3 w-full"
+                  : `w-full ${failedCount > 0 && onOpenFolder ? "grid grid-cols-2 gap-3" : "flex"}`
+              }
+            >
               {failedCount > 0 && (
                 <Button
                   onClick={() => downloadRows(failedIndices)}
