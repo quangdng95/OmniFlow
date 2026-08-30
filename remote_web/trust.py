@@ -5,7 +5,7 @@ import hmac
 import time
 
 from flask import Blueprint, Response, redirect, request
-from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+from itsdangerous import BadData, URLSafeTimedSerializer
 
 from remote_web import config
 
@@ -53,7 +53,7 @@ def verify_trust_cookie(cookie_value):
     try:
         _serializer().loads(cookie_value, max_age=config.COOKIE_MAX_AGE_SECONDS)
         return True
-    except (BadSignature, SignatureExpired):
+    except BadData:
         return False
 
 

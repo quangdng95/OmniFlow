@@ -54,6 +54,20 @@ def test_rotating_the_secret_key_invalidates_existing_cookies(isolated_state_fil
     assert trust.verify_trust_cookie(cookie) is False
 
 
+def test_verify_trust_cookie_rejects_a_validly_signed_but_corrupt_payload(isolated_state_file):
+    # A cookie whose HMAC signature is valid (so BadSignature/SignatureExpired
+    # would NOT catch it) but whose payload segment isn't valid base64/JSON
+    # underneath. itsdangerous raises BadPayload for this - a BadData sibling
+    # of BadSignature (not a subclass of it), which an
+    # `except (BadSignature, SignatureExpired)` clause would NOT catch,
+    # letting the exception escape verify_trust_cookie's `-> bool` contract.
+    # Built by signing an intentionally-bogus payload directly with the
+    # module's own signer, so the HMAC itself is genuinely valid.
+    signer = trust._serializer().make_signer()
+    forged = signer.sign(b"not-valid-base64!!!").decode()
+    assert trust.verify_trust_cookie(forged) is False
+
+
 def test_unlock_get_renders_a_form_with_no_token_in_the_page(isolated_state_file, client):
     resp = client.get("/unlock")
     assert resp.status_code == 200
