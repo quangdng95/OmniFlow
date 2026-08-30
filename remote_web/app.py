@@ -13,6 +13,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from backend import paths
 from remote_web import config, ffmpeg_locator, reaper, trust
 from remote_web.routes import health as health_routes
+from remote_web.routes import jobs as jobs_routes
 from remote_web.routes import media as media_routes
 from remote_web.routes import settings as settings_routes
 
@@ -21,6 +22,7 @@ app.register_blueprint(trust.unlock_bp)
 app.register_blueprint(health_routes.bp)
 app.register_blueprint(settings_routes.bp)
 app.register_blueprint(media_routes.bp)
+app.register_blueprint(jobs_routes.bp)
 
 
 @app.before_request
