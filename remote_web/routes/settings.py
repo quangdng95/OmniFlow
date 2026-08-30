@@ -1,6 +1,6 @@
-"""GET/POST /api/settings.
+"""GET/POST /api/settings, POST /api/settings/cookies.
 
-Two very different kinds of state live behind this one endpoint:
+Three very different kinds of state live behind these routes:
 - `language` is remote_web's own concern, in its own small file next to
   config.STATE_FILE - in practice the frontend's actual language switch
   reads/writes localStorage directly (LanguageContext.tsx), never this
@@ -14,10 +14,20 @@ Two very different kinds of state live behind this one endpoint:
   backend.config.load_session() internally, so proxying it here is what
   makes changing it from the phone actually affect real playlist
   extraction - keeping a wholly separate copy would silently do nothing.
+- `cookies_path`/`cookies_status` (new, spec:
+  docs/superpowers/specs/2026-08-30-remote-web-cloud-portability-design.md
+  §2.2): a headless Linux cloud deployment has no browser/Keychain to
+  auto-extract Instagram/Threads cookies from the way the native app does,
+  so this exposes a manual cookies.txt upload instead. The uploaded file is
+  wired into backend.config's EXISTING cookies_path mechanism (reused
+  unmodified) - backend.cookies.instagram_cookiefile_candidates() and every
+  Instagram/Threads resolver in remote_web/routes/media.py already consult
+  backend.config.get_cookies_path() first, so nothing else needs to change
+  for an uploaded cookies file to actually take effect.
 
-`path`/`cookies_path`/`browser` are deliberately NOT part of this response at
-all - the frontend never reads or writes them in remote mode (those
-sections are hidden behind isLocal(), see frontend/src/pages/SettingsPage.tsx).
+`path`/`browser` are deliberately NOT part of this response at all - the
+frontend never reads or writes them in remote mode (that section is hidden
+behind isLocal(), see frontend/src/pages/SettingsPage.tsx).
 """
 
 import json
@@ -31,6 +41,11 @@ from remote_web import config
 bp = Blueprint("settings", __name__)
 
 _DEFAULT_LANGUAGE = "en"
+# Deliberately NOT under config.TEMP_ROOT - reaper.py's mtime-based sweep
+# (original design spec §5.4) must never treat this as an orphaned job
+# directory and delete a live credential.
+_COOKIES_FILE = os.path.join(os.path.dirname(config.STATE_FILE), ".manual_cookies.txt")
+_MAX_COOKIES_FILE_BYTES = 64 * 1024
 
 
 def _get_settings_file():
@@ -59,7 +74,11 @@ def _save_language(language):
 @bp.get("/api/settings")
 def get_settings():
     session = backend_config.load_session()
-    return jsonify({"language": _load_language(), "playlist_limit": session["playlist_limit"]})
+    return jsonify({
+        "language": _load_language(),
+        "playlist_limit": session["playlist_limit"],
+        "cookies_status": backend_config.cookies_status_for(session["cookies_path"]),
+    })
 
 
 @bp.post("/api/settings")
@@ -74,3 +93,27 @@ def update_settings():
         backend_config.save_session(session["path"], session["cookies_path"], session["browser"], playlist_limit)
 
     return jsonify({"language": language, "playlist_limit": playlist_limit})
+
+
+@bp.post("/api/settings/cookies")
+def upload_cookies():
+    uploaded = request.files.get("cookies")
+    if uploaded is None or uploaded.filename == "":
+        return jsonify({"error": "No file uploaded"}), 400
+
+    body = uploaded.read(_MAX_COOKIES_FILE_BYTES + 1)
+    if not body:
+        return jsonify({"error": "Uploaded file is empty"}), 400
+    if len(body) > _MAX_COOKIES_FILE_BYTES:
+        return jsonify({"error": "Uploaded file is too large (max 64 KiB) - this doesn't look like a real cookies.txt"}), 400
+
+    os.makedirs(os.path.dirname(_COOKIES_FILE), exist_ok=True)
+    with open(_COOKIES_FILE, "wb") as f:
+        f.write(body)
+    # This is a live session credential, same care as config.STATE_FILE.
+    os.chmod(_COOKIES_FILE, 0o600)
+
+    session = backend_config.load_session()
+    backend_config.save_session(session["path"], _COOKIES_FILE, session["browser"], session["playlist_limit"])
+
+    return jsonify({"cookies_status": backend_config.cookies_status_for(_COOKIES_FILE)})

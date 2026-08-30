@@ -3,6 +3,8 @@
 backend.extraction.extract_video_info reads it from there and the frontend's
 Playlist Limit control is NOT gated behind isLocal(), unlike Target Path)."""
 
+import io
+
 import pytest
 
 from backend import config as backend_config
@@ -65,3 +67,81 @@ def test_post_settings_partial_update_does_not_reset_the_other_field(client):
     resp = client.get("/api/settings").get_json()
     assert resp["language"] == "vi"
     assert resp["playlist_limit"] == 200
+
+
+# ---- POST /api/settings/cookies ----
+
+NETSCAPE_COOKIE_LINE = ".instagram.com\tTRUE\t/\tTRUE\t1999999999\tsessionid\tabc123\n"
+
+
+def test_upload_cookies_requires_trust(client):
+    remote_app.config["TESTING"] = True
+    anon_client = remote_app.test_client()
+    resp = anon_client.post(
+        "/api/settings/cookies",
+        data={"cookies": (io.BytesIO(NETSCAPE_COOKIE_LINE.encode()), "cookies.txt")},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 401
+
+
+def test_upload_cookies_saves_file_and_wires_into_backend_config(client, tmp_path, monkeypatch):
+    _unlock(client)
+    cookies_file_path = tmp_path / "remote_web_cookies.txt"
+    monkeypatch.setattr("remote_web.routes.settings._COOKIES_FILE", str(cookies_file_path))
+
+    resp = client.post(
+        "/api/settings/cookies",
+        data={"cookies": (io.BytesIO(NETSCAPE_COOKIE_LINE.encode()), "cookies.txt")},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["cookies_status"] == "valid"
+
+    assert cookies_file_path.exists()
+    assert cookies_file_path.read_text() == NETSCAPE_COOKIE_LINE
+    assert oct(cookies_file_path.stat().st_mode)[-3:] == "600"
+
+    session = backend_config.load_session()
+    assert session["cookies_path"] == str(cookies_file_path)
+
+
+def test_upload_cookies_rejects_missing_file(client):
+    _unlock(client)
+    resp = client.post("/api/settings/cookies", data={}, content_type="multipart/form-data")
+    assert resp.status_code == 400
+
+
+def test_upload_cookies_rejects_empty_file(client):
+    _unlock(client)
+    resp = client.post(
+        "/api/settings/cookies",
+        data={"cookies": (io.BytesIO(b""), "cookies.txt")},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 400
+
+
+def test_upload_cookies_rejects_oversized_file(client):
+    _unlock(client)
+    too_big = b"x" * (64 * 1024 + 1)
+    resp = client.post(
+        "/api/settings/cookies",
+        data={"cookies": (io.BytesIO(too_big), "cookies.txt")},
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 400
+
+
+def test_get_settings_reports_cookies_status(client, tmp_path, monkeypatch):
+    _unlock(client)
+    cookies_file_path = tmp_path / "remote_web_cookies.txt"
+    monkeypatch.setattr("remote_web.routes.settings._COOKIES_FILE", str(cookies_file_path))
+    client.post(
+        "/api/settings/cookies",
+        data={"cookies": (io.BytesIO(NETSCAPE_COOKIE_LINE.encode()), "cookies.txt")},
+        content_type="multipart/form-data",
+    )
+    resp = client.get("/api/settings")
+    assert resp.get_json()["cookies_status"] == "valid"
