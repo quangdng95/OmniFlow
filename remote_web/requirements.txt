@@ -1,0 +1,9 @@
+# remote_web adds no new Python dependencies beyond the repo root's own
+# requirements.txt. itsdangerous (used by trust.py for signed cookies)
+# already ships as a direct dependency of Flask (confirmed installed at
+# v2.2.0 alongside Flask 3.1.3 in this repo's .venv during design review -
+# see docs/superpowers/specs/2026-08-29-remote-web-access-design.md).
+#
+# Setup for this deployment is therefore identical to the root project's own:
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
