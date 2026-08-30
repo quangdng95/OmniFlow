@@ -141,15 +141,18 @@ THREADS_EXTRACT_ERROR = "❌ Lỗi: Không thể trích xuất dữ liệu từ 
 LINKEDIN_DOCUMENT_POST_ERROR = "❌ Lỗi: Bài đăng LinkedIn dạng tài liệu/slide (PDF) hiện chưa được OmniFlow hỗ trợ tải. OmniFlow hiện chỉ hỗ trợ bài đăng LinkedIn dạng video hoặc ảnh."
 
 
-def _save_single_cdn_image(job_id, save_dir, title, cdn_url):
-    # Shared tail for the LinkedIn og:image and TikTok Photo Mode single-item
-    # fallbacks in start_download's run(): save one resolved CDN url as a
-    # .jpg and mark the job done. yt_dlp.utils.DownloadCancelled propagates
-    # through unchanged so each caller keeps its own cancel handling.
-    jpg_path = download.get_unique_filename(save_dir, title, "jpg")
-    jobs.jobs[job_id]["filename"] = os.path.basename(jpg_path)
-    jobs.jobs[job_id]["filepath"] = jpg_path
-    download.download_direct_url(cdn_url, jpg_path, job_id)
+def _save_single_cdn_file(job_id, save_dir, title, cdn_url, ext="jpg"):
+    # Shared tail for the LinkedIn og:image and TikTok single-item CDN
+    # fallbacks in start_download's run(): save one resolved CDN url and
+    # mark the job done. `ext` defaults to "jpg" (LinkedIn's image fallback
+    # and a TikTok Photo Mode slide are always images); a TikTok video
+    # fallback passes "mp4" explicitly. yt_dlp.utils.DownloadCancelled
+    # propagates through unchanged so each caller keeps its own cancel
+    # handling.
+    out_path = download.get_unique_filename(save_dir, title, ext)
+    jobs.jobs[job_id]["filename"] = os.path.basename(out_path)
+    jobs.jobs[job_id]["filepath"] = out_path
+    download.download_direct_url(cdn_url, out_path, job_id)
     jobs.jobs[job_id]["percent"] = 100
     jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
     jobs.jobs[job_id]["status"] = "done"
@@ -257,16 +260,19 @@ def check_link():
                 return jsonify({"error": LINKEDIN_DOCUMENT_POST_ERROR}), 400
             except Exception:
                 pass
-        # yt-dlp has no extractor at all for a TikTok Photo Mode post (a
-        # slideshow, not a video) - it raises a bare "Unsupported URL" here.
-        # Fall back to the tikwm.com resolver (backend/tiktok.py) before
-        # giving up. Gated on that specific message (not every DownloadError)
-        # so a real TikTok video that fails for an unrelated reason (deleted,
-        # private, geo-blocked) doesn't also pay for a doomed second network
-        # call to the third-party resolver.
-        if cls.platform == "TikTok" and "unsupported url" in str(e).lower():
+        # yt-dlp has two separate, unrelated TikTok gaps as of 2026-08-30
+        # (see backend/tiktok.py's module docstring): no extractor at all
+        # for a Photo Mode post ("Unsupported URL"), and - newer - its own
+        # video extractor now fails on every normal video too ("Unable to
+        # extract universal data for rehydration", a known open yt-dlp
+        # issue). Both cases fall back to the same tikwm.com resolver, so
+        # this is gated on platform alone, not a specific error message -
+        # a message-specific gate already proved too narrow once (it
+        # missed the video case entirely) and TikTok's exact failure text
+        # can keep shifting as its anti-bot posture evolves.
+        if cls.platform == "TikTok":
             try:
-                media = tiktok.fetch_tiktok_photo_post(url)
+                media = tiktok.fetch_tiktok_post(url)
                 return jsonify(instagram.instagram_check_response(url, media))
             except Exception:
                 pass
@@ -543,7 +549,7 @@ def start_download():
             if cls.platform == "LinkedIn":
                 try:
                     linkedin_media = linkedin.fetch_linkedin_image_post(url)
-                    _save_single_cdn_image(job_id, save_dir, title, linkedin_media["items"][0]["url"])
+                    _save_single_cdn_file(job_id, save_dir, title, linkedin_media["items"][0]["url"])
                     return
                 except yt_dlp.utils.DownloadCancelled:
                     jobs.jobs[job_id]["status"] = "cancelled"
@@ -555,17 +561,20 @@ def start_download():
                     return
                 except Exception:
                     pass  # fall through to the friendly error below
-            # A TikTok Photo Mode post (a slideshow, not a video) has no
-            # yt-dlp extractor at all - only reached here because the
-            # general yt-dlp attempt above already failed, so a normal
-            # TikTok video download never pays the third-party resolver's
-            # cost. See backend/tiktok.py for why tikwm.com is used here.
-            # Gated on that specific message so a real video that fails for
-            # an unrelated reason doesn't also pay for a doomed second call.
-            if cls.platform == "TikTok" and "unsupported url" in str(e).lower():
+            # yt-dlp has two separate, unrelated TikTok gaps as of
+            # 2026-08-30 (see backend/tiktok.py's module docstring): no
+            # extractor at all for a Photo Mode post, and - newer - its own
+            # video extractor now fails on every normal video too. Both
+            # fall back to the same tikwm.com resolver; gated on platform
+            # alone (not a specific error message - see /api/check's same
+            # comment for why a message-specific gate already proved too
+            # narrow once).
+            if cls.platform == "TikTok":
                 try:
-                    tiktok_media = tiktok.fetch_tiktok_photo_post(url)
-                    _save_single_cdn_image(job_id, save_dir, title, tiktok_media["items"][0]["url"])
+                    tiktok_media = tiktok.fetch_tiktok_post(url)
+                    tiktok_item = tiktok_media["items"][0]
+                    tiktok_ext = "mp4" if tiktok_item["kind"] == "video" else "jpg"
+                    _save_single_cdn_file(job_id, save_dir, title, tiktok_item["url"], ext=tiktok_ext)
                     return
                 except yt_dlp.utils.DownloadCancelled:
                     jobs.jobs[job_id]["status"] = "cancelled"
@@ -729,9 +738,13 @@ def start_batch_download():
                     raise instagram.InstagramAuthError("Instagram requires a logged-in session (cookies).")
                 media_holder["media"] = instagram.fetch_instagram_media_any(url, ig_candidates)
             elif is_tiktok_photo:
-                # Same one-resolve-reuse-across-slides pattern as the Instagram
+                # A TikTok "playlist" check response can only come from a
+                # Photo Mode slideshow (a normal video always resolves to a
+                # single item, never type:"playlist" - see fetch_tiktok_post),
+                # so this is still exclusively the Photo Mode case. Same
+                # one-resolve-reuse-across-slides pattern as the Instagram
                 # carousel above (backend/tiktok.py).
-                media_holder["media"] = tiktok.fetch_tiktok_photo_post(url)
+                media_holder["media"] = tiktok.fetch_tiktok_post(url)
 
             # Download BATCH_CONCURRENCY items at once. download_item swallows its
             # own per-item errors, so a future never raises here.
