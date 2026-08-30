@@ -19,7 +19,9 @@ import os
 import shutil
 import tempfile
 import threading
+import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 import yt_dlp
 from flask import Blueprint, jsonify, request
@@ -28,6 +30,7 @@ from backend import classify
 from backend import config as backend_config
 from backend import cookies, download, extraction, instagram, jobs, linkedin, paths, threads, tiktok
 from remote_web import config, ffmpeg_locator
+from remote_web import zipper as zipper_module
 
 bp = Blueprint("media", __name__)
 
@@ -376,4 +379,160 @@ def start_download():
         jobs.jobs[job_id]["text"] = f"Saved: {final_filename}"
 
     threading.Thread(target=run, daemon=True).start()
+    return jsonify({"job_id": job_id})
+
+
+# How many playlist items download at once - same value and rationale as
+# backend/app.py's BATCH_CONCURRENCY (YouTube throttles each stream, so
+# independent streams add up; too many at once trips rate limits).
+BATCH_CONCURRENCY = 3
+
+
+@bp.post("/api/download-batch")
+def start_batch_download():
+    data = request.get_json(force=True) or {}
+    cls = classify.classify_url((data.get("url") or "").strip())
+    url = cls.url
+    quality = data.get("quality") or "Best"
+    items = data.get("items") or []
+    if not items:
+        return jsonify({"error": "No items selected"}), 400
+
+    # No is_local_request() gate - batch downloads work remotely here,
+    # delivered as a single .zip (spec §5.3), unlike backend/app.py where
+    # this route is local-only (a remote .zip was scoped out there).
+
+    ffmpeg_bin = ffmpeg_locator.resolve_ffmpeg_binary()
+    if not ffmpeg_bin:
+        return jsonify({"error": ffmpeg_locator.ffmpeg_unavailable_message()}), 400
+
+    os.makedirs(config.TEMP_ROOT, exist_ok=True)
+    save_dir = tempfile.mkdtemp(dir=config.TEMP_ROOT, prefix="omniflow-remote-batch-items-")
+
+    is_ig_carousel = cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL
+    is_tiktok_photo = cls.platform == "TikTok"
+
+    job_id = uuid.uuid4().hex
+    total = len(items)
+    jobs.jobs[job_id] = {
+        "status": "running", "percent": 0, "text": "Starting...",
+        "filename": None, "filepath": None, "cancelled": False,
+        "item": 0, "total": total,
+        "items_progress": [
+            {"title": (it.get("title") or f"Video {i + 1}"), "status": "pending", "percent": 0}
+            for i, it in enumerate(items)
+        ],
+    }
+
+    def run_batch():
+        prog = jobs.jobs[job_id]["items_progress"]
+        state = {"saved": 0, "failed": 0}
+        media_holder = {"media": None}
+        ig_candidates = []
+        lock = threading.Lock()
+
+        # A batch job's own zip dir - separate from `save_dir` (where raw
+        # per-item files land transiently before being zipped and deleted).
+        zip_dir = tempfile.mkdtemp(dir=config.TEMP_ROOT, prefix="omniflow-remote-batch-zip-")
+        zip_name = download.sanitize_filename(f"{cls.platform}_{time.strftime('%Y%m%d_%H%M%S')}") + ".zip"
+        zip_path = os.path.join(zip_dir, zip_name)
+        zipper = zipper_module.BatchZipper(zip_path)
+
+        def recompute_overall():
+            jobs.jobs[job_id]["percent"] = min(100.0, sum(p["percent"] for p in prog) / total)
+            jobs.jobs[job_id]["item"] = sum(1 for p in prog if p["status"] in ("done", "error"))
+
+        def download_item(i, item):
+            p = prog[i]
+            if jobs.jobs[job_id]["cancelled"]:
+                return
+            p["status"] = "downloading"
+            item_title = item.get("title") or f"Video {i + 1}"
+
+            def on_progress(pct, p=p):
+                p["percent"] = pct
+                recompute_overall()
+
+            try:
+                if is_ig_carousel or is_tiktok_photo:
+                    idx = item.get("entry_index") or (i + 1)
+                    node = media_holder["media"]["items"][idx - 1]
+                    cdn_url = node.get("url")
+                    if not cdn_url:
+                        raise ValueError("No downloadable media found")
+                    ext = "jpg" if node["kind"] == "image" else "mp4"
+                    out = download.get_unique_filename(save_dir, item_title, ext)
+                    download.download_direct_url(cdn_url, out, job_id, on_progress=on_progress)
+                elif item.get("url"):
+                    out = download.download_one_video(item["url"], save_dir, item_title, quality, ffmpeg_bin, job_id, on_progress=on_progress)
+                elif item.get("entry_index"):
+                    out = download.download_one_video(url, save_dir, item_title, quality, ffmpeg_bin, job_id, entry_index=item["entry_index"], on_progress=on_progress)
+                else:
+                    p["status"] = "error"
+                    with lock:
+                        state["failed"] += 1
+                    recompute_overall()
+                    return
+                # Incremental zip (§5.3): append then delete the raw file
+                # immediately - peak disk usage stays near BATCH_CONCURRENCY
+                # in-flight files instead of the whole batch's total size.
+                zipper.add_and_delete(out, os.path.basename(out))
+                p["percent"] = 100
+                p["status"] = "done"
+                with lock:
+                    state["saved"] += 1
+            except yt_dlp.utils.DownloadCancelled:
+                p["status"] = "error"
+            except Exception as e:
+                print(f"[remote_web batch] job {job_id} item {i + 1}/{total} failed: {e}")
+                p["status"] = "error"
+                with lock:
+                    state["failed"] += 1
+            recompute_overall()
+
+        try:
+            if is_ig_carousel:
+                ig_candidates = cookies.instagram_cookiefile_candidates()
+                if not ig_candidates:
+                    raise instagram.InstagramAuthError("Instagram requires a logged-in session (cookies).")
+                media_holder["media"] = instagram.fetch_instagram_media_any(url, ig_candidates)
+            elif is_tiktok_photo:
+                media_holder["media"] = tiktok.fetch_tiktok_photo_post(url)
+
+            with ThreadPoolExecutor(max_workers=min(BATCH_CONCURRENCY, total)) as ex:
+                futures = [ex.submit(download_item, i, item) for i, item in enumerate(items)]
+                for f in futures:
+                    f.result()
+        except Exception as e:
+            print(f"[remote_web batch] job {job_id} failed: {e}")
+            cookies._cleanup_temp_cookiefiles(ig_candidates)
+            zipper.close()
+            shutil.rmtree(zip_dir, ignore_errors=True)
+            shutil.rmtree(save_dir, ignore_errors=True)
+            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e) if is_ig_carousel else (str(e) or "Download failed")
+            jobs.jobs[job_id]["status"] = "error"
+            return
+
+        cookies._cleanup_temp_cookiefiles(ig_candidates)
+        zipper.close()
+        shutil.rmtree(save_dir, ignore_errors=True)  # every successful item was already moved into the zip
+        saved, failed = state["saved"], state["failed"]
+        if jobs.jobs[job_id]["cancelled"]:
+            shutil.rmtree(zip_dir, ignore_errors=True)
+            jobs.jobs[job_id]["text"] = f"Cancelled (saved {saved} of {total})"
+            jobs.jobs[job_id]["status"] = "cancelled"
+            return
+        jobs.jobs[job_id]["percent"] = 100
+        jobs.jobs[job_id]["saved_count"] = saved
+        if not saved:
+            shutil.rmtree(zip_dir, ignore_errors=True)
+            jobs.jobs[job_id]["text"] = "Could not download any item"
+            jobs.jobs[job_id]["status"] = "error"
+            return
+        jobs.jobs[job_id]["filename"] = os.path.basename(zip_path)
+        jobs.jobs[job_id]["filepath"] = zip_path
+        jobs.jobs[job_id]["text"] = f"Saved {saved} of {total} videos" + (f" ({failed} failed)" if failed else "")
+        jobs.jobs[job_id]["status"] = "done"
+
+    threading.Thread(target=run_batch, daemon=True).start()
     return jsonify({"job_id": job_id})

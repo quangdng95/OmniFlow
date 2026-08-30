@@ -188,3 +188,112 @@ def test_download_always_stages_into_a_temp_dir_not_a_configured_folder(client, 
     job = _wait_for_job(job_id)
     assert job["status"] == "done"
     assert str(tmp_path) in job["filepath"]
+
+
+# ---- /api/download-batch ----
+
+import os
+import zipfile
+
+from remote_web import zipper as zipper_module
+
+
+def test_download_batch_requires_trust():
+    remote_app.config["TESTING"] = True
+    anon_client = remote_app.test_client()
+    resp = anon_client.post("/api/download-batch", json={"url": "https://www.youtube.com/playlist?list=PL1", "quality": "Best", "items": []})
+    assert resp.status_code == 401
+
+
+def test_download_batch_no_items_returns_400(client):
+    resp = client.post("/api/download-batch", json={"url": "https://www.youtube.com/playlist?list=PL1", "quality": "Best", "items": []})
+    assert resp.status_code == 400
+
+
+def test_download_batch_produces_a_zip_with_every_item(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+
+    def fake_download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
+        out = os.path.join(save_dir, f"{title}.mp4")
+        with open(out, "wb") as f:
+            f.write(b"fake video")
+        if on_progress:
+            on_progress(100)
+        return out
+
+    monkeypatch.setattr(download_module, "download_one_video", fake_download_one_video)
+
+    resp = client.post("/api/download-batch", json={
+        "url": "https://www.youtube.com/playlist?list=PL1",
+        "quality": "Best",
+        "items": [
+            {"title": "Video A", "url": "https://youtube.com/watch?v=a"},
+            {"title": "Video B", "url": "https://youtube.com/watch?v=b"},
+        ],
+    })
+    assert resp.status_code == 200
+    job_id = resp.get_json()["job_id"]
+    job = _wait_for_job(job_id)
+    assert job["status"] == "done"
+    assert job["saved_count"] == 2
+    assert job["filepath"].endswith(".zip")
+    with zipfile.ZipFile(job["filepath"]) as zf:
+        assert len(zf.namelist()) == 2
+        assert zf.getinfo(zf.namelist()[0]).compress_type == zipfile.ZIP_STORED
+
+
+def test_download_batch_deletes_raw_files_as_it_goes(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+    written_paths = []
+
+    def fake_download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
+        out = os.path.join(save_dir, f"{title}.mp4")
+        with open(out, "wb") as f:
+            f.write(b"fake video")
+        written_paths.append(out)
+        if on_progress:
+            on_progress(100)
+        return out
+
+    monkeypatch.setattr(download_module, "download_one_video", fake_download_one_video)
+
+    resp = client.post("/api/download-batch", json={
+        "url": "https://www.youtube.com/playlist?list=PL1",
+        "quality": "Best",
+        "items": [{"title": "Video A", "url": "https://youtube.com/watch?v=a"}],
+    })
+    job_id = resp.get_json()["job_id"]
+    _wait_for_job(job_id)
+    assert not os.path.exists(written_paths[0])
+
+
+def test_download_batch_partial_failure_still_saves_the_rest(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+
+    def fake_download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
+        if title == "Broken":
+            raise ValueError("boom")
+        out = os.path.join(save_dir, f"{title}.mp4")
+        with open(out, "wb") as f:
+            f.write(b"fake video")
+        if on_progress:
+            on_progress(100)
+        return out
+
+    monkeypatch.setattr(download_module, "download_one_video", fake_download_one_video)
+
+    resp = client.post("/api/download-batch", json={
+        "url": "https://www.youtube.com/playlist?list=PL1",
+        "quality": "Best",
+        "items": [
+            {"title": "Broken", "url": "https://youtube.com/watch?v=broken"},
+            {"title": "Good", "url": "https://youtube.com/watch?v=good"},
+        ],
+    })
+    job_id = resp.get_json()["job_id"]
+    job = _wait_for_job(job_id)
+    assert job["status"] == "done"
+    assert job["saved_count"] == 1
