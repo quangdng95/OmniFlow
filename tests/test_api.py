@@ -705,7 +705,9 @@ def test_check_link_linkedin_document_post_gets_a_specific_friendly_message(clie
     assert resp.get_json()["error"] == app_module.LINKEDIN_DOCUMENT_POST_ERROR
 
 
-# ---- TikTok: yt-dlp video path, custom Photo Mode fallback for slideshow posts ----
+# ---- TikTok: tikwm.com fallback for both Photo Mode and (as of 2026-08-30,
+# since yt-dlp's own video extractor broke, see backend/tiktok.py) normal
+# video posts too ----
 
 
 def test_check_link_tiktok_photo_falls_back_to_resolver(client, monkeypatch):
@@ -715,7 +717,7 @@ def test_check_link_tiktok_photo_falls_back_to_resolver(client, monkeypatch):
     monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
     monkeypatch.setattr(
         tiktok_module,
-        "fetch_tiktok_photo_post",
+        "fetch_tiktok_post",
         lambda url: {"title": "A post", "items": [{"kind": "image", "url": "http://cdn/i.jpg", "thumbnail": "http://cdn/cover.jpg"}]},
     )
     resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/photo/123"})
@@ -732,7 +734,7 @@ def test_check_link_tiktok_photo_multi_image_returns_playlist(client, monkeypatc
     monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
     monkeypatch.setattr(
         tiktok_module,
-        "fetch_tiktok_photo_post",
+        "fetch_tiktok_post",
         lambda url: {"title": "A post", "items": [
             {"kind": "image", "url": "http://cdn/1.jpg", "thumbnail": "http://cdn/cover.jpg"},
             {"kind": "image", "url": "http://cdn/2.jpg", "thumbnail": "http://cdn/cover.jpg"},
@@ -746,37 +748,67 @@ def test_check_link_tiktok_photo_multi_image_returns_playlist(client, monkeypatc
 
 
 def test_check_link_tiktok_video_post_unaffected(client, monkeypatch):
-    # A real TikTok video never reaches the Photo Mode fallback - the standard
-    # yt-dlp path handles it exactly like every other platform, and the
-    # third-party resolver is never even called.
+    # A yt-dlp attempt that SUCCEEDS never even looks at the tikwm.com
+    # resolver - the fallback is only ever tried inside the except
+    # DownloadError block.
     monkeypatch.setattr(extraction_module, "extract_video_info", lambda cls: {"title": "A TikTok video", "formats": []})
 
     def fail_if_called(url):
-        raise AssertionError("fetch_tiktok_photo_post should not be called for a working video URL")
+        raise AssertionError("fetch_tiktok_post should not be called when yt-dlp already succeeded")
 
-    monkeypatch.setattr(tiktok_module, "fetch_tiktok_photo_post", fail_if_called)
+    monkeypatch.setattr(tiktok_module, "fetch_tiktok_post", fail_if_called)
     resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/video/123"})
     assert resp.status_code == 200
     assert resp.get_json()["title"] == "A TikTok video"
 
 
-def test_check_link_tiktok_real_video_failure_skips_the_photo_resolver(client, monkeypatch):
-    # A TikTok video that fails for an unrelated reason (deleted, private,
-    # geo-blocked) must not pay for a doomed second network call to the
-    # third-party Photo Mode resolver - only the exact "Unsupported URL"
-    # message (yt-dlp's own "no extractor matched this URL at all" signal)
-    # should trigger the fallback.
+def test_check_link_tiktok_real_video_failure_tries_the_resolver_too(client, monkeypatch):
+    # As of 2026-08-30 (see backend/tiktok.py), yt-dlp's TikTok video
+    # extractor itself is broken for every real video (a known, currently
+    # open upstream issue) - so the tikwm.com fallback is now tried for
+    # ANY TikTok DownloadError, not gated on a specific error message (a
+    # message-specific gate already proved too narrow once: it missed this
+    # exact failure). If the fallback ALSO fails (a genuinely
+    # deleted/private video), the original yt-dlp error still produces the
+    # normal friendly message - no raw exception leaks either way.
     def fake_extract(cls):
         raise yt_dlp.utils.DownloadError("This video is unavailable")
 
     monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
 
-    def fail_if_called(url):
-        raise AssertionError("fetch_tiktok_photo_post should not be called for a non-'Unsupported URL' failure")
+    resolver_called = {"count": 0}
 
-    monkeypatch.setattr(tiktok_module, "fetch_tiktok_photo_post", fail_if_called)
+    def also_fails(url):
+        resolver_called["count"] += 1
+        raise tiktok_module.TikTokResolverError("tikwm.com could not resolve this post either")
+
+    monkeypatch.setattr(tiktok_module, "fetch_tiktok_post", also_fails)
     resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/video/123"})
+    assert resolver_called["count"] == 1
     assert resp.status_code == 400
+    assert "github.com" not in resp.get_json()["error"].lower()
+
+
+def test_check_link_tiktok_real_video_failure_uses_the_resolver_when_it_succeeds(client, monkeypatch):
+    # The other half of the case above: when yt-dlp fails for a reason that
+    # ISN'T a genuine "unsupported URL"/missing-extractor case, but the
+    # tikwm.com fallback still manages to resolve the post, that result must
+    # be used - not discarded just because yt-dlp's own error message didn't
+    # look like the old Photo-Mode-specific signal.
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("Unable to extract universal data for rehydration")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_post",
+        lambda url: {"title": "A real video", "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": "http://cdn/cover.jpg"}]},
+    )
+    resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/video/123"})
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["type"] == "video"
+    assert body["kind"] == "video"
 
 
 def test_start_download_threads_saves_with_correct_extension(client, monkeypatch, tmp_path):
@@ -933,9 +965,9 @@ def test_start_download_linkedin_document_post_gets_a_specific_friendly_message(
 
 
 def test_start_download_tiktok_photo_falls_back_and_saves_as_jpg(client, monkeypatch, tmp_path):
-    # The generic yt-dlp attempt runs first (unaffected for a normal TikTok
-    # video); only its failure triggers the Photo Mode fallback, so a normal
-    # video download never pays the third-party resolver's cost.
+    # The generic yt-dlp attempt runs first; only its failure triggers the
+    # tikwm.com fallback. A resolved Photo Mode slide (kind: "image") saves
+    # as a .jpg via _save_single_cdn_file's default extension.
     monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
 
     class MockYoutubeDL:
@@ -954,7 +986,7 @@ def test_start_download_tiktok_photo_falls_back_and_saves_as_jpg(client, monkeyp
     monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
     monkeypatch.setattr(
         tiktok_module,
-        "fetch_tiktok_photo_post",
+        "fetch_tiktok_post",
         lambda url: {"title": "A post", "items": [{"kind": "image", "url": "http://cdn/i.jpg", "thumbnail": "http://cdn/cover.jpg"}]},
     )
     monkeypatch.setattr(download_module, "download_direct_url", lambda cdn_url, output_path, job_id: None)
@@ -975,9 +1007,9 @@ def test_start_download_tiktok_photo_falls_back_and_saves_as_jpg(client, monkeyp
     assert jobs_module.jobs[job_id]["filename"].endswith(".jpg")
 
 
-def test_start_download_tiktok_video_unaffected_by_photo_fallback(client, monkeypatch, tmp_path):
-    # A normal TikTok video download that succeeds never even looks at the
-    # Photo Mode resolver.
+def test_start_download_tiktok_video_unaffected_by_resolver_fallback(client, monkeypatch, tmp_path):
+    # A yt-dlp download that succeeds never even looks at the tikwm.com
+    # resolver.
     monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
 
     class MockYoutubeDL:
@@ -997,9 +1029,9 @@ def test_start_download_tiktok_video_unaffected_by_photo_fallback(client, monkey
     monkeypatch.setattr(download_module, "ensure_h264", lambda *a, **k: None)
 
     def fail_if_called(url):
-        raise AssertionError("fetch_tiktok_photo_post should not be called for a working video download")
+        raise AssertionError("fetch_tiktok_post should not be called when yt-dlp already succeeded")
 
-    monkeypatch.setattr(tiktok_module, "fetch_tiktok_photo_post", fail_if_called)
+    monkeypatch.setattr(tiktok_module, "fetch_tiktok_post", fail_if_called)
 
     resp = client.post(
         "/api/download",
@@ -1016,10 +1048,10 @@ def test_start_download_tiktok_video_unaffected_by_photo_fallback(client, monkey
     assert jobs_module.jobs[job_id]["status"] == "done"
 
 
-def test_start_download_tiktok_real_video_failure_skips_the_photo_resolver(client, monkeypatch, tmp_path):
-    # Same guard as the /api/check test above, on the download route: a
-    # TikTok video failing for an unrelated reason must not also pay for a
-    # doomed second network call to the third-party Photo Mode resolver.
+def test_start_download_tiktok_real_video_failure_tries_the_resolver_too(client, monkeypatch, tmp_path):
+    # Same broadened gate as /api/check, on the download route: any TikTok
+    # DownloadError now tries the tikwm.com fallback, not just the old
+    # Photo-Mode-specific "Unsupported URL" signal.
     monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
 
     class MockYoutubeDL:
@@ -1037,10 +1069,13 @@ def test_start_download_tiktok_real_video_failure_skips_the_photo_resolver(clien
 
     monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
 
-    def fail_if_called(url):
-        raise AssertionError("fetch_tiktok_photo_post should not be called for a non-'Unsupported URL' failure")
+    resolver_called = {"count": 0}
 
-    monkeypatch.setattr(tiktok_module, "fetch_tiktok_photo_post", fail_if_called)
+    def also_fails(url):
+        resolver_called["count"] += 1
+        raise tiktok_module.TikTokResolverError("tikwm.com could not resolve this post either")
+
+    monkeypatch.setattr(tiktok_module, "fetch_tiktok_post", also_fails)
 
     resp = client.post(
         "/api/download",
@@ -1053,7 +1088,51 @@ def test_start_download_tiktok_real_video_failure_skips_the_photo_resolver(clien
             break
         time.sleep(0.05)
 
+    assert resolver_called["count"] == 1
     assert jobs_module.jobs[job_id]["status"] == "error"
+
+
+def test_start_download_tiktok_real_video_falls_back_and_saves_as_mp4(client, monkeypatch, tmp_path):
+    # The other half: when yt-dlp fails but the tikwm.com fallback resolves
+    # a real video (kind: "video"), the saved file must be a .mp4, not the
+    # .jpg the Photo Mode fallback always used - _save_single_cdn_file must
+    # pick the extension from the resolved item's own kind.
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+
+    class MockYoutubeDL:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def download(self, urls):
+            raise yt_dlp.utils.DownloadError("Unable to extract universal data for rehydration")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", MockYoutubeDL)
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_post",
+        lambda url: {"title": "A real video", "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": "http://cdn/cover.jpg"}]},
+    )
+    monkeypatch.setattr(download_module, "download_direct_url", lambda cdn_url, output_path, job_id: None)
+
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.tiktok.com/@someone/video/123", "title": "My Video", "quality": "Best"},
+    )
+    job_id = resp.get_json()["job_id"]
+
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+
+    assert jobs_module.jobs[job_id]["status"] == "done"
+    assert jobs_module.jobs[job_id]["filename"].endswith(".mp4")
 
 
 # ---- remote downloads stage into a temp dir, not the configured folder ----
@@ -1527,7 +1606,7 @@ def test_start_batch_download_tiktok_photo_carousel_picks_each_slide(client, mon
     monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
     monkeypatch.setattr(
         tiktok_module,
-        "fetch_tiktok_photo_post",
+        "fetch_tiktok_post",
         lambda url: {"title": "A post", "items": [
             {"kind": "image", "url": "http://cdn/1.jpg", "thumbnail": "http://cdn/cover.jpg"},
             {"kind": "image", "url": "http://cdn/2.jpg", "thumbnail": "http://cdn/cover.jpg"},
