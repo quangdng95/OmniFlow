@@ -12,9 +12,11 @@ from flask import Flask, jsonify, request, send_from_directory
 
 from backend import paths
 from remote_web import config, ffmpeg_locator, trust
+from remote_web.routes import health as health_routes
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 app.register_blueprint(trust.unlock_bp)
+app.register_blueprint(health_routes.bp)
 
 
 @app.before_request
