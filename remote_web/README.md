@@ -161,64 +161,121 @@ watching that file unless they think to look). Check
 periodically, rather than only discovering the failure mid-use away from
 home.
 
-## Alternative: free-tier cloud deployment (Linux)
+## Free-tier cloud deployment (Linux) — the primary deployment
 
 Everything above describes running `remote_web` on a dedicated Mac. The same
-package also runs on a Linux VPS — useful if you'd rather not keep any Mac
-powered on at all. This is a **separate, independent deployment**: it gets
-its own hostname, its own trust token, and does not affect the Mac
-deployment in any way if you're running both.
+package also runs, unchanged, on a free Linux cloud VM — so nothing needs a
+Mac powered on at all. This is the deployment actually in use
+(`cloud.southframevn.com`, on a GCP `e2-micro`, 2026-09-10); the Mac
+instructions above are kept for reference.
 
-**Trade-off vs. the Mac deployment:** Instagram/Threads auth can't
-auto-detect a browser session on a headless Linux box (no Keychain, no real
-browser) — you upload a `cookies.txt` manually instead, via a new
-Settings section that only appears when running in remote mode. Export one
-from a browser where you're logged into Instagram/Threads (any cookie
-export extension works), and upload it once after first unlocking the
-cloud deployment; it'll need re-uploading whenever the session goes stale,
-same as any exported cookies file eventually does.
+### What works on a cloud IP, and what doesn't
 
-1. Create an [Oracle Cloud](https://www.oracle.com/cloud/free/) account and
-   provision an "Always Free" instance (an Ampere A1 / ARM shape, or an AMD
-   Micro shape) running Ubuntu — this tier is free forever, not a
-   time-limited trial. Note: sign-up requires a card for identity
-   verification (you are not charged on the Always Free tier), and Oracle
-   has been known to flag long-idle free accounts for review — check in on
-   the instance occasionally.
-2. `sudo apt update && sudo apt install -y python3-venv python3-pip nodejs npm ffmpeg`
-   — `ffmpeg` here is the whole reason this deployment doesn't need any of
-   the macOS vendored-binary machinery: a plain system package is enough.
-3. Clone the repo, then the same setup as the Mac section above:
+A datacenter IP changes the auth story for three platforms:
+
+| Platform | On a cloud IP |
+|---|---|
+| TikTok, Facebook, X, RedNote, LinkedIn | Work with nothing configured. |
+| **YouTube** | Refuses outright — `playability status: LOGIN_REQUIRED` (not merely a "confirm you're not a bot" challenge). A [bgutil POT provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) is installed (step 6) and clears the *bot-check* layer, but **cannot** clear `LOGIN_REQUIRED` — that needs a real logged-in session. |
+| **Instagram / Threads** | Need a `sessionid` — there is no anonymous path at all. |
+
+So YouTube / Instagram / Threads on the cloud VM require a login session,
+and the only free way to get one onto a datacenter box is to **push it up
+from a Mac** that's logged into those sites in a browser
+(`remote_web/scripts/sync_cloud_cookies.py`, step 7). The Mac only has to be
+awake briefly for each sync — it is not a parallel deployment, just a
+cookie source.
+
+### Setup
+
+The VM has ~1 GB RAM, so two things differ from the Mac path: add swap
+before installing anything, and **build `frontend/dist` on your dev machine
+and copy it up** rather than running `npm` on the VM (a Vite build OOMs
+there).
+
+1. Create a [Google Cloud](https://cloud.google.com/free) account (card
+   required for verification; Always Free is genuinely free forever and not
+   the same thing as the 90-day $300 trial). Provision **one `e2-micro`**
+   instance — it is only free in `us-west1`, `us-central1`, or `us-east1` —
+   running **Ubuntu 24.04 LTS**, **30 GB Standard persistent disk**, an
+   ephemeral external IP (free on a free-tier VM), and your SSH public key
+   in the instance metadata. No inbound firewall rule is needed beyond SSH:
+   the Cloudflare tunnel dials outbound.
+   (Oracle Cloud's Always Free Ampere shape was the original plan — it has
+   far more RAM — but Oracle flagged/locked the free account during setup.
+   GCP has been steadier for this.)
+2. On the VM: add a swapfile, then the system packages —
    ```bash
-   python3 -m venv .venv && source .venv/bin/activate
-   pip install -r requirements.txt
-   cd frontend && npm install && npm run build && cd ..
+   sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+   sudo mkswap /swapfile && sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   sudo apt-get update
+   sudo apt-get install -y python3-venv python3-pip ffmpeg rsync unzip
    ```
-4. Install `cloudflared` for Linux (Cloudflare's `.deb` package or binary
-   release), `cloudflared tunnel login` against the **same** Cloudflare
-   account already used for the Mac's tunnel (one account can hold several
-   independent tunnels), then create a second named tunnel and route a
-   **different** hostname to it (e.g. `cloudflared tunnel route dns
-   omniflow-cloud cloud.yourdomain.com`) — do not reuse the Mac deployment's
-   hostname.
-5. Two `systemd` units (the Linux equivalent of the Mac's two LaunchAgents
-   — see "Why a LaunchAgent, not a LaunchDaemon" above), both
-   `Restart=on-failure` and `WantedBy=multi-user.target`. Unlike the Mac's
-   LaunchAgent (which needs Automatic Login to reach the login Keychain), a
-   Linux VPS has no analogous GUI-session requirement at all: Instagram/
-   Threads auth here is the manually-uploaded `cookies.txt`, not
-   `browser_cookie3`, so a plain systemd service survives an unattended
-   reboot with no special login configuration needed.
-6. `python3 -m remote_web.config show` for this deployment's own token (it
-   is independent from the Mac deployment's token — each `remote_web`
-   process has its own `.state.json`). Visit
-   `https://<your-cloud-hostname>/unlock`, unlock, then go to Settings and
-   upload a `cookies.txt` if you need Instagram/Threads to work.
+   `ffmpeg` from `apt` is the whole reason this deployment needs none of the
+   macOS vendored-binary machinery — `ffmpeg_locator.py`'s Linux branch just
+   uses `shutil.which("ffmpeg")`.
+3. From your dev machine, build the frontend and copy the app up (no `.git`,
+   no `node_modules`, no venv, no macOS ffmpeg binaries):
+   ```bash
+   cd frontend && npm ci && npm run build && cd ..
+   rsync -az --exclude=__pycache__ --exclude='*.pyc' --exclude=tests \
+     backend remote_web requirements.txt  <user>@<vm>:~/omniflow/
+   rsync -az frontend/dist  <user>@<vm>:~/omniflow/frontend/
+   ```
+4. On the VM: `python3 -m venv ~/omniflow/.venv && ~/omniflow/.venv/bin/pip
+   install -r ~/omniflow/requirements.txt`. Then confirm ffmpeg resolves:
+   `~/omniflow/.venv/bin/python3 -c "from remote_web.ffmpeg_locator import
+   resolve_ffmpeg_binary as r; print(r())"` (must print a path).
+5. Install `cloudflared` (Cloudflare's `linux-amd64.deb`), copy your
+   existing `~/.cloudflared/cert.pem` up from any machine already logged
+   into the Cloudflare account, then
+   `cloudflared tunnel create omniflow-gcp`,
+   `cloudflared tunnel route dns omniflow-gcp cloud.<yourdomain>`, and write
+   `~/.cloudflared/config.yml` pointing the hostname at
+   `http://127.0.0.1:5050`.
+6. **YouTube bot-check layer** — install [`deno`](https://deno.land) (a
+   `yt-dlp` JS-runtime requirement) to `/usr/local/bin`, then the bgutil POT
+   provider: `git clone --branch 2.0.0
+   https://github.com/Brainicism/bgutil-ytdlp-pot-provider`, `cd server &&
+   npm ci && npx tsc` (needs Node 20 via NodeSource), run
+   `node build/main.js` as a systemd service (listens on `127.0.0.1:4416`),
+   and `~/omniflow/.venv/bin/pip install bgutil-ytdlp-pot-provider` for the
+   `yt-dlp` plugin (auto-detects the server). This alone does **not** make
+   YouTube work from the VM (see the table above) — it's the floor, not the
+   fix.
+7. **The actual YouTube/Instagram/Threads fix** — on a Mac logged into those
+   sites, run `bash remote_web/scripts/install-cloud-cookie-sync.sh`. It
+   reads the browser sessions (`browser_cookie3`, one Keychain
+   "Always Allow" prompt on first run), `scp`s a combined `cookies.txt` to
+   the VM's `remote_web/.manual_cookies.txt`, and installs a LaunchAgent
+   that repeats every 6 hours while the Mac is awake. On the VM, point the
+   backend at that file once:
+   `~/omniflow/.venv/bin/python3 -c "from backend import config as c;
+   s=c.load_session(); c.save_session(s['path'],
+   '/home/<user>/omniflow/remote_web/.manual_cookies.txt', s['browser'],
+   s['playlist_limit'])"`.
+8. **Three `systemd` units**, all `Restart=on-failure`,
+   `WantedBy=multi-user.target` (no login-session caveat — a headless Linux
+   VM has no Keychain in play): `omniflow-remote` (`python3 -m
+   remote_web.app` from `~/omniflow`), `omniflow-tunnel`
+   (`cloudflared tunnel --config … run`), and `bgutil-pot`
+   (`node …/build/main.js`).
+9. `~/omniflow/.venv/bin/python3 -m remote_web.config show` for this
+   deployment's token, then visit `https://cloud.<yourdomain>/unlock`.
+   Settings still shows a manual cookies-upload box (works as a one-off if
+   you have no Mac to run the sync from), but with the sync installed you
+   never touch it.
 
-**Known, accepted trade-off:** a cloud provider's IP range is more likely to
-be rate-limited or blocked by TikTok specifically than a residential IP —
-no mitigation (e.g. a residential proxy) is built for this in v1. Every
-other platform is unaffected.
+### Cost
+
+$0 within Always Free: one `e2-micro`, 30 GB Standard PD, one of the three
+free regions, ephemeral external IP. The one place a small charge can leak
+is **network egress** — 1 GB/month free, then ~$0.12/GB — and every
+downloaded video is egress (VM → Cloudflare → you). Light personal use
+stays at or near $0; set a $1 budget alert to be sure. After the 90-day
+trial ends, "Activate full account" in Billing keeps the VM running (still
+$0 in Always Free).
 
 ## Revoking access
 
@@ -257,14 +314,15 @@ significant change:
 - [ ] (Cloud deployment only) `GET /api/health/detail` on the cloud hostname
       reports `ffmpeg: true` (resolved via `apt`-installed ffmpeg, not a
       vendored binary).
-- [ ] (Cloud deployment only) Settings shows the new cookies-upload section
-      (only in remote mode); uploading a real `cookies.txt` flips its
-      status to "valid".
-- [ ] (Cloud deployment only) An Instagram or Threads check/download
-      succeeds after uploading cookies.
-- [ ] (Cloud deployment only) A plain YouTube check/download succeeds with
-      no cookies uploaded at all (proves platforms that need no auth are
-      unaffected by the whole cookies-upload feature being new).
+- [ ] (Cloud deployment only) A TikTok check/download succeeds with nothing
+      configured (proves the no-auth platforms are unaffected on a cloud IP).
+- [ ] (Cloud deployment only) `bgutil-pot.service` is active and
+      `curl 127.0.0.1:4416/ping` responds.
+- [ ] (Cloud deployment only) After `sync_cloud_cookies.py` has run from a
+      logged-in Mac, a YouTube **and** an Instagram check/download both
+      succeed on the cloud hostname.
+- [ ] (Cloud deployment only) `~/Library/Logs/OmniFlowCloudCookies/err.log`
+      on the Mac shows the 6-hourly sync completing, not a Keychain denial.
 
 ## Testing
 

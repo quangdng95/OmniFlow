@@ -1,7 +1,9 @@
 # Remote Web — Cloud (Linux) Portability — Design Spec
 
-**Date:** 2026-08-30
-**Status:** Approved (conversational review with owner; no revision rounds needed)
+**Date:** 2026-08-30 · **Deployed:** 2026-09-10 (see §5–6 for where reality diverged)
+**Status:** Implemented. Code changes (§2) as designed; provider is GCP not Oracle (§5),
+and a cloud IP turned out to block YouTube/Instagram/Threads, fixed by a Mac→VM cookie
+sync (§6).
 
 ## 1. Problem & Goals
 
@@ -164,11 +166,51 @@ replacing them, since both deployments are meant to coexist:
 ## 5. Resolved Open Questions
 
 - **Docker vs. direct install:** direct install (owner's explicit choice, simpler).
-- **Which free-tier cloud provider:** Oracle Cloud Always Free (genuinely free forever,
-  not a 12-month trial like AWS/GCP) — owner accepted the known caveats (card required
-  for signup verification, occasional inactivity-based account flags) as a low-severity
-  trade-off for a personal tool.
-- **Domain:** a new, separate hostname (`cloud.southframevn.com`) — the Mac's existing
-  `download-media.southframevn.com` is untouched.
-- **TikTok IP-reputation risk on a cloud IP:** explicitly accepted by the owner, no
-  mitigation built for v1.
+- **Which free-tier cloud provider:** **GCP `e2-micro` Always Free** (as deployed
+  2026-09-10). Oracle Cloud Always Free was the original plan — its Ampere shape has far
+  more RAM — but Oracle flagged/locked the free account partway through setup, and the
+  owner chose not to fight it. GCP's `e2-micro` is genuinely always-free forever (a
+  separate thing from the 90-day $300 trial; §5's original "12-month trial like GCP" note
+  was wrong — that's a different GCP offer), an ephemeral external IP is free on a
+  free-tier VM, and it must sit in `us-west1`/`us-central1`/`us-east1`. Its ~1 GB RAM
+  means: add a 2 GB swapfile before `pip install`, and build `frontend/dist` off-box
+  (a Vite build OOMs on the VM).
+- **Domain:** a new, separate hostname (`cloud.southframevn.com`).
+- **TikTok IP-reputation risk on a cloud IP:** accepted by the owner — and in practice
+  TikTok worked fine from the GCP IP (both yt-dlp direct and the tikwm.com fallback).
+  The IP problem landed on YouTube instead (see §6).
+
+## 6. Delivered reality: the cloud-IP auth wall (2026-09-10)
+
+Discovered during deployment, not anticipated by §1–5:
+
+- **YouTube refuses a datacenter IP outright.** Not the "Sign in to confirm you're not a
+  bot" challenge that a PO token clears — the player response comes back with
+  `playability status: LOGIN_REQUIRED`. A [bgutil POT
+  provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) (v2.0.0 HTTP server
+  on `127.0.0.1:4416` as a third `systemd` unit, plus the `bgutil-ytdlp-pot-provider`
+  pip plugin and a system `deno` install for yt-dlp's JS runtime) is deployed and clears
+  the bot-check layer, but **cannot** clear `LOGIN_REQUIRED`.
+- **Instagram / Threads** have no anonymous path at all (they need a `sessionid`), same
+  as always.
+- **The fix for all three:** a Mac logged into those sites pushes its browser session up
+  to the VM. `remote_web/scripts/sync_cloud_cookies.py` reads YouTube/Google/Instagram/
+  Threads cookies via `browser_cookie3` (sweeping every installed Chromium-family
+  browser + profile, keeping the one with a real session per domain), writes one
+  Netscape `cookies.txt`, and `scp`s it to the VM's `remote_web/.manual_cookies.txt`
+  (the exact file §2.2's upload endpoint writes — so the wiring through
+  `backend_config.save_session` is identical, just fed by scp instead of a multipart
+  POST). `install-cloud-cookie-sync.sh` runs it once and installs a LaunchAgent
+  (`com.omniflow.cloudcookies`, `StartInterval` 21600) to repeat every 6 h while the Mac
+  is awake. The Mac is now a **cookie source, not a parallel deployment** — it does not
+  run `remote_web` or a tunnel of its own.
+- **What needs nothing:** TikTok, Facebook, X, RedNote, LinkedIn — all work on the cloud
+  VM with no cookies and no POT provider.
+- **Manual upload still exists** (§2.2's Settings box) as the fallback for anyone with no
+  Mac to sync from; the sync script just automates feeding the same file.
+- **`backend/cookies.py` on headless Linux:** `cookiefiles_from_browsers()` throws
+  `KeyError('DBUS_SESSION_BUS_ADDRESS')` per call (no DBus session bus under systemd) and
+  logs it to `.logs/errors.log`. Non-fatal — it's caught, returns zero sessions, and the
+  code falls through to the manual/synced `cookies.txt`. Left as-is (`backend/` is
+  out of scope for this package); the log noise is cosmetic and cached behind
+  `HEALTH_CACHE_SECONDS` for the one caller that hits it unconditionally.
