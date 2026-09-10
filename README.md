@@ -10,6 +10,8 @@
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#installation)
   [![Latest Release](https://img.shields.io/github/v/release/quangdng95/OmniFlow)](../../releases/latest)
+
+  **🇬🇧 English&nbsp;&nbsp;|&nbsp;&nbsp;[🇻🇳 Tiếng Việt](README.vi.md)**
 </div>
 
 ---
@@ -48,7 +50,7 @@ platforms creators, designers, and researchers actually pull reference material 
 | Platform | Single item | Bulk / multi-item | Notes |
 |---|---|---|---|
 | YouTube | ✅ Video, audio-only | ✅ Playlist, channel, Mix/Radio | |
-| TikTok | ✅ Video | — | |
+| TikTok | ✅ Video, Photo Mode slideshow | — | |
 | Instagram | ✅ Post, Reel, photo | ✅ Carousel, Story, profile/Reels | Private content needs a logged-in browser session |
 | Facebook | ✅ Reel | — | |
 | RedNote (Xiaohongshu) | ✅ Video, image | — | |
@@ -126,13 +128,13 @@ cd frontend && npm install && cd ..
 **Run in dev mode** (hot-reload, Flask backend on `:5001` + Vite frontend on `:5173`):
 
 ```bash
-./dev.sh
+./scripts/dev.sh
 ```
 
 **Build the standalone macOS app** (produces `dist/OmniFlow.app` and `dist/OmniFlow.dmg`):
 
 ```bash
-./build.sh
+./scripts/build.sh
 ```
 
 ## Tech stack
@@ -159,11 +161,14 @@ Known gaps, tracked honestly rather than hidden.
 
 **macOS app polish**
 
-- [ ] Native `arm64` `ffmpeg` for the Apple Silicon build, so it no longer needs Rosetta 2 at
-  runtime (the Intel build's `ffmpeg` is already native)
+- [x] Native `arm64` `ffmpeg` for the Apple Silicon build, so it no longer needs Rosetta 2 at
+  runtime (both the Apple Silicon and Intel builds now ship a native binary for their own chip)
 - [ ] Code signing + notarization, so macOS stops warning about an unidentified developer on
-  first launch
-- [ ] LinkedIn native document/slide-deck (PDF) post support
+  first launch — needs a paid Apple Developer account; see [First Launch](docs/FIRST_LAUNCH.md)
+  for the free one-time workaround in the meantime
+- [ ] LinkedIn native document/slide-deck (PDF) post support — still no known resolver (needs a
+  real example URL to reverse-engineer against), but the app now tells you clearly when a link is
+  this unsupported post type instead of a generic error
 - [ ] Windows / Linux builds
 
 **Platform expansion**

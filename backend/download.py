@@ -13,8 +13,36 @@ import yt_dlp
 from backend import config, cookies, extraction, instagram, jobs
 
 
+# macOS (APFS/HFS+) caps a single path component at 255 UTF-8 bytes. A video
+# title is usually short, but a caption-as-title source (TikTok Photo Mode's
+# item title is its full post caption - confirmed live, MISTAKES.md
+# 2026-08-28) can run to 1000+ characters, and get_unique_filename's own
+# collision check (os.path.exists) does NOT error on an over-long name -
+# only the actual write does, so this must be enforced here, at the source,
+# not left for get_unique_filename's collision-suffix math to trip over.
+# 200 leaves headroom for the extension and a " (N)" collision suffix.
+_MAX_FILENAME_BYTES = 200
+# A multi-item post's per-item titles only differ in a short suffix
+# (backend.instagram.instagram_check_response numbers them "{caption} (1)",
+# "{caption} (2)", ...) - truncating from the head alone collapses every
+# item to the same name once the shared prefix alone exceeds the byte cap,
+# which silently clobbers files in a parallel batch download (confirmed
+# live, MISTAKES.md 2026-08-28: 4 images saved as 2 files). Keeping the tail
+# too preserves that differentiator.
+_TAIL_BYTES = 24
+
+
 def sanitize_filename(name):
-    return re.sub(r'[\\/*?:"<>|]', "", name).strip()
+    name = re.sub(r'[\\/*?:"<>|]', "", name).strip()
+    encoded = name.encode("utf-8")
+    if len(encoded) <= _MAX_FILENAME_BYTES:
+        return name
+    # decode(errors="ignore") already drops a dangling multi-byte sequence
+    # split by the slice boundary (a stray leading/trailing continuation
+    # byte just decodes to nothing) - no manual boundary-walking needed.
+    head = encoded[: _MAX_FILENAME_BYTES - _TAIL_BYTES].decode("utf-8", errors="ignore")
+    tail = encoded[-_TAIL_BYTES:].decode("utf-8", errors="ignore")
+    return (head + tail).strip()
 
 
 def get_unique_filename(directory, filename, extension):

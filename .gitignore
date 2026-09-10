@@ -7,6 +7,7 @@ node_modules/
 
 # PyInstaller packaging artifacts (see OmniFlow.spec / rules/packaging.md)
 build/
+.ffmpeg_stage/
 dist/
 build-*/
 dist-*/
@@ -27,3 +28,6 @@ MISTAKES.md
 session.md
 config.json
 .logs/
+
+# Isolated git worktrees used for subagent-driven plan execution
+.worktrees/

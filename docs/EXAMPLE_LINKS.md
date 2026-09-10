@@ -1,5 +1,7 @@
 # Example Links
 
+**🇬🇧 English&nbsp;&nbsp;|&nbsp;&nbsp;[🇻🇳 Tiếng Việt](EXAMPLE_LINKS.vi.md)**
+
 Not sure what to paste first? Copy any link below straight into OmniFlow to see it in action —
 one example per supported platform.
 
@@ -17,8 +19,14 @@ https://www.youtube.com/watch?v=quQwf-B6uSE
 
 ## TikTok
 
+Video:
 ```
 https://www.tiktok.com/@quangdng95/video/7611893214659808520
+```
+
+Photo Mode (slideshow — downloads the whole list of images, pick which ones you want):
+```
+https://www.tiktok.com/@u40lambo/photo/7656817162857876756
 ```
 
 ## Instagram

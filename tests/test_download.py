@@ -35,6 +35,40 @@ def test_sanitize_filename_trims_whitespace():
     assert sanitize_filename("  My Video  ") == "My Video"
 
 
+def test_sanitize_filename_truncates_extremely_long_names_to_stay_within_filesystem_limits():
+    # A TikTok Photo Mode caption (used as the item title - and thus the
+    # saved filename) can run to 1000+ characters (confirmed live,
+    # MISTAKES.md 2026-08-28). Used as-is, the resulting filename exceeds
+    # macOS's 255-byte-per-path-component limit and the download fails with
+    # OSError: [Errno 63] File name too long - not platform-specific, any
+    # title this long from any resolver would hit the same wall.
+    long_name = "Từ những ngày đầu thai kỳ " * 60  # 1500+ UTF-8 bytes
+    result = sanitize_filename(long_name)
+    assert len(result.encode("utf-8")) <= 200
+
+
+def test_sanitize_filename_does_not_cut_a_multibyte_character_in_half():
+    # Truncating by raw bytes could land mid-character for multi-byte UTF-8
+    # (Vietnamese diacritics, emoji) - the result must still decode cleanly.
+    long_name = "ệ" * 300  # each character is a multi-byte UTF-8 sequence
+    result = sanitize_filename(long_name)
+    result.encode("utf-8").decode("utf-8")  # raises if truncation split a character
+
+
+def test_sanitize_filename_keeps_a_trailing_differentiator_distinct_after_truncation():
+    # backend.instagram.instagram_check_response numbers a multi-item post's
+    # titles as "{shared caption} (1)", "{shared caption} (2)", ... - a
+    # naive prefix-only truncation of a long shared caption (TikTok Photo
+    # Mode) collapses every item to the SAME truncated name, so
+    # get_unique_filename can no longer tell them apart and parallel batch
+    # downloads silently clobber each other (confirmed live, MISTAKES.md
+    # 2026-08-28: a 4-image post saved only 2 files). The tail must survive
+    # truncation so distinct titles stay distinct.
+    caption = "Từ những ngày đầu thai kỳ, mình đã tập thói quen đọc thai giáo " * 15
+    names = {sanitize_filename(f"{caption} ({i})") for i in range(1, 5)}
+    assert len(names) == 4
+
+
 # ---- get_unique_filename ----
 
 
@@ -54,6 +88,18 @@ def test_get_unique_filename_increments_past_multiple_collisions(tmp_path):
     (tmp_path / "clip (1).mp4").write_text("x")
     result = get_unique_filename(str(tmp_path), "clip", "mp4")
     assert result == str(tmp_path / "clip (2).mp4")
+
+
+def test_get_unique_filename_with_a_very_long_title_is_actually_writable(tmp_path):
+    # A plain length assertion on the returned string wouldn't have caught
+    # the real bug - os.path.exists() (what get_unique_filename itself
+    # checks) doesn't error on an over-long name, only an actual write does.
+    # This proves the fix at the point that matters, matching how the real
+    # bug was found (reproduced with a real open().write(), not a string check).
+    long_title = "Từ những ngày đầu thai kỳ, mình đã tập thói quen đọc thai giáo cho con mỗi tối. " * 15
+    result = get_unique_filename(str(tmp_path), long_title, "jpg")
+    with open(result, "wb") as f:
+        f.write(b"x")
 
 
 # ---- download progress tracking ----
