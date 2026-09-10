@@ -78,6 +78,16 @@ export interface Translations {
       browse: string;
       rememberPath: string;
     };
+    cookiesUpload: {
+      heading: string;
+      description: string;
+      chooseFile: string;
+      upload: string;
+      statusValid: string;
+      statusNoSession: string;
+      statusNone: string;
+      uploadedOk: string;
+    };
     language: {
       heading: string;
       description: string;
@@ -247,6 +257,16 @@ const en: Translations = {
       description: "Here you can configure where the downloaded videos are to be saved.",
       browse: "Browse…",
       rememberPath: "Always save at the last used path.",
+    },
+    cookiesUpload: {
+      heading: "Instagram / Threads Cookies",
+      description: "This deployment has no browser to auto-detect a login session from. Export a cookies.txt from a browser where you're logged into Instagram or Threads, and upload it here.",
+      chooseFile: "Choose cookies.txt…",
+      upload: "Upload",
+      statusValid: "A working Instagram session was found in the uploaded file.",
+      statusNoSession: "The uploaded file doesn't contain a valid Instagram session — export a fresh cookies.txt and try again.",
+      statusNone: "No cookies file uploaded yet.",
+      uploadedOk: "Cookies file uploaded.",
     },
     language: {
       heading: "Language",
@@ -459,6 +479,16 @@ const vi: Translations = {
       description: "Tại đây bạn có thể cấu hình nơi lưu các video đã tải xuống.",
       browse: "Chọn thư mục…",
       rememberPath: "Luôn lưu vào thư mục đã dùng gần nhất.",
+    },
+    cookiesUpload: {
+      heading: "Cookies Instagram / Threads",
+      description: "Bản triển khai này không có trình duyệt để tự phát hiện phiên đăng nhập. Hãy xuất file cookies.txt từ trình duyệt đang đăng nhập Instagram hoặc Threads, rồi tải lên tại đây.",
+      chooseFile: "Chọn file cookies.txt…",
+      upload: "Tải lên",
+      statusValid: "Đã tìm thấy phiên đăng nhập Instagram hợp lệ trong file vừa tải lên.",
+      statusNoSession: "File vừa tải lên không chứa phiên đăng nhập Instagram hợp lệ — hãy xuất lại cookies.txt mới rồi thử lại.",
+      statusNone: "Chưa có file cookies nào được tải lên.",
+      uploadedOk: "Đã tải lên file cookies.",
     },
     language: {
       heading: "Ngôn ngữ",

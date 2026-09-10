@@ -63,6 +63,7 @@ const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
   const [activeRows, setActiveRows] = useState<number[]>([]);
   const [batchJobId, setBatchJobId] = useState<string | null>(null);
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null);
+  const [finishedBatchJobId, setFinishedBatchJobId] = useState<string | null>(null);
 
   const checkTokenRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +75,7 @@ const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
     setActiveRows([]);
     setBatchJobId(null);
     setBatchSummary(null);
+    setFinishedBatchJobId(null);
     setSelectedQuality("Best");
   };
 
@@ -152,6 +154,9 @@ const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
           setBatchSummary({ done, total, percent });
         }
         if (progress.status !== "running") {
+          if (progress.status === "done") {
+            setFinishedBatchJobId(batchJobId);
+          }
           setBatchJobId(null);
           setBatchSummary(null);
           clearInterval(id);
@@ -275,6 +280,7 @@ const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
     });
     try {
       const { job_id } = await api.startBatchDownload(url.trim(), quality, items);
+      setFinishedBatchJobId(null);
       setBatchJobId(job_id);
     } catch (e) {
       toast.error((e as Error).message);
@@ -443,6 +449,7 @@ const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
               onDownloadItems={handleDownloadItems}
               onCancel={handleCancelBatch}
               onOpenFolder={isLocal() ? handleOpenFolder : undefined}
+              downloadUrl={isLocal() || !finishedBatchJobId ? undefined : `/api/download-file/${finishedBatchJobId}`}
             />
           )}
 
