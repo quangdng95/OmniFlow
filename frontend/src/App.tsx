@@ -6,6 +6,7 @@ import { LanguageProvider } from "./i18n/LanguageContext";
 
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
+const ShortcutSetupPage = lazy(() => import("./pages/ShortcutSetupPage"));
 
 const App = () => {
   const [page, setPage] = useState<Page>("home");
@@ -27,6 +28,7 @@ const App = () => {
             <Suspense fallback={null}>
               {page === "settings" && <SettingsPage onNavigate={setPage} />}
               {page === "terms" && <TermsPage onNavigate={setPage} />}
+              {page === "shortcut" && <ShortcutSetupPage onNavigate={setPage} />}
             </Suspense>
           )}
 

@@ -2,10 +2,11 @@ export type Language = "en" | "vi";
 
 export interface Translations {
   header: {
-    nav: { home: string; settings: string; terms: string };
+    nav: { home: string; settings: string; terms: string; shortcut: string };
     home: { title: string; descriptionLine1: string; descriptionLine2: string };
     settings: { title: string };
     terms: { title: string };
+    shortcut: { title: string };
   };
   footer: { by: string };
   urlInput: {
@@ -126,11 +127,28 @@ export interface Translations {
     intro: string;
     sections: { heading: string; body: string; list?: string[]; trailing?: string }[];
   };
+  shortcutSetup: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    warningTitle: string;
+    warningBody: string;
+    valuesTitle: string;
+    valuesUrlLabel: string;
+    valuesTokenNote: string;
+    phases: {
+      num: string;
+      title: string;
+      desc: string;
+      steps: { text: string; nested?: boolean }[];
+    }[];
+    footerNote: string;
+  };
 }
 
 const en: Translations = {
   header: {
-    nav: { home: "Home", settings: "Settings", terms: "Terms of Use" },
+    nav: { home: "Home", settings: "Settings", terms: "Terms of Use", shortcut: "Shortcut Setup" },
     home: {
       title: "OmniFlow – All-in-One Video Downloader",
       descriptionLine1: "Download videos and media instantly with OmniFlow.",
@@ -138,6 +156,7 @@ const en: Translations = {
     },
     settings: { title: "Settings" },
     terms: { title: "Terms of Use" },
+    shortcut: { title: "iOS Shortcut Setup" },
   },
   footer: { by: "By" },
   urlInput: {
@@ -348,11 +367,143 @@ const en: Translations = {
       },
     ],
   },
+  shortcutSetup: {
+    eyebrow: "iOS Shortcut · build it once",
+    heading: "Share a link → OmniFlow downloads it",
+    intro:
+      "Watching something on Instagram/TikTok, hit Share → pick this shortcut → it calls this server and saves the file for you. Build it once, then share the shortcut itself so any other iPhone can use it too.",
+    warningTitle: "⚠️ Not verified on a real iPhone yet",
+    warningBody:
+      "This is built exactly against the real API below (already verified end-to-end on the server side), but there's no way to remote into an iPhone and build/run it inside the Shortcuts app directly. Follow the phases in order, test with one short TikTok link first. If an action's name doesn't match what you see, or something errors, that's worth reporting so it can be fixed.",
+    valuesTitle: "2 values used throughout",
+    valuesUrlLabel: "Server base URL:",
+    valuesTokenNote:
+      "Token — get it by SSH-ing into the server (python3 -m remote_web.config show) or from whoever manages it. Never paste the real token into the shortcut and then share that shortcut publicly — anyone holding it can use this server the same way you can.",
+    phases: [
+      {
+        num: "PHASE 0",
+        title: "Create the shortcut",
+        desc: 'Shortcuts app → tap + → name it "OmniFlow Download"',
+        steps: [
+          {
+            text: 'Tap the ⓘ (Shortcut Details) icon at the top → enable "Use as Share Sheet Action" → under Share Sheet Types, choose only URLs.',
+          },
+          {
+            text: "Still works run manually (without the Share Sheet): copy the link first, then open the shortcut from the Home Screen — Phase 1 falls back to the clipboard when nothing was shared in.",
+          },
+        ],
+      },
+      {
+        num: "PHASE 1",
+        title: "Get the link",
+        desc: "Prefer whatever was shared in; fall back to the clipboard",
+        steps: [
+          { text: "If Shortcut Input → Has No Value" },
+          { text: "Get Clipboard", nested: true },
+          { text: "Set Variable named Link = the Clipboard result", nested: true },
+          { text: "Otherwise" },
+          { text: "Set Variable named Link = Shortcut Input", nested: true },
+          { text: "End If" },
+        ],
+      },
+      {
+        num: "PHASE 2",
+        title: "Check the link",
+        desc: "Calls /api/check — fails fast on a bad link or a playlist",
+        steps: [
+          { text: "Dictionary — add 1 key: url = variable Link" },
+          {
+            text: "Get Contents of URL — URL: {origin}/api/check · Method: POST · Headers: Authorization = Bearer TOKEN, Content-Type = application/json · Request Body: JSON → pick the Dictionary from the step above · → Set Variable CheckResult",
+          },
+          { text: "Get Dictionary Value — key error from CheckResult → Set Variable CheckError" },
+          { text: "If CheckError → Has Any Value" },
+          { text: "Show Alert — message = variable CheckError", nested: true },
+          { text: "Stop This Shortcut", nested: true },
+          { text: "End If" },
+          { text: "Get Dictionary Value — key type from CheckResult → Set Variable LinkType" },
+          { text: "If LinkType → is → playlist" },
+          { text: "Open URLs — {origin}", nested: true },
+          {
+            text: 'Show Alert — "This link has multiple videos/photos — open the web app to pick one"',
+            nested: true,
+          },
+          { text: "Stop This Shortcut", nested: true },
+          { text: "End If" },
+        ],
+      },
+      {
+        num: "PHASE 3",
+        title: "Start the download",
+        desc: "Calls /api/download, grabs a job_id",
+        steps: [
+          { text: "Dictionary — 2 keys: url = variable Link · quality = text Best" },
+          {
+            text: "Get Contents of URL — URL: {origin}/api/download · Method: POST, same headers as Phase 2 · Request Body: JSON → the Dictionary you just made · → Set Variable DownloadResult",
+          },
+          { text: "Get Dictionary Value — key job_id from DownloadResult → Set Variable JobID" },
+        ],
+      },
+      {
+        num: "PHASE 4",
+        title: "Wait for it to finish",
+        desc: "Polls progress every 1.5s, up to 20 times (~30s)",
+        steps: [
+          { text: "Set Variable Done = false" },
+          { text: "Repeat 20 times" },
+          { text: "If Done → is → false", nested: true },
+          { text: "Wait 1.5 seconds", nested: true },
+          {
+            text: "Get Contents of URL — URL: {origin}/api/progress/ + insert the JobID variable at the end · Method: GET, header Authorization = Bearer TOKEN · → Set Variable ProgressResult",
+            nested: true,
+          },
+          { text: "Get Dictionary Value — key status from ProgressResult → Set Variable JobStatus", nested: true },
+          { text: "If JobStatus → is → done", nested: true },
+          { text: "Set Variable Done = true", nested: true },
+          { text: "End If", nested: true },
+          { text: "End If", nested: true },
+          { text: "End Repeat" },
+        ],
+      },
+      {
+        num: "PHASE 5",
+        title: "Save / open the file",
+        desc: "Pulls down the real file, previews it so you can save it",
+        steps: [
+          { text: "If Done → is → true" },
+          {
+            text: "Get Contents of URL — URL: {origin}/api/download-file/ + insert JobID · Method: GET, header Authorization = Bearer TOKEN · The result is the real video/photo file",
+            nested: true,
+          },
+          {
+            text: "Quick Look the result above — tap the share button inside Quick Look to Save to Photos / Files / AirDrop",
+            nested: true,
+          },
+          { text: "Otherwise" },
+          { text: 'Show Alert — "Taking a while — open the web app to keep watching it"', nested: true },
+          { text: "Open URLs — {origin}", nested: true },
+          { text: "End If" },
+        ],
+      },
+      {
+        num: "PHASE 6",
+        title: "Share it to another device",
+        desc: "Same shortcut, same server/session as yours",
+        steps: [
+          { text: "Open the shortcut you just built → tap Share (top corner) → Copy iCloud Link" },
+          {
+            text: "Send that link over iMessage/whatever you like — anyone who taps it gets the exact same shortcut, ready to use",
+          },
+        ],
+      },
+    ],
+    footerNote:
+      "Server: remote_web, authenticated via the Authorization: Bearer header (added specifically for a headless client like this — the browser's own cookie login still works the same, side by side). The job's temp file on the server is deleted automatically once Phase 5 pulls it down.",
+  },
 };
 
 const vi: Translations = {
   header: {
-    nav: { home: "Trang chủ", settings: "Cài đặt", terms: "Điều khoản sử dụng" },
+    nav: { home: "Trang chủ", settings: "Cài đặt", terms: "Điều khoản sử dụng", shortcut: "Cài Shortcut" },
     home: {
       title: "OmniFlow – Tải video từ mọi nền tảng",
       descriptionLine1: "Tải video và media ngay lập tức với OmniFlow.",
@@ -360,6 +511,7 @@ const vi: Translations = {
     },
     settings: { title: "Cài đặt" },
     terms: { title: "Điều khoản sử dụng" },
+    shortcut: { title: "Cài đặt iOS Shortcut" },
   },
   footer: { by: "Bởi" },
   urlInput: {
@@ -569,6 +721,135 @@ const vi: Translations = {
         body: "Chúng tôi có quyền chỉnh sửa các Điều khoản này bất kỳ lúc nào. Việc bạn tiếp tục sử dụng OmniFlow sau khi có thay đổi đồng nghĩa với việc bạn chấp nhận các điều khoản đã cập nhật.",
       },
     ],
+  },
+  shortcutSetup: {
+    eyebrow: "iOS Shortcut · tự build 1 lần",
+    heading: "Share link → OmniFlow tự tải",
+    intro:
+      "Coi video trên Instagram/TikTok, bấm Share → chọn shortcut này → nó tự gọi server này, tải xong tự lưu file. Build 1 lần, xong share iCloud link của chính cái shortcut đó cho máy khác xài chung.",
+    warningTitle: "⚠️ Chưa test trên iPhone thật",
+    warningBody:
+      "Thiết kế đúng theo API thật bên dưới (đã test end-to-end phía server), nhưng không remote vào iPhone để tự tay build + chạy thử trong app Shortcuts được. Làm đúng thứ tự các Phase, test với 1 link TikTok ngắn trước. Bước nào tên action không khớp hoặc lỗi thì đáng để báo lại chỉnh.",
+    valuesTitle: "2 giá trị dùng xuyên suốt",
+    valuesUrlLabel: "Base URL của server:",
+    valuesTokenNote:
+      "Token — lấy bằng cách SSH vào server (python3 -m remote_web.config show) hoặc hỏi người quản trị. Đừng dán token thật vào shortcut rồi share công khai — ai cầm được file cũng xài chung được server này y như mày.",
+    phases: [
+      {
+        num: "PHASE 0",
+        title: "Tạo shortcut mới",
+        desc: 'App Shortcuts → dấu + → đặt tên "OmniFlow Tải Video"',
+        steps: [
+          {
+            text: 'Bấm icon ⓘ (Shortcut Details) ở góc trên → bật "Use as Share Sheet Action" → mục Share Sheet Types chỉ chọn URLs.',
+          },
+          {
+            text: "Vẫn chạy được kiểu thủ công (không qua Share Sheet): cứ copy link trước rồi mở shortcut từ Home Screen — Phase 1 tự đọc Clipboard nếu không có gì được share vào.",
+          },
+        ],
+      },
+      {
+        num: "PHASE 1",
+        title: "Lấy link",
+        desc: "Ưu tiên link được share vào, không có thì lấy từ Clipboard",
+        steps: [
+          { text: "If Shortcut Input → Has No Value" },
+          { text: "Get Clipboard", nested: true },
+          { text: "Set Variable tên Link = kết quả Clipboard", nested: true },
+          { text: "Otherwise" },
+          { text: "Set Variable tên Link = Shortcut Input", nested: true },
+          { text: "End If" },
+        ],
+      },
+      {
+        num: "PHASE 2",
+        title: "Check link",
+        desc: "Gọi /api/check — báo lỗi sớm nếu link hỏng hoặc là playlist",
+        steps: [
+          { text: "Dictionary — thêm 1 key: url = biến Link" },
+          {
+            text: "Get Contents of URL — URL: {origin}/api/check · Method: POST · Headers: Authorization = Bearer TOKEN, Content-Type = application/json · Request Body: JSON → chọn Dictionary ở bước trước · → Set Variable CheckResult",
+          },
+          { text: "Get Dictionary Value — key error từ CheckResult → Set Variable CheckError" },
+          { text: "If CheckError → Has Any Value" },
+          { text: "Show Alert — nội dung = biến CheckError", nested: true },
+          { text: "Stop This Shortcut", nested: true },
+          { text: "End If" },
+          { text: "Get Dictionary Value — key type từ CheckResult → Set Variable LinkType" },
+          { text: "If LinkType → is → playlist" },
+          { text: "Open URLs — {origin}", nested: true },
+          { text: 'Show Alert — "Link này nhiều video/ảnh — mở web để chọn item nhé"', nested: true },
+          { text: "Stop This Shortcut", nested: true },
+          { text: "End If" },
+        ],
+      },
+      {
+        num: "PHASE 3",
+        title: "Bắt đầu tải",
+        desc: "Gọi /api/download, lấy job_id",
+        steps: [
+          { text: "Dictionary — 2 key: url = biến Link · quality = chữ Best" },
+          {
+            text: "Get Contents of URL — URL: {origin}/api/download · Method: POST, headers giống Phase 2 · Request Body: JSON → Dictionary vừa tạo · → Set Variable DownloadResult",
+          },
+          { text: "Get Dictionary Value — key job_id từ DownloadResult → Set Variable JobID" },
+        ],
+      },
+      {
+        num: "PHASE 4",
+        title: "Chờ tải xong",
+        desc: "Hỏi tiến độ mỗi 1.5 giây, tối đa 20 lần (~30s)",
+        steps: [
+          { text: "Set Variable Done = false" },
+          { text: "Repeat 20 lần" },
+          { text: "If Done → is → false", nested: true },
+          { text: "Wait 1.5 giây", nested: true },
+          {
+            text: "Get Contents of URL — URL: {origin}/api/progress/ + chèn biến JobID vào cuối · Method: GET, header Authorization = Bearer TOKEN · → Set Variable ProgressResult",
+            nested: true,
+          },
+          { text: "Get Dictionary Value — key status từ ProgressResult → Set Variable JobStatus", nested: true },
+          { text: "If JobStatus → is → done", nested: true },
+          { text: "Set Variable Done = true", nested: true },
+          { text: "End If", nested: true },
+          { text: "End If", nested: true },
+          { text: "End Repeat" },
+        ],
+      },
+      {
+        num: "PHASE 5",
+        title: "Lưu / mở file",
+        desc: "Tải file thật về, mở preview để lưu vào Ảnh hoặc Files",
+        steps: [
+          { text: "If Done → is → true" },
+          {
+            text: "Get Contents of URL — URL: {origin}/api/download-file/ + chèn biến JobID · Method: GET, header Authorization = Bearer TOKEN · Kết quả chính là file video/ảnh thật",
+            nested: true,
+          },
+          {
+            text: "Quick Look kết quả bước trên — bấm nút share ở Quick Look để Save to Photos / Files / AirDrop",
+            nested: true,
+          },
+          { text: "Otherwise" },
+          { text: 'Show Alert — "Tải hơi lâu, mở web coi tiếp nha"', nested: true },
+          { text: "Open URLs — {origin}", nested: true },
+          { text: "End If" },
+        ],
+      },
+      {
+        num: "PHASE 6",
+        title: "Share qua máy khác",
+        desc: "Cùng 1 shortcut, dùng chung server/session",
+        steps: [
+          { text: "Mở shortcut vừa build → bấm nút Share (góc trên) → Copy iCloud Link" },
+          {
+            text: "Gửi link đó qua iMessage/Zalo/gì cũng được → máy nào bấm vào cũng add được y chang, xài luôn",
+          },
+        ],
+      },
+    ],
+    footerNote:
+      "Server: remote_web, xác thực qua header Authorization: Bearer (thêm riêng cho client kiểu này — cookie trình duyệt vẫn hoạt động bình thường song song). Job tải xong tự xoá file tạm trên server sau khi Phase 5 lấy về máy.",
   },
 };
 

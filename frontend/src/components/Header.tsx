@@ -2,13 +2,20 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Logo from "./Logo";
 import { useLanguage } from "../i18n/LanguageContext";
+import { isLocal } from "../isLocal";
 
-export type Page = "home" | "settings" | "terms";
+export type Page = "home" | "settings" | "terms" | "shortcut";
 
 interface HeaderProps {
   active: Page;
   onNavigate: (page: Page) => void;
 }
+
+const PAGE_TITLES: Record<Exclude<Page, "home">, (t: ReturnType<typeof useLanguage>["t"]) => string> = {
+  settings: (t) => t.header.settings.title,
+  terms: (t) => t.header.terms.title,
+  shortcut: (t) => t.header.shortcut.title,
+};
 
 const Header = ({ active, onNavigate }: HeaderProps) => {
   const { t } = useLanguage();
@@ -17,6 +24,11 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
     { key: "home", label: t.header.nav.home },
     { key: "settings", label: t.header.nav.settings },
     { key: "terms", label: t.header.nav.terms },
+    // The Shortcut only makes sense against a remote deployment (it calls
+    // /api/* with a Bearer token, which only the remote_web trust gate
+    // understands) - hidden for the local desktop app, same convention as
+    // Settings' Target Path/Instagram Cookies sections hiding in remote mode.
+    ...(isLocal() ? [] : [{ key: "shortcut" as Page, label: t.header.nav.shortcut }]),
   ];
 
   return (
@@ -71,7 +83,7 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
             own box, not floating separately on the page background below it */}
         {active !== "home" && (
           <h2 className="w-full max-w-[680px] text-xl font-bold text-slate-800 text-center select-none">
-            {active === "settings" ? t.header.settings.title : t.header.terms.title}
+            {PAGE_TITLES[active](t)}
           </h2>
         )}
       </div>
