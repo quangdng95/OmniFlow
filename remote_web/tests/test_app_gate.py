@@ -54,6 +54,12 @@ def test_root_path_redirects_untrusted_visitor_to_unlock(client):
     assert resp.headers["Location"] == "/unlock"
 
 
+def test_a_valid_bearer_token_passes_the_gate_without_any_cookie(client):
+    token = config.get_or_create_token()
+    resp = client.get("/api/anything-at-all", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 404  # past the gate, into Flask's own 404
+
+
 def test_root_path_serves_index_html_once_trusted(client):
     token = config.get_or_create_token()
     client.post("/unlock", data={"token": token})

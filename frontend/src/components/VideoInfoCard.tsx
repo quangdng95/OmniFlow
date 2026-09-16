@@ -1,9 +1,12 @@
-import { CheckCircle2, Download, RefreshCw, FolderOpen, XCircle, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { CheckCircle2, Download, Loader2, RefreshCw, FolderOpen, XCircle, AlertCircle } from "lucide-react";
 import PlatformTag from "./PlatformTag";
 import SectionCard from "./SectionCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "../i18n/LanguageContext";
+import { saveDownloadedFile } from "../lib/saveFile";
 import type { VideoInfo } from "../types";
 
 export type DownloadActionState = "idle" | "downloading" | "done" | "fail";
@@ -30,6 +33,24 @@ const VideoInfoCard = ({
   downloadUrl,
 }: VideoInfoCardProps) => {
   const { t } = useLanguage();
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!downloadUrl) return;
+    setSaving(true);
+    try {
+      await saveDownloadedFile(downloadUrl, filename || info.title);
+    } catch (e: unknown) {
+      const error = e as Error;
+      // A user backing out of the share sheet also lands here (AbortError) -
+      // that's a cancel, not a failure, so it shouldn't show as an error toast.
+      if (error.name !== "AbortError") {
+        toast.error(error.message);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <SectionCard className="p-4 bg-white/90 border border-neutral-200 shadow-sm rounded-xl select-none">
@@ -122,14 +143,18 @@ const VideoInfoCard = ({
               )}
 
               {downloadUrl && (
-                <a href={downloadUrl} className="flex-1">
-                  <Button
-                    className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg py-2"
-                  >
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg py-2"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
                     <Download className="h-4 w-4" />
-                    {t.downloadSuccess.download}
-                  </Button>
-                </a>
+                  )}
+                  {t.downloadSuccess.download}
+                </Button>
               )}
             </div>
           </div>

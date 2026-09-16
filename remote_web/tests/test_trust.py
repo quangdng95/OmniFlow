@@ -116,6 +116,30 @@ def test_unlock_lockout_is_keyed_per_ip(isolated_state_file, client, monkeypatch
     assert resp.status_code == 302
 
 
+def test_is_trusted_request_accepts_a_valid_bearer_token(isolated_state_file, app):
+    token = config.get_or_create_token()
+    with app.test_request_context("/api/anything", headers={"Authorization": f"Bearer {token}"}):
+        from flask import request
+
+        assert trust.is_trusted_request(request) is True
+
+
+def test_is_trusted_request_rejects_a_wrong_bearer_token(isolated_state_file, app):
+    config.get_or_create_token()
+    with app.test_request_context("/api/anything", headers={"Authorization": "Bearer wrong"}):
+        from flask import request
+
+        assert trust.is_trusted_request(request) is False
+
+
+def test_is_trusted_request_rejects_a_malformed_authorization_header(isolated_state_file, app):
+    token = config.get_or_create_token()
+    with app.test_request_context("/api/anything", headers={"Authorization": token}):
+        from flask import request
+
+        assert trust.is_trusted_request(request) is False
+
+
 def test_unlock_lockout_expires_after_the_window(isolated_state_file, client, monkeypatch):
     monkeypatch.setattr(config, "LOCKOUT_THRESHOLD", 2)
     monkeypatch.setattr(config, "LOCKOUT_WINDOW_SECONDS", 300)

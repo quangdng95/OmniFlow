@@ -103,7 +103,7 @@ def _fetch_formats_for_quality_resolution(url, cookies_path, entry_index):
     # 1080p. Best-effort: any failure here just means the label's own number
     # gets treated as a literal height ceiling, same as before per-label
     # resolution existed.
-    opts = {"quiet": True, "no_warnings": True}
+    opts = {"quiet": True, "no_warnings": True, "remote_components": {"ejs:github"}}
     if entry_index:
         opts["noplaylist"] = False
         opts["playlist_items"] = str(entry_index)
@@ -150,6 +150,9 @@ def build_download_options(
         # leftovers) - yt-dlp deletes them after a successful merge when this is
         # False (the default, pinned explicitly here so it can't drift).
         "keepvideo": False,
+        # See the matching comment in extraction.py - required for an
+        # authenticated YouTube download to find real format URLs at all.
+        "remote_components": {"ejs:github"},
     }
     if entry_index:
         # The URL resolves to a playlist (an Instagram Story, or a multi-video

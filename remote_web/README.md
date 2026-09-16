@@ -199,11 +199,30 @@ there).
    instance — it is only free in `us-west1`, `us-central1`, or `us-east1` —
    running **Ubuntu 24.04 LTS**, **30 GB Standard persistent disk**, an
    ephemeral external IP (free on a free-tier VM), and your SSH public key
-   in the instance metadata. No inbound firewall rule is needed beyond SSH:
-   the Cloudflare tunnel dials outbound.
+   in the instance metadata. No inbound firewall rule is needed for the app
+   itself: the Cloudflare tunnel dials outbound.
    (Oracle Cloud's Always Free Ampere shape was the original plan — it has
    far more RAM — but Oracle flagged/locked the free account during setup.
    GCP has been steadier for this.)
+   - **SSH access is IAP-only, not public** (hardened 2026-09-16 — see
+     MISTAKES.md). `default-allow-ssh` (port 22 open to `0.0.0.0/0`) is
+     deleted; the only firewall rule for port 22 is `allow-ssh-iap`, scoped
+     to Google's fixed IAP range `35.235.240.0/20`. Connect via:
+     ```bash
+     gcloud compute start-iap-tunnel omniflow-cloud 22 \
+       --local-host-port=localhost:2222 \
+       --project=omniflow-cloud-260910 --zone=us-west1-b &
+     ssh -i ~/.ssh/omniflow_cloud -p 2222 omniflow@localhost
+     ```
+     Plain `ssh -i ~/.ssh/omniflow_cloud omniflow@<ip>` will just time out now
+     — this is expected, not a broken deployment. Don't use bare
+     `gcloud compute ssh --tunnel-through-iap` for routine access: with no
+     `--ssh-key-file`/`--strict-host-key-checking` care it auto-provisions a
+     *new* Linux user matching your local OS username (with passwordless
+     sudo via the `google-sudoers` group) instead of reusing `omniflow` — it
+     did exactly this once during hardening and had to be cleaned up. The
+     `start-iap-tunnel` + plain `ssh` form above reuses the existing
+     `omniflow` account and never touches project-wide SSH-key metadata.
 2. On the VM: add a swapfile, then the system packages —
    ```bash
    sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile

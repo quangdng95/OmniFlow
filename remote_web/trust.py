@@ -58,7 +58,17 @@ def verify_trust_cookie(cookie_value):
 
 
 def is_trusted_request(req):
-    return verify_trust_cookie(req.cookies.get(config.TRUST_COOKIE_NAME))
+    if verify_trust_cookie(req.cookies.get(config.TRUST_COOKIE_NAME)):
+        return True
+    # Bearer-token alternative to the cookie flow, for headless/automation
+    # clients (iOS Shortcuts, curl) that can set a Header reliably but can't
+    # replicate a browser's cookie-jar/redirect dance around POST /unlock.
+    # Same secret as the /unlock form - just a different, still-never-logged
+    # delivery mechanism (never a URL query param, per §4.1).
+    auth_header = req.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return hmac.compare_digest(auth_header[7:], config.get_or_create_token())
+    return False
 
 
 _UNLOCK_FORM_HTML = """<!doctype html>

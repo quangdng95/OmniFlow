@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HomePage from "./HomePage";
 import { api } from "../api";
+import { saveDownloadedFile } from "../lib/saveFile";
 import { LanguageProvider } from "../i18n/LanguageContext";
 import type { Page } from "../components/Header";
 import type { JobProgress, PlaylistCheckResult, VideoInfo } from "../types";
@@ -27,6 +28,10 @@ vi.mock("../api", () => ({
     openFolder: vi.fn(),
     getClipboard: vi.fn(),
   },
+}));
+
+vi.mock("../lib/saveFile", () => ({
+  saveDownloadedFile: vi.fn().mockResolvedValue("shared"),
 }));
 
 const mockedApi = vi.mocked(api, true);
@@ -351,9 +356,11 @@ describe("HomePage in remote mode (non-local hostname)", () => {
     await screen.findByText("Video A", undefined, { timeout: 3000 });
     await user.click(screen.getByRole("button", { name: /start download/i }));
 
-    const downloadLink = await screen.findByText("Download");
-    expect(downloadLink.closest("a")).toHaveAttribute("href", "/api/download-file/job-789");
+    const downloadButton = await screen.findByRole("button", { name: "Download" });
     expect(screen.queryByText("Open Folder")).not.toBeInTheDocument();
+
+    await user.click(downloadButton);
+    expect(saveDownloadedFile).toHaveBeenCalledWith("/api/download-file/job-789", "clip.mp4");
   });
 });
 

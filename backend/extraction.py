@@ -122,6 +122,11 @@ def extract_video_info(cls):
         "skip_download": True,
         "socket_timeout": 30,
         "check_formats": False,
+        # YouTube forces SABR streaming (URL-less formats needing an n-sig
+        # challenge solve) for an authenticated/cookied request; without this,
+        # yt-dlp silently skips its EJS challenge-solver fetch and raises "No
+        # video formats found" instead of extracting. Harmless when unused.
+        "remote_components": {"ejs:github"},
     }
     if cls.is_multi:
         # Flat extraction: list each entry's id/title/url/duration/thumbnail

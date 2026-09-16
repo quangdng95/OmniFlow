@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Download, FolderOpen, XCircle, FolderCheck, FolderX, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { Download, FolderOpen, Loader2, XCircle, FolderCheck, FolderX, RefreshCw } from "lucide-react";
 import SectionCard from "./SectionCard";
 import PlatformTag from "./PlatformTag";
 import File from "./File";
@@ -8,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "../i18n/LanguageContext";
+import { saveDownloadedFile } from "../lib/saveFile";
 import type { Platform, PlaylistItem, RowProgress, RowDownloadStatus } from "../types";
 
 export interface BatchSummary {
@@ -53,6 +55,22 @@ const PlaylistItemsCard = ({
 
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [showUnavailable, setShowUnavailable] = useState(false);
+  const [savingZip, setSavingZip] = useState(false);
+
+  const handleSaveZip = async () => {
+    if (!downloadUrl) return;
+    setSavingZip(true);
+    try {
+      await saveDownloadedFile(downloadUrl, `${title || "OmniFlow"}.zip`);
+    } catch (e: unknown) {
+      const error = e as Error;
+      if (error.name !== "AbortError") {
+        toast.error(error.message);
+      }
+    } finally {
+      setSavingZip(false);
+    }
+  };
 
   const selectableIndices = useMemo(
     () =>
@@ -266,12 +284,18 @@ const PlaylistItemsCard = ({
                 </Button>
               )}
               {downloadUrl && (
-                <a href={downloadUrl} className="flex-1">
-                  <Button className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold py-2">
+                <Button
+                  onClick={handleSaveZip}
+                  disabled={savingZip}
+                  className="flex-1 w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold py-2"
+                >
+                  {savingZip ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
                     <Download className="h-4 w-4" />
-                    {t.downloadSuccess.download}
-                  </Button>
-                </a>
+                  )}
+                  {t.downloadSuccess.download}
+                </Button>
               )}
             </div>
           </div>
