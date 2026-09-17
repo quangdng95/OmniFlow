@@ -32,6 +32,7 @@ vi.mock("../api", () => ({
 
 vi.mock("../lib/saveFile", () => ({
   saveDownloadedFile: vi.fn().mockResolvedValue("shared"),
+  saveDownloadedZipAsFiles: vi.fn().mockResolvedValue("shared"),
 }));
 
 const mockedApi = vi.mocked(api, true);

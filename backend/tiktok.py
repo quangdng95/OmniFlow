@@ -109,7 +109,11 @@ def fetch_tiktok_post(url):
     title = data.get("title") or "TikTok Post"
     cover = data.get("cover")
     if images:
-        items = [{"kind": "image", "url": image_url, "thumbnail": cover} for image_url in images]
+        # Each slide's own image IS its thumbnail - tikwm.com's "cover" is a
+        # single post-level poster frame (always the first slide), so using
+        # it here made every row in a multi-image carousel show the same
+        # picture instead of that row's actual slide (MISTAKES.md 2026-09-17).
+        items = [{"kind": "image", "url": image_url, "thumbnail": image_url} for image_url in images]
     else:
         items = [{"kind": "video", "url": play_url, "thumbnail": cover}]
     return {"title": title, "items": items}

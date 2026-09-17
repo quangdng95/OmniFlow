@@ -8,9 +8,8 @@ from the file extension, whether that's video.mp4 or batch.zip.
 """
 
 import os
-import shutil
 
-from flask import Blueprint, after_this_request, jsonify, send_file
+from flask import Blueprint, jsonify, send_file
 
 from backend import jobs
 
@@ -49,9 +48,12 @@ def download_file(job_id):
     if not filepath or not os.path.isfile(filepath):
         return jsonify({"error": "File not found"}), 404
 
-    @after_this_request
-    def cleanup(response):
-        shutil.rmtree(os.path.dirname(filepath), ignore_errors=True)
-        return response
-
+    # Deliberately NOT deleted here on the first successful stream (that used
+    # to 404 a client retrying the same job - e.g. the user backed out of the
+    # OS share sheet, or picked "Save to Files" and wants to also AirDrop it,
+    # and tapping Download again just got "File not found" with no recovery
+    # but re-pasting the link - MISTAKES.md 2026-09-17). reaper.py's
+    # mtime-based sweep already exists to clean up a finished-but-unfetched
+    # job after REAPER_STALE_MINUTES; it cleans up an already-fetched one on
+    # the same schedule now too, giving a real retry window instead of none.
     return send_file(filepath, as_attachment=True, download_name=job["filename"])

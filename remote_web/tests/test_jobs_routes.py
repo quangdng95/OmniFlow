@@ -73,7 +73,7 @@ def test_download_file_not_ready_returns_404(client):
     assert resp.status_code == 404
 
 
-def test_download_file_streams_and_cleans_up_the_temp_dir(client, tmp_path):
+def test_download_file_streams_the_file(client, tmp_path):
     job_dir = tmp_path / "omniflow-remote-abc123"
     job_dir.mkdir()
     file_path = job_dir / "video.mp4"
@@ -84,7 +84,6 @@ def test_download_file_streams_and_cleans_up_the_temp_dir(client, tmp_path):
     resp = client.get("/api/download-file/job1")
     assert resp.status_code == 200
     assert resp.data == b"fake mp4 bytes"
-    assert not job_dir.exists()  # cleaned up after streaming
 
 
 def test_download_file_serves_a_zip_the_same_way_as_a_single_file(client, tmp_path):
@@ -98,4 +97,22 @@ def test_download_file_serves_a_zip_the_same_way_as_a_single_file(client, tmp_pa
     resp = client.get("/api/download-file/job1")
     assert resp.status_code == 200
     assert resp.data == b"PK\x03\x04fake zip bytes"
-    assert not job_dir.exists()
+
+
+def test_download_file_can_be_fetched_a_second_time(client, tmp_path):
+    # A client backing out of the OS share sheet (or wanting to save it
+    # somewhere else too) taps Download again for the same finished job -
+    # this used to 404 because the first successful stream deleted the file
+    # immediately (regression pin, MISTAKES.md 2026-09-17).
+    job_dir = tmp_path / "omniflow-remote-abc123"
+    job_dir.mkdir()
+    file_path = job_dir / "video.mp4"
+    file_path.write_bytes(b"fake mp4 bytes")
+    jobs_module.jobs["job1"] = {
+        "status": "done", "filepath": str(file_path), "filename": "video.mp4",
+    }
+    first = client.get("/api/download-file/job1")
+    second = client.get("/api/download-file/job1")
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert second.data == b"fake mp4 bytes"

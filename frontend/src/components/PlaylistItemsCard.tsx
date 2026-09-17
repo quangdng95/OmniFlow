@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "../i18n/LanguageContext";
-import { saveDownloadedFile } from "../lib/saveFile";
+import { saveDownloadedZipAsFiles } from "../lib/saveFile";
 import type { Platform, PlaylistItem, RowProgress, RowDownloadStatus } from "../types";
 
 export interface BatchSummary {
@@ -61,7 +61,7 @@ const PlaylistItemsCard = ({
     if (!downloadUrl) return;
     setSavingZip(true);
     try {
-      await saveDownloadedFile(downloadUrl, `${title || "OmniFlow"}.zip`);
+      await saveDownloadedZipAsFiles(downloadUrl, `${title || "OmniFlow"}.zip`);
     } catch (e: unknown) {
       const error = e as Error;
       if (error.name !== "AbortError") {

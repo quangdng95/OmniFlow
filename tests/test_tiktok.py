@@ -54,9 +54,12 @@ def test_fetch_tiktok_post_parses_a_photo_mode_slideshow(monkeypatch):
     media = fetch_tiktok_post("https://www.tiktok.com/@someone/photo/123")
 
     assert media["title"] == "A slideshow post"
+    # Each item's thumbnail must be its OWN image, not the post-level cover -
+    # using a shared cover made every row show slide 1's picture (regression
+    # pin, MISTAKES.md 2026-09-17).
     assert media["items"] == [
-        {"kind": "image", "url": "https://p16-sign.tiktokcdn.com/img1.jpeg", "thumbnail": "https://p16-sign.tiktokcdn.com/cover.jpeg"},
-        {"kind": "image", "url": "https://p16-sign.tiktokcdn.com/img2.jpeg", "thumbnail": "https://p16-sign.tiktokcdn.com/cover.jpeg"},
+        {"kind": "image", "url": "https://p16-sign.tiktokcdn.com/img1.jpeg", "thumbnail": "https://p16-sign.tiktokcdn.com/img1.jpeg"},
+        {"kind": "image", "url": "https://p16-sign.tiktokcdn.com/img2.jpeg", "thumbnail": "https://p16-sign.tiktokcdn.com/img2.jpeg"},
     ]
 
 
@@ -107,7 +110,7 @@ def test_fetch_tiktok_post_prefers_images_over_play_when_both_present(monkeypatc
     media = fetch_tiktok_post("https://www.tiktok.com/@someone/photo/123")
 
     assert media["items"] == [
-        {"kind": "image", "url": "https://p16-sign.tiktokcdn.com/img1.jpeg", "thumbnail": "https://p16-sign.tiktokcdn.com/cover.jpeg"},
+        {"kind": "image", "url": "https://p16-sign.tiktokcdn.com/img1.jpeg", "thumbnail": "https://p16-sign.tiktokcdn.com/img1.jpeg"},
     ]
 
 
