@@ -1,6 +1,67 @@
 # Changelog
 
-All notable changes to OmniFlow are documented here. Dates are in `YYYY-MM-DD` format.
+All notable changes to OmniFlow are documented here. Dates are in `YYYY-MM-DD` format. This file
+is the raw, engineering-facing history; the app itself also has an in-app **Changelog** page
+(`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
+keep both updated together when shipping a user-visible change.
+
+## 2026-09-18
+
+### Fixed — TikTok & download reliability
+
+- [x] Fixed TikTok Photo Mode/carousel thumbnails not rendering correctly for some posts.
+- [x] Fixed the per-row "Retry" action on a failed download returning a 404 instead of retrying.
+- [x] Fixed bulk save-to-Photos (mobile Share Sheet flow) only saving the first item of a batch.
+
+## 2026-09-16
+
+### Added — Remote automation & mobile
+
+- [x] **Bearer-token API auth**: `/api/*` now also accepts `Authorization: Bearer <token>`, so a
+  headless client (the new iOS Shortcut) can call the API without a browser cookie session.
+- [x] **iOS Shortcut Setup guide** (new page, `ShortcutSetupPage`): share a link from any app →
+  OmniFlow downloads it and hands the file back, no browser needed. Linked from the header nav,
+  remote-deployment only (hidden for the local desktop app).
+- [x] Mobile Share Sheet saves (including bulk saves) now complete end-to-end on iOS.
+- [x] Restricted remote SSH/server-management access behind the app's own IAP gate.
+
+### Fixed — YouTube
+
+- [x] Fixed YouTube downloads breaking after YouTube rolled out its newer SABR anti-bot streaming
+  protocol.
+
+## 2026-08-29 → 2026-09-10
+
+### Added — Remote Web Access (new capability)
+
+- [x] **Remote Web Access**: OmniFlow can run on a personal cloud server and be reached securely
+  from a phone or any other device via a private URL, gated by a signed trust-cookie login +
+  lockout (see `.claude/rules/web-app.md` and the `remote_web` package).
+- [x] Batch (playlist/carousel) downloads over remote access assemble into a single incremental
+  ZIP (`ZIP_STORED`) instead of requiring one file at a time.
+- [x] Mac → cloud-VM Instagram/Threads cookie sync, so authenticated downloads keep working when
+  OmniFlow isn't running on the machine that owns the browser session.
+- [x] Manual `cookies.txt` upload path for headless/cloud deployments with no browser to
+  auto-extract cookies from.
+- [x] Linux ffmpeg resolution via `PATH` for cloud portability (previously macOS-only lookup).
+
+## 2026-08-29 → 2026-08-30
+
+### Added — TikTok Photo Mode
+
+- [x] Support for downloading TikTok "Photo Mode" posts (multi-image slideshows) via the
+  third-party `tikwm.com` resolver — previously unsupported (no yt-dlp extractor exists for this
+  shape at all).
+- [x] Widened the same `tikwm.com` fallback to cover normal TikTok **video** downloads too, after
+  yt-dlp's own TikTok extractor broke upstream (yt-dlp/yt-dlp#16199).
+
+### Fixed
+
+- [x] Fixed a LinkedIn video download bug.
+- [x] Rebuilt the vendored ffmpeg as a self-contained, native arm64 binary (via `dylibbundler`) —
+  a real speed improvement on Apple Silicon, which previously ran the Intel binary under Rosetta 2.
+- [x] `api.ts`'s `request()` no longer leaks a raw JSON-parse error to the UI on a malformed
+  response.
 
 ## 2026-07-10
 

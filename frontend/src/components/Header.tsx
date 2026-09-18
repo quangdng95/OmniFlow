@@ -4,7 +4,7 @@ import Logo from "./Logo";
 import { useLanguage } from "../i18n/LanguageContext";
 import { isLocal } from "../isLocal";
 
-export type Page = "home" | "settings" | "terms" | "shortcut";
+export type Page = "home" | "settings" | "terms" | "shortcut" | "changelog";
 
 interface HeaderProps {
   active: Page;
@@ -15,6 +15,7 @@ const PAGE_TITLES: Record<Exclude<Page, "home">, (t: ReturnType<typeof useLangua
   settings: (t) => t.header.settings.title,
   terms: (t) => t.header.terms.title,
   shortcut: (t) => t.header.shortcut.title,
+  changelog: (t) => t.header.changelog.title,
 };
 
 const Header = ({ active, onNavigate }: HeaderProps) => {
@@ -22,6 +23,7 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
 
   const navItems: { key: Page; label: string }[] = [
     { key: "home", label: t.header.nav.home },
+    { key: "changelog", label: t.header.nav.changelog },
     { key: "settings", label: t.header.nav.settings },
     { key: "terms", label: t.header.nav.terms },
     // The Shortcut only makes sense against a remote deployment (it calls

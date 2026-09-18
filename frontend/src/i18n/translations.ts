@@ -2,11 +2,12 @@ export type Language = "en" | "vi";
 
 export interface Translations {
   header: {
-    nav: { home: string; settings: string; terms: string; shortcut: string };
+    nav: { home: string; settings: string; terms: string; shortcut: string; changelog: string };
     home: { title: string; descriptionLine1: string; descriptionLine2: string };
     settings: { title: string };
     terms: { title: string };
     shortcut: { title: string };
+    changelog: { title: string };
   };
   footer: { by: string };
   urlInput: {
@@ -144,11 +145,17 @@ export interface Translations {
     }[];
     footerNote: string;
   };
+  changelog: {
+    eyebrow: string;
+    heading: string;
+    intro: string;
+    releases: { date: string; title: string; items: string[] }[];
+  };
 }
 
 const en: Translations = {
   header: {
-    nav: { home: "Home", settings: "Settings", terms: "Terms of Use", shortcut: "Shortcut Setup" },
+    nav: { home: "Home", settings: "Settings", terms: "Terms of Use", shortcut: "Shortcut Setup", changelog: "Changelog" },
     home: {
       title: "OmniFlow – All-in-One Video Downloader",
       descriptionLine1: "Download videos and media instantly with OmniFlow.",
@@ -157,6 +164,7 @@ const en: Translations = {
     settings: { title: "Settings" },
     terms: { title: "Terms of Use" },
     shortcut: { title: "iOS Shortcut Setup" },
+    changelog: { title: "Changelog" },
   },
   footer: { by: "By" },
   urlInput: {
@@ -499,11 +507,73 @@ const en: Translations = {
     footerNote:
       "Server: remote_web, authenticated via the Authorization: Bearer header (added specifically for a headless client like this — the browser's own cookie login still works the same, side by side). The job's temp file on the server is deleted automatically once Phase 5 pulls it down.",
   },
+  changelog: {
+    eyebrow: "Changelog · what's new",
+    heading: "What's changed in OmniFlow",
+    intro:
+      "A running log of what actually shipped, in plain language — newest first. This tracks real changes as they land here, separately from whatever's already described on the download page.",
+    releases: [
+      {
+        date: "2026-09-18",
+        title: "TikTok & download reliability fixes",
+        items: [
+          "Fixed TikTok Photo Mode/carousel thumbnails not showing correctly for some posts.",
+          "Fixed the \"Retry\" button on a failed download sometimes failing with a 404 error instead of retrying.",
+          "Fixed bulk-saving multiple photos/videos to your iPhone's Photos app so every item saves, not just the first one.",
+        ],
+      },
+      {
+        date: "2026-09-16",
+        title: "YouTube fix, API tokens, mobile Share Sheet saves",
+        items: [
+          "Fixed YouTube downloads breaking after YouTube rolled out a newer anti-bot streaming protocol (SABR).",
+          "Added secure API token (Bearer) authentication, so OmniFlow can be automated from other apps/devices — like the new iOS Shortcut below — without logging in through a browser each time.",
+          "Sharing a link straight from Instagram/TikTok/etc. to OmniFlow on your phone (via the Share Sheet) now saves the result directly, including bulk saves.",
+          "New: an iOS Shortcut Setup guide — build a Share-Sheet shortcut once so any iPhone can send a link to your OmniFlow server and get the file back, no browser needed.",
+          "Locked remote SSH/server management down to the app's own purchase gate, closing an access path that shouldn't have been open.",
+        ],
+      },
+      {
+        date: "2026-08-29 → 2026-09-10",
+        title: "Remote access: use OmniFlow from your phone",
+        items: [
+          "Added Remote Web Access — run OmniFlow on your own small cloud server and reach it securely from your phone or any device via a private URL, protected by a login/trust-cookie gate.",
+          "Batch downloads (playlists, carousels) over remote access now assemble into a single ZIP you download in one go.",
+          "Instagram/Threads login sessions now sync from your Mac to a cloud server, so authenticated downloads keep working even when OmniFlow isn't running on your own machine.",
+          "Added a manual cookies.txt upload option for headless/cloud servers that have no browser to auto-extract cookies from.",
+          "Fixed ffmpeg not being found on Linux-based cloud servers.",
+        ],
+      },
+      {
+        date: "2026-08-29 → 2026-08-30",
+        title: "TikTok Photo Mode + smarter fallbacks",
+        items: [
+          "Added support for downloading TikTok \"Photo Mode\" posts (multi-image slideshows) — previously unsupported entirely.",
+          "Fixed TikTok video downloads breaking after an upstream TikTok change — downloads now automatically fall back to a working method when the primary one fails.",
+          "Fixed a LinkedIn video download bug.",
+          "Rebuilt the bundled ffmpeg as a native Apple Silicon build for a real speed boost on M-series Macs (it was previously running under Rosetta 2 emulation).",
+          "Hardened error handling so a failed check/download never surfaces a raw, confusing technical error.",
+        ],
+      },
+      {
+        date: "2026-07-10",
+        title: "Instagram/Threads fixes, self-serve diagnostics",
+        items: [
+          "Fixed the root cause of check/download failing entirely on a freshly-installed Mac (a broken bundled SSL certificate path).",
+          "Fixed a Chrome cookie-reading bug that could silently miss a just-logged-in Instagram/Threads session.",
+          "Fixed a misleading \"Private account\" message that could appear when the real cause was an expired session.",
+          "Added Diagnostic Logs and Reset App Data to Settings, so a failure can be self-diagnosed and reported.",
+          "Pasting a platform's full \"Share\" text (title, hashtags and all) now works, not just a bare URL.",
+          "UI polish pass to match the Figma design pixel-for-pixel (logo colors, spacing, contrast).",
+        ],
+      },
+    ],
+  },
 };
 
 const vi: Translations = {
   header: {
-    nav: { home: "Trang chủ", settings: "Cài đặt", terms: "Điều khoản sử dụng", shortcut: "Cài Shortcut" },
+    nav: { home: "Trang chủ", settings: "Cài đặt", terms: "Điều khoản sử dụng", shortcut: "Cài Shortcut", changelog: "Nhật ký cập nhật" },
     home: {
       title: "OmniFlow – Tải video từ mọi nền tảng",
       descriptionLine1: "Tải video và media ngay lập tức với OmniFlow.",
@@ -512,6 +582,7 @@ const vi: Translations = {
     settings: { title: "Cài đặt" },
     terms: { title: "Điều khoản sử dụng" },
     shortcut: { title: "Cài đặt iOS Shortcut" },
+    changelog: { title: "Nhật ký cập nhật" },
   },
   footer: { by: "Bởi" },
   urlInput: {
@@ -850,6 +921,68 @@ const vi: Translations = {
     ],
     footerNote:
       "Server: remote_web, xác thực qua header Authorization: Bearer (thêm riêng cho client kiểu này — cookie trình duyệt vẫn hoạt động bình thường song song). Job tải xong tự xoá file tạm trên server sau khi Phase 5 lấy về máy.",
+  },
+  changelog: {
+    eyebrow: "Nhật ký cập nhật · có gì mới",
+    heading: "OmniFlow đã thay đổi những gì",
+    intro:
+      "Nhật ký thật các thay đổi đã lên production, viết dễ hiểu — mới nhất ở trên đầu. Trang này ghi lại đúng những gì đã đổi, tách riêng khỏi phần giới thiệu/marketing đã public sẵn ở trang tải.",
+    releases: [
+      {
+        date: "18-09-2026",
+        title: "Sửa lỗi TikTok và độ ổn định khi tải",
+        items: [
+          "Sửa lỗi thumbnail của bài TikTok Photo Mode/carousel hiển thị sai với một số bài.",
+          "Sửa nút \"Retry\" khi tải lỗi đôi khi báo lỗi 404 thay vì tải lại được.",
+          "Sửa lỗi lưu hàng loạt ảnh/video vào Photos trên iPhone — trước đây chỉ item đầu tiên được lưu.",
+        ],
+      },
+      {
+        date: "16-09-2026",
+        title: "Sửa YouTube, thêm API token, lưu qua Share Sheet",
+        items: [
+          "Sửa lỗi tải YouTube bị chặn sau khi YouTube áp dụng giao thức chống bot mới (SABR).",
+          "Thêm xác thực bằng API token (Bearer) — OmniFlow giờ tự động hoá được từ app/thiết bị khác (như iOS Shortcut mới bên dưới) mà không cần đăng nhập qua trình duyệt mỗi lần.",
+          "Share link từ Instagram/TikTok/... thẳng vào OmniFlow trên điện thoại (qua Share Sheet) giờ tự lưu kết quả, kể cả lưu hàng loạt.",
+          "Mới: hướng dẫn cài iOS Shortcut — build 1 lần để iPhone nào cũng gửi link thẳng tới server OmniFlow và nhận lại file, không cần mở trình duyệt.",
+          "Khoá quyền quản trị SSH từ xa lại sau cổng mua hàng (IAP) của app, đóng một đường truy cập lẽ ra không nên mở.",
+        ],
+      },
+      {
+        date: "29-08-2026 → 10-09-2026",
+        title: "Truy cập từ xa: dùng OmniFlow ngay trên điện thoại",
+        items: [
+          "Thêm Remote Web Access — chạy OmniFlow trên server cloud riêng và truy cập an toàn từ điện thoại hoặc thiết bị khác qua URL riêng, có cổng đăng nhập/trust-cookie bảo vệ.",
+          "Tải hàng loạt (playlist, carousel) qua remote access giờ gộp lại thành 1 file ZIP duy nhất để tải về một lần.",
+          "Đồng bộ session đăng nhập Instagram/Threads từ Mac lên server cloud, nên tải có xác thực vẫn chạy được kể cả khi OmniFlow không chạy trên máy của mày.",
+          "Thêm tuỳ chọn upload cookies.txt thủ công cho server headless/cloud không có trình duyệt để tự lấy cookie.",
+          "Sửa lỗi không tìm thấy ffmpeg trên server cloud chạy Linux.",
+        ],
+      },
+      {
+        date: "29-08-2026 → 30-08-2026",
+        title: "TikTok Photo Mode + fallback thông minh hơn",
+        items: [
+          "Thêm hỗ trợ tải bài TikTok \"Photo Mode\" (slideshow nhiều ảnh) — trước đây hoàn toàn chưa hỗ trợ.",
+          "Sửa lỗi tải video TikTok bị hỏng sau khi TikTok đổi hệ thống — giờ tự động chuyển sang cách tải khác khi cách chính không chạy được.",
+          "Sửa lỗi tải video LinkedIn.",
+          "Build lại ffmpeg đi kèm thành bản arm64 gốc cho Apple Silicon, tăng tốc thật trên Mac M-series (trước đây chạy qua giả lập Rosetta 2).",
+          "Xử lý lỗi chặt hơn để check/tải lỗi không bao giờ hiện thông báo kỹ thuật khó hiểu.",
+        ],
+      },
+      {
+        date: "10-07-2026",
+        title: "Sửa Instagram/Threads, thêm chẩn đoán tự phục vụ",
+        items: [
+          "Sửa tận gốc lỗi check/tải không chạy được trên máy Mac mới cài (đường dẫn SSL certificate trong app bị hỏng).",
+          "Sửa lỗi đọc cookie Chrome có thể bỏ sót session Instagram/Threads vừa đăng nhập.",
+          "Sửa thông báo \"Private account\" gây hiểu lầm khi nguyên nhân thật là session hết hạn.",
+          "Thêm mục Diagnostic Logs và Reset App Data trong Cài đặt để tự chẩn đoán và báo lỗi.",
+          "Dán nguyên đoạn \"Share\" (tiêu đề, hashtag...) của nền tảng giờ cũng lấy được link, không cần link trần.",
+          "Chỉnh giao diện khớp pixel với thiết kế Figma (màu logo, khoảng cách, độ tương phản).",
+        ],
+      },
+    ],
   },
 };
 
