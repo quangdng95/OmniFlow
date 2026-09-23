@@ -28,6 +28,25 @@ def test_rotate_token_changes_the_token_but_not_the_secret_key(isolated_state_fi
     assert config.get_or_create_secret_key() == old_key
 
 
+def test_set_token_replaces_the_token_but_not_the_secret_key(isolated_state_file):
+    config.get_or_create_token()
+    old_key = config.get_or_create_secret_key()
+    assert config.set_token("a-chosen-password") == "a-chosen-password"
+    assert config.get_or_create_token() == "a-chosen-password"
+    assert config.get_or_create_secret_key() == old_key
+
+
+def test_set_token_rejects_an_empty_value(isolated_state_file):
+    original = config.get_or_create_token()
+    try:
+        config.set_token("")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("set_token('') should have raised ValueError")
+    assert config.get_or_create_token() == original
+
+
 def test_rotate_secret_key_changes_the_key_but_not_the_token(isolated_state_file):
     old_token = config.get_or_create_token()
     old_key = config.get_or_create_secret_key()

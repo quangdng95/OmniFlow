@@ -305,6 +305,16 @@ Two different operations:
   ```bash
   python3 -m remote_web.config rotate-token
   ```
+- **Set your own token** — replace the random token with a memorable
+  password (prompts if the value is omitted). The same value is what the
+  `/unlock` form and the iOS Shortcut's `Authorization: Bearer` header
+  accept, so update the Shortcut too. A short or guessable value weakens the
+  gate: the brute-force lockout is per-IP and in-memory, so it does not stop
+  an attacker who rotates IPs, and this deployment holds live
+  Instagram/YouTube/Threads sessions.
+  ```bash
+  python3 -m remote_web.config set-token
+  ```
 - **Rotate the secret key** — the actual "I lost my phone" response.
   Invalidates *every* previously-issued cookie at once, forcing every
   device (including your own) to `/unlock` again.

@@ -97,6 +97,18 @@ def rotate_token():
     return state["token"]
 
 
+def set_token(value):
+    # Owner-chosen token (e.g. a memorable password) in place of a random one.
+    # Same effect as rotate_token(): new /unlock attempts need the new value,
+    # already-issued cookies stay valid.
+    if not value:
+        raise ValueError("token must not be empty")
+    state = _load_state()
+    state["token"] = value
+    _save_state(state)
+    return value
+
+
 def rotate_secret_key():
     # Invalidates EVERY previously-issued trust cookie at once (§4.3) - the
     # actual "I lost my phone" response. Every device, including the owner's
@@ -115,11 +127,17 @@ if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "show"
     if cmd == "rotate-token":
         print(f"New token: {rotate_token()}")
+    elif cmd == "set-token":
+        import getpass
+
+        new_value = sys.argv[2] if len(sys.argv) > 2 else getpass.getpass("New token: ")
+        set_token(new_value)
+        print("Token updated.")
     elif cmd == "rotate-key":
         rotate_secret_key()
         print("Secret key rotated - every previously-issued trust cookie is now invalid.")
     elif cmd == "show":
         print(f"Token: {get_or_create_token()}")
     else:
-        print(f"Unknown command: {cmd!r}. Use: show | rotate-token | rotate-key", file=sys.stderr)
+        print(f"Unknown command: {cmd!r}. Use: show | rotate-token | set-token | rotate-key", file=sys.stderr)
         sys.exit(1)
