@@ -181,6 +181,13 @@ def _no_network_quality_lookup(monkeypatch):
     monkeypatch.setattr(download_module, "_fetch_formats_for_quality_resolution", lambda *a, **k: [])
 
 
+@pytest.fixture(autouse=True)
+def _desktop_format_policy_by_default(monkeypatch):
+    # AVOID_REENCODE is the cloud-only switch remote_web flips at startup;
+    # every assertion in this file that isn't about it expects the desktop policy.
+    monkeypatch.setattr(download_module, "AVOID_REENCODE", False)
+
+
 def test_build_download_options_for_audio():
     opts = build_download_options("Audio Only", "/tmp/My Video", "/path/to/ffmpeg", [], [])
     assert opts["format"] == "bestaudio/best"
@@ -308,6 +315,41 @@ def test_build_download_options_targets_one_entry_when_index_given():
 
 
 # ---- H.264 safety net (detect_video_codec / ensure_h264) ----
+
+
+FACEBOOK_REEL = "https://www.facebook.com/reel/2194732404711942"
+
+
+def test_desktop_policy_never_names_native_h264_formats():
+    opts = build_download_options("1920p", "/tmp/v", "/ff", [], [], url=FACEBOOK_REEL)
+    assert "avc1" not in opts["format"]
+    assert "hd/sd" not in opts["format"]
+
+
+def test_avoid_reencode_tries_native_h264_then_facebook_hd_sd_before_the_normal_ladder(monkeypatch):
+    # Regression (MISTAKES.md 2026-09-25): a Facebook reel's DASH tiers are all
+    # AV1, so the res-first ladder picked 1080p AV1 and ensure_h264() then
+    # re-encoded it on the 1 GB cloud VM for minutes. `hd`/`sd` are muxed H.264.
+    monkeypatch.setattr(download_module, "AVOID_REENCODE", True)
+    opts = build_download_options("1920p", "/tmp/v", "/ff", [], [], url=FACEBOOK_REEL)
+    assert opts["format"].startswith("bestvideo[vcodec^=avc1][height<=1920]+bestaudio[ext=m4a]/hd/sd/")
+    # The old ladder stays as the tail, so a source with no H.264 at all still downloads.
+    assert opts["format"].endswith(
+        "bestvideo[height<=1920]+bestaudio[ext=m4a]/bestvideo[height<=1920]+bestaudio/best[height<=1920]/best"
+    )
+
+
+def test_avoid_reencode_leaves_facebook_only_format_ids_out_of_other_platforms(monkeypatch):
+    monkeypatch.setattr(download_module, "AVOID_REENCODE", True)
+    opts = build_download_options("1080p", "/tmp/v", "/ff", [], [], url="https://www.youtube.com/watch?v=jNQXAC9IVRw")
+    assert opts["format"].startswith("bestvideo[vcodec^=avc1][height<=1080]+bestaudio[ext=m4a]/bestvideo[height<=1080]")
+    assert "hd/sd" not in opts["format"]
+
+
+def test_avoid_reencode_does_not_touch_audio_only(monkeypatch):
+    monkeypatch.setattr(download_module, "AVOID_REENCODE", True)
+    opts = build_download_options("Audio Only", "/tmp/v", "/ff", [], [], url=FACEBOOK_REEL)
+    assert opts["format"] == "bestaudio/best"
 
 
 def test_detect_video_codec_parses_ffmpeg_stderr(monkeypatch):

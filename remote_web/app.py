@@ -10,7 +10,7 @@ import sys
 
 from flask import Flask, jsonify, redirect, request, send_from_directory
 
-from backend import paths
+from backend import download, paths
 from remote_web import config, ffmpeg_locator, reaper, trust
 from remote_web.routes import health as health_routes
 from remote_web.routes import jobs as jobs_routes
@@ -71,4 +71,8 @@ if __name__ == "__main__":
     # every top-level startup step (this ffmpeg check, and Task 7's reaper
     # thread start) twice. launchd (spec §6 step 8) already handles
     # restart-on-crash, so the dev reloader adds no value here, only risk.
+    #
+    # Set here rather than at import so tests that import `app` don't flip a
+    # process-wide flag the backend's own tests assert against.
+    download.AVOID_REENCODE = True
     app.run(host="127.0.0.1", port=config.PORT, debug=False)

@@ -56,6 +56,7 @@ export interface Translations {
     selectQuality: string;
     startDownload: string;
     downloading: string;
+    finalizing: string; // shown once the transfer hits 100% but the job is still merging/converting
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
@@ -218,6 +219,7 @@ const en: Translations = {
     selectQuality: "Select Quality:",
     startDownload: "Start Download",
     downloading: "Downloading",
+    finalizing: "Processing video…",
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
@@ -514,6 +516,15 @@ const en: Translations = {
       "A running log of what actually shipped, in plain language — newest first. This tracks real changes as they land here, separately from whatever's already described on the download page.",
     releases: [
       {
+        date: "2026-09-25",
+        title: "Facebook downloads no longer hang on the cloud server",
+        items: [
+          "Fixed Facebook downloads on the cloud server getting stuck at \"100%\" for minutes and slowing every other request down. Some Facebook videos only offer their top quality in AV1, which the server was re-encoding to H.264 on a tiny CPU — it now takes Facebook's ready-made H.264 version instead.",
+          "Trade-off: on the cloud server, a Facebook video whose 1080p version exists only in AV1 now downloads at 720p H.264. The desktop app is unchanged.",
+          "When a download reaches 100% but is still being processed, the progress now says \"Processing video…\" instead of looking frozen.",
+        ],
+      },
+      {
         date: "2026-09-18",
         title: "TikTok & download reliability fixes",
         items: [
@@ -636,6 +647,7 @@ const vi: Translations = {
     selectQuality: "Chọn chất lượng:",
     startDownload: "Bắt đầu tải xuống",
     downloading: "Đang tải xuống",
+    finalizing: "Đang xử lý video…",
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
@@ -928,6 +940,15 @@ const vi: Translations = {
     intro:
       "Nhật ký thật các thay đổi đã lên production, viết dễ hiểu — mới nhất ở trên đầu. Trang này ghi lại đúng những gì đã đổi, tách riêng khỏi phần giới thiệu/marketing đã public sẵn ở trang tải.",
     releases: [
+      {
+        date: "25-09-2026",
+        title: "Tải Facebook trên server cloud không còn bị treo",
+        items: [
+          "Sửa lỗi tải Facebook trên server cloud bị kẹt ở \"100%\" hàng phút và làm chậm mọi request khác. Một số video Facebook chỉ có chất lượng cao nhất ở dạng AV1, server phải re-encode sang H.264 trên CPU rất yếu — giờ nó lấy luôn bản H.264 có sẵn của Facebook.",
+          "Đánh đổi: trên server cloud, video Facebook mà bản 1080p chỉ có ở dạng AV1 sẽ tải bản 720p H.264. Bản desktop giữ nguyên.",
+          "Khi tải xong 100% nhưng vẫn đang xử lý, thanh tiến trình hiện \"Đang xử lý video…\" thay vì trông như bị đơ.",
+        ],
+      },
       {
         date: "18-09-2026",
         title: "Sửa lỗi TikTok và độ ổn định khi tải",

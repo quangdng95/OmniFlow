@@ -10,7 +10,14 @@ import urllib.request
 
 import yt_dlp
 
-from backend import config, cookies, extraction, instagram, jobs
+from backend import classify, config, cookies, extraction, instagram, jobs
+
+# True only in the remote_web (cloud) process. A 1 GB / shared-vCPU VM can't
+# afford libx264-re-encoding a 1080p AV1/VP9 source (minutes at 100% CPU that
+# starve every other request - MISTAKES.md 2026-09-25), so there we take a
+# native H.264 stream even at a lower resolution. The desktop app leaves this
+# False: resolution first, ensure_h264() re-encodes the rare straggler.
+AVOID_REENCODE = False
 
 
 # macOS (APFS/HFS+) caps a single path component at 255 UTF-8 bytes. A video
@@ -208,12 +215,22 @@ def build_download_options(
         # within the requested cap always wins; a VP9/AV1 pick that slips
         # through is still caught afterward by the ensure_h264() re-encode
         # safety net in run().
-        opts["format"] = (
+        video_format = (
             f"bestvideo{height_filter}+bestaudio[ext=m4a]/"
             f"bestvideo{height_filter}+bestaudio/"
             f"best{height_filter}/"
             f"best"
         )
+        if AVOID_REENCODE:
+            # Native H.264 first. Facebook serves its 1080p tier as AV1 only,
+            # but always also offers muxed H.264 `hd` (720p) / `sd` files whose
+            # codec yt-dlp reports as unknown, so they can't be matched by a
+            # vcodec filter and have to be named by format id.
+            native_h264 = f"bestvideo[vcodec^=avc1]{height_filter}+bestaudio[ext=m4a]/"
+            if classify.get_platform_info(url or "") == "Facebook":
+                native_h264 += "hd/sd/"
+            video_format = native_h264 + video_format
+        opts["format"] = video_format
         opts["format_sort"] = ["res", "vcodec:h264", "acodec:m4a"]
         # PRD §7: merge straight into an mp4 container. Because the selector above
         # already lands H.264 video + m4a audio in the common case, both the merge

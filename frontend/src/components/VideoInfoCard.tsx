@@ -98,7 +98,9 @@ const VideoInfoCard = ({
           <div className="flex flex-col gap-3 w-full">
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-[#0d9585] leading-none">
-                {percent}% {t.qualityAction.downloading}…
+                {percent >= 100
+                  ? t.qualityAction.finalizing
+                  : `${percent}% ${t.qualityAction.downloading}…`}
               </span>
               <Progress value={percent} className="h-1.5 w-full bg-neutral-100 [&>[data-slot=progress-indicator]]:bg-[#0d9585]" />
             </div>

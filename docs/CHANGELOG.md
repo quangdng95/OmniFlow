@@ -5,6 +5,20 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-09-25
+
+### Fixed — Cloud (`remote_web`) Facebook downloads hanging
+
+- [x] A Facebook reel whose DASH tiers are all AV1 was downloaded as 1080p AV1 and then re-encoded
+  to H.264 by `ensure_h264()` on the 1 GB shared-vCPU cloud VM — minutes at 100% CPU that also
+  slowed every other request (a concurrent link check took 27 s+). `remote_web` now sets
+  `download.AVOID_REENCODE`, which puts native H.264 first in the format selector (Facebook's muxed
+  `hd`/`sd` files, named by format id since yt-dlp reports their codec as unknown). Desktop app
+  unchanged. Trade-off: a Facebook video with only an AV1 1080p tier downloads at 720p H.264 on the
+  cloud. See MISTAKES.md 2026-09-25.
+- [x] The single-video progress label shows "Processing video…" at 100% instead of a frozen
+  "100% Downloading…".
+
 ## 2026-09-18
 
 ### Fixed — TikTok & download reliability
