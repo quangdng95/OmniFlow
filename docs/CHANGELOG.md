@@ -7,6 +7,21 @@ keep both updated together when shipping a user-visible change.
 
 ## 2026-09-25
 
+### Added — English / Vietnamese switch
+
+- [x] `LanguageSwitcher` (EN | VI) in the header of every page; the language also defaults to
+  Vietnamese on a Vietnamese-language browser (`i18n/storage.ts`: localStorage → shared cookie →
+  `navigator.language`), and `<html lang>` follows it.
+- [x] Backend error text is bilingual: `backend/messages.py` is one catalog for the desktop app and
+  `remote_web`, chosen per request from the `X-Language` header the frontend now sends (captured in
+  the route and passed into worker threads). Vietnamese remains the default when no header is sent,
+  so the iOS Shortcut and other header-less clients behave as before. Client-side errors
+  (`api.ts`, `saveFile.ts`) are translated too.
+- [x] The server-rendered `/unlock` page follows `?lang=` → the shared `omniflow-language` cookie →
+  `Accept-Language` → English, and has its own English / Tiếng Việt link.
+- [x] The header nav wraps instead of overflowing, which had pushed "Home" out of reach on phones
+  once the Changelog item was added. "Supported Platforms" was the last hardcoded UI heading.
+
 ### Fixed — Cloud (`remote_web`) Facebook downloads hanging
 
 - [x] A Facebook reel whose DASH tiers are all AV1 was downloaded as 1080p AV1 and then re-encoded

@@ -28,20 +28,16 @@ from flask import Blueprint, jsonify, request
 
 from backend import classify
 from backend import config as backend_config
-from backend import cookies, download, extraction, instagram, jobs, linkedin, paths, threads, tiktok
+from backend import cookies, download, extraction, instagram, jobs, linkedin, messages, paths, threads, tiktok
 from remote_web import config, ffmpeg_locator
 from remote_web import zipper as zipper_module
 
 bp = Blueprint("media", __name__)
 
-INSTAGRAM_NO_SESSION_ERROR = "❌ Lỗi: Không tìm thấy phiên đăng nhập Instagram nào trên trình duyệt của máy này. Vui lòng đăng nhập Instagram trên Chrome/Safari/Brave (hoặc thêm cookies.txt thủ công trong Settings) rồi thử lại."
-THREADS_AUTH_ERROR = "❌ Lỗi: Cần một trình duyệt đã đăng nhập Threads (threads.com) trên máy này để tải bài viết. Vui lòng đăng nhập rồi thử lại."
-THREADS_EXTRACT_ERROR = "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung."
-LINKEDIN_DOCUMENT_POST_ERROR = "❌ Lỗi: Bài đăng LinkedIn dạng tài liệu/slide (PDF) hiện chưa được OmniFlow hỗ trợ tải. OmniFlow hiện chỉ hỗ trợ bài đăng LinkedIn dạng video hoặc ảnh."
-
 
 @bp.post("/api/check")
 def check_link():
+    lang = messages.request_language()
     data = request.get_json(force=True) or {}
     raw_url = (data.get("url") or "").strip()
     if not raw_url:
@@ -58,7 +54,7 @@ def check_link():
     if cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL:
         candidates = cookies.instagram_cookiefile_candidates()
         if not candidates:
-            return jsonify({"error": INSTAGRAM_NO_SESSION_ERROR}), 400
+            return jsonify({"error": messages.text("instagram_no_session", lang)}), 400
         try:
             media = instagram.fetch_instagram_media_any(url, candidates)
             return jsonify(instagram.instagram_check_response(url, media))
@@ -90,8 +86,8 @@ def check_link():
             finally:
                 cookies._cleanup_temp_cookiefiles(candidates)
         if not candidates or isinstance(last_error, threads.ThreadsAuthError):
-            return jsonify({"error": THREADS_AUTH_ERROR}), 400
-        return jsonify({"error": THREADS_EXTRACT_ERROR}), 400
+            return jsonify({"error": messages.text("threads_auth", lang)}), 400
+        return jsonify({"error": messages.text("extract_failed", lang)}), 400
 
     try:
         info = extraction.extract_video_info(cls)
@@ -101,7 +97,7 @@ def check_link():
                 media = linkedin.fetch_linkedin_image_post(url)
                 return jsonify(instagram.instagram_check_response(url, media))
             except linkedin.LinkedInUnsupportedPostError:
-                return jsonify({"error": LINKEDIN_DOCUMENT_POST_ERROR}), 400
+                return jsonify({"error": messages.text("linkedin_document", lang)}), 400
             except Exception:
                 pass
         if cls.platform == "TikTok":
@@ -118,14 +114,14 @@ def check_link():
             except Exception:
                 pass
         error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
-        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, backend_config.get_cookies_path())}), 400
+        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, backend_config.get_cookies_path(), lang=lang)}), 400
     except Exception as e:
         paths.log_exception(f"remote_web check_link ({cls.platform}): {url}", e)
         error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
-        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, backend_config.get_cookies_path())}), 400
+        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, backend_config.get_cookies_path(), lang=lang)}), 400
 
     if not info:
-        return jsonify({"error": extraction.describe_extraction_error(url, ig_resolver_error or Exception(""), backend_config.get_cookies_path())}), 400
+        return jsonify({"error": extraction.describe_extraction_error(url, ig_resolver_error or Exception(""), backend_config.get_cookies_path(), lang=lang)}), 400
 
     if info.get("_type") == "playlist" or "entries" in info:
         entries = [e for e in (info.get("entries") or []) if e]
@@ -169,6 +165,7 @@ def _save_single_cdn_file(job_id, save_dir, title, cdn_url, ext="jpg"):
 
 @bp.post("/api/download")
 def start_download():
+    lang = messages.request_language()
     data = request.get_json(force=True) or {}
     raw_url = (data.get("url") or "").strip()
     if not raw_url:
@@ -218,7 +215,7 @@ def start_download():
                 return
             except instagram.InstagramAuthError as e:
                 jobs._remove_job_file(job_id)
-                jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, ig_candidates[0])
+                jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, ig_candidates[0], lang=lang)
                 jobs.jobs[job_id]["status"] = "error"
                 return
             except Exception as e:
@@ -269,7 +266,7 @@ def start_download():
                 return
             except threads.ThreadsAuthError:
                 jobs._remove_job_file(job_id)
-                jobs.jobs[job_id]["text"] = THREADS_AUTH_ERROR
+                jobs.jobs[job_id]["text"] = messages.text("threads_auth", lang)
                 jobs.jobs[job_id]["status"] = "error"
                 return
             except Exception as e:
@@ -289,7 +286,7 @@ def start_download():
 
     ffmpeg_bin = ffmpeg_locator.resolve_ffmpeg_binary()
     if not ffmpeg_bin:
-        return jsonify({"error": ffmpeg_locator.ffmpeg_unavailable_message()}), 400
+        return jsonify({"error": ffmpeg_locator.ffmpeg_unavailable_message(lang)}), 400
 
     ext = "mp3" if "Audio" in quality else "mp4"
     final_output_path = download.get_unique_filename(save_dir, title, ext)
@@ -352,7 +349,7 @@ def start_download():
                     return
                 except linkedin.LinkedInUnsupportedPostError:
                     jobs.jobs[job_id]["status"] = "error"
-                    jobs.jobs[job_id]["text"] = LINKEDIN_DOCUMENT_POST_ERROR
+                    jobs.jobs[job_id]["text"] = messages.text("linkedin_document", lang)
                     return
                 except Exception:
                     pass
@@ -373,7 +370,7 @@ def start_download():
                     pass
             print(f"[remote_web download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
-            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path)
+            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path, lang=lang)
             download.cleanup_partial_download(output_path_no_ext)
             shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
@@ -403,6 +400,7 @@ BATCH_CONCURRENCY = 3
 
 @bp.post("/api/download-batch")
 def start_batch_download():
+    lang = messages.request_language()
     data = request.get_json(force=True) or {}
     cls = classify.classify_url((data.get("url") or "").strip())
     url = cls.url
@@ -417,7 +415,7 @@ def start_batch_download():
 
     ffmpeg_bin = ffmpeg_locator.resolve_ffmpeg_binary()
     if not ffmpeg_bin:
-        return jsonify({"error": ffmpeg_locator.ffmpeg_unavailable_message()}), 400
+        return jsonify({"error": ffmpeg_locator.ffmpeg_unavailable_message(lang)}), 400
 
     os.makedirs(config.TEMP_ROOT, exist_ok=True)
     save_dir = tempfile.mkdtemp(dir=config.TEMP_ROOT, prefix="omniflow-remote-batch-items-")
@@ -532,7 +530,7 @@ def start_batch_download():
             zipper.close()
             shutil.rmtree(zip_dir, ignore_errors=True)
             shutil.rmtree(save_dir, ignore_errors=True)
-            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e) if is_ig_carousel else (str(e) or "Download failed")
+            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, lang=lang) if is_ig_carousel else (str(e) or "Download failed")
             jobs.jobs[job_id]["status"] = "error"
             return
 

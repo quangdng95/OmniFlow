@@ -1,14 +1,24 @@
 import type { BatchItem, CheckResult, CookiesStatus, JobProgress, Settings } from "./types";
+import { translations } from "./i18n/translations";
+import { detectLanguage } from "./i18n/storage";
+
+// Read per call, not captured at import: the user can switch language at any
+// time and both our client-side errors and the server's (via X-Language) must
+// follow it.
+const errors = () => translations[detectLanguage()].apiErrors;
+const languageHeader = () => ({ "X-Language": detectLanguage() });
+const requestFailedMessage = (status: number, ok: boolean) =>
+  ok ? errors().requestFailed : errors().requestFailedStatus.replace("{status}", String(status));
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
     res = await fetch(path, {
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...languageHeader() },
       ...init,
     });
   } catch {
-    throw new Error("Can't reach the OmniFlow server. Make sure it's running, then reload this page.");
+    throw new Error(errors().unreachable);
   }
   let data;
   try {
@@ -19,10 +29,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     // against a remote_web deployment, which never registers it) returns a
     // plain HTML 404 page, not JSON - never let that leak as a raw
     // "Unexpected token '<'" JSON.parse error.
-    throw new Error(`Request failed${res.ok ? "" : ` (${res.status})`}.`);
+    throw new Error(requestFailedMessage(res.status, res.ok));
   }
   if (!res.ok) {
-    throw new Error(data.error || "Request failed");
+    throw new Error(data.error || errors().requestFailed);
   }
   return data as T;
 }
@@ -43,18 +53,18 @@ export const api = {
     formData.append("cookies", file);
     let res: Response;
     try {
-      res = await fetch("/api/settings/cookies", { method: "POST", body: formData });
+      res = await fetch("/api/settings/cookies", { method: "POST", body: formData, headers: languageHeader() });
     } catch {
-      throw new Error("Can't reach the OmniFlow server. Make sure it's running, then reload this page.");
+      throw new Error(errors().unreachable);
     }
     let data;
     try {
       data = await res.json();
     } catch {
-      throw new Error(`Request failed${res.ok ? "" : ` (${res.status})`}.`);
+      throw new Error(requestFailedMessage(res.status, res.ok));
     }
     if (!res.ok) {
-      throw new Error(data.error || "Upload failed");
+      throw new Error(data.error || errors().uploadFailed);
     }
     return data as { cookies_status: CookiesStatus };
   },

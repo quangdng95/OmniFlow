@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Logo from "./Logo";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { useLanguage } from "../i18n/LanguageContext";
 import { isLocal } from "../isLocal";
 
@@ -41,8 +42,14 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       <div className="w-full flex flex-col gap-4 items-center">
-        {/* Navigation */}
-        <div className="w-full max-w-[680px] flex gap-6 items-center justify-center">
+        {/* Language switch - on every page, not buried in Settings */}
+        <div className="w-full max-w-[680px] flex justify-end">
+          <LanguageSwitcher />
+        </div>
+
+        {/* Navigation - wraps instead of overflowing: with 5 items a phone
+            width used to clip the left-most ones (Home) out of reach. */}
+        <div className="w-full max-w-[680px] flex flex-wrap gap-2 items-center justify-center">
           {navItems.map((item) => {
             const isActive = active === item.key;
             return (

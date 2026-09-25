@@ -356,7 +356,7 @@ const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
               {/* Supported Platforms */}
               <div className="flex flex-col items-center gap-3 select-none">
                 <h3 className="text-base font-bold text-slate-800 text-center m-0">
-                  Supported Platforms
+                  {t.home.supportedPlatformsHeading}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
                   {platforms.map((p) => (

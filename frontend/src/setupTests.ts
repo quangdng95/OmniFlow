@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import { beforeEach } from "vitest";
 
 class MockIntersectionObserver {
   observe() {}
@@ -66,4 +67,12 @@ Object.defineProperty(globalThis, "localStorage", {
 Object.defineProperty(window, "localStorage", {
   writable: true,
   value: globalThis.localStorage,
+});
+
+// The language choice is also stored in a cookie (shared with remote_web's
+// /unlock page). jsdom keeps cookies for the whole file, so a test that
+// switched to Vietnamese would otherwise leak that into every later test
+// that only clears localStorage.
+beforeEach(() => {
+  document.cookie = "omniflow-language=; path=/; max-age=0";
 });

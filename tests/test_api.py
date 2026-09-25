@@ -20,6 +20,7 @@ from backend import extraction as extraction_module
 from backend import instagram as instagram_module
 from backend import cookies as cookies_module
 from backend import jobs as jobs_module
+from backend import messages as messages_module
 from backend import threads as threads_module
 from backend import linkedin as linkedin_module
 from backend import tiktok as tiktok_module
@@ -587,7 +588,7 @@ def test_check_link_instagram_rejected_when_remote(client):
     resp = client.post(
         "/api/check",
         json={"url": "https://www.instagram.com/reel/abc/"},
-        headers={"Host": "example.com"},
+        headers={"Host": "example.com", "X-Language": "en"},
     )
     assert resp.status_code == 403
     assert "locally" in resp.get_json()["error"]
@@ -610,7 +611,7 @@ def test_start_download_instagram_rejected_when_remote(client):
     resp = client.post(
         "/api/download",
         json={"url": "https://www.instagram.com/reel/abc/", "title": "Video", "quality": "720p"},
-        headers={"Host": "example.com"},
+        headers={"Host": "example.com", "X-Language": "en"},
     )
     assert resp.status_code == 403
     assert "locally" in resp.get_json()["error"]
@@ -623,7 +624,7 @@ def test_check_link_threads_rejected_when_remote(client):
     resp = client.post(
         "/api/check",
         json={"url": "https://www.threads.com/@someone/post/abc123"},
-        headers={"Host": "example.com"},
+        headers={"Host": "example.com", "X-Language": "en"},
     )
     assert resp.status_code == 403
     assert "locally" in resp.get_json()["error"]
@@ -652,7 +653,7 @@ def test_start_download_threads_rejected_when_remote(client):
     resp = client.post(
         "/api/download",
         json={"url": "https://www.threads.com/@someone/post/abc123", "title": "Video", "quality": "Best"},
-        headers={"Host": "example.com"},
+        headers={"Host": "example.com", "X-Language": "en"},
     )
     assert resp.status_code == 403
     assert "locally" in resp.get_json()["error"]
@@ -702,7 +703,7 @@ def test_check_link_linkedin_document_post_gets_a_specific_friendly_message(clie
     monkeypatch.setattr(linkedin_module, "fetch_linkedin_image_post", raise_unsupported)
     resp = client.post("/api/check", json={"url": "https://www.linkedin.com/posts/someone_activity-123-abcd"})
     assert resp.status_code == 400
-    assert resp.get_json()["error"] == app_module.LINKEDIN_DOCUMENT_POST_ERROR
+    assert resp.get_json()["error"] == messages_module.text("linkedin_document", "vi")
 
 
 # ---- TikTok: tikwm.com fallback for both Photo Mode and (as of 2026-08-30,
@@ -961,7 +962,7 @@ def test_start_download_linkedin_document_post_gets_a_specific_friendly_message(
         time.sleep(0.05)
 
     assert jobs_module.jobs[job_id]["status"] == "error"
-    assert jobs_module.jobs[job_id]["text"] == app_module.LINKEDIN_DOCUMENT_POST_ERROR
+    assert jobs_module.jobs[job_id]["text"] == messages_module.text("linkedin_document", "vi")
 
 
 def test_start_download_tiktok_photo_falls_back_and_saves_as_jpg(client, monkeypatch, tmp_path):

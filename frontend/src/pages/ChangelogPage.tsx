@@ -21,7 +21,7 @@ const ChangelogPage = ({ onNavigate: _onNavigate }: ChangelogPageProps) => {
 
       {t.changelog.releases.map((release) => (
         <SectionCard
-          key={release.date}
+          key={`${release.date}|${release.title}`}
           className="p-0 bg-white border border-slate-200/50 shadow-sm rounded-xl overflow-hidden flex flex-col gap-0"
         >
           <div className="flex items-baseline gap-3 px-5 py-4 bg-slate-50 border-b border-slate-100">

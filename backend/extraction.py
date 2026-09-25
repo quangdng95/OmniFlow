@@ -11,7 +11,7 @@ import socket
 
 import yt_dlp
 
-from backend import classify, config, cookies, instagram
+from backend import classify, config, cookies, instagram, messages
 
 _QUALITY_LABEL_RE = re.compile(r"^(\d+)p")
 
@@ -178,7 +178,7 @@ def extract_video_info(cls):
             cookies._cleanup_temp_cookiefiles([auto_cookiefile])
 
 
-def describe_extraction_error(url, error, cookies_path=None):
+def describe_extraction_error(url, error, cookies_path=None, lang=None):
     message = str(error)
     lower = message.lower()
 
@@ -191,7 +191,7 @@ def describe_extraction_error(url, error, cookies_path=None):
     # fallback below, hiding a "you're offline" failure behind a message
     # that doesn't say so.
     if isinstance(error, (ConnectionError, TimeoutError, socket.gaierror)):
-        return "❌ Lỗi: Không thể kết nối mạng để xử lý liên kết này. Vui lòng kiểm tra kết nối Internet (hoặc tường lửa/VPN) rồi thử lại."
+        return messages.text("network_unreachable", lang)
 
     # A bare builtin exception (ValueError, KeyError, TypeError, ...) means
     # something broke unexpectedly deep inside an extractor (e.g. a yt-dlp
@@ -206,7 +206,7 @@ def describe_extraction_error(url, error, cookies_path=None):
     # Instagram profile / user failures
     is_ig_profile = classify.is_instagram_profile_url(url)
     if is_ig_profile or "instagram:user" in lower or "instagram:profile" in lower or ("unable to extract data" in lower and "instagram" in url.lower()):
-        return "❌ Lỗi: Không thể lấy danh sách từ tài khoản Instagram này do giới hạn bảo mật. Vui lòng tải từng bài viết (Post/Reel) hoặc kiểm tra lại Cookies trong Settings."
+        return messages.text("instagram_profile_restricted", lang)
 
     # A platform (TikTok especially) temporarily rate-limiting/blocking this
     # machine's IP is a distinct failure from a private account and deserves
@@ -214,7 +214,7 @@ def describe_extraction_error(url, error, cookies_path=None):
     # actively misleading. Checked before the private/login patterns since
     # "blocked" can otherwise get masked by an unrelated coincidental match.
     if "ip address is blocked" in lower or "blocked from accessing" in lower:
-        return "❌ Lỗi: IP của bạn đang tạm thời bị nền tảng này chặn/giới hạn. Vui lòng thử lại sau ít phút hoặc đổi mạng."
+        return messages.text("ip_blocked", lang)
 
     # Instagram, TikTok, Facebook private/login required errors. "302"/"400"
     # match an HTTP status code via a word boundary - a bare substring check
@@ -237,20 +237,20 @@ def describe_extraction_error(url, error, cookies_path=None):
     is_major_platform = any(p in url.lower() for p in ("instagram", "tiktok", "facebook", "fb.watch", "fb.com"))
 
     if is_major_platform and is_private_or_login:
-        return "❌ Lỗi: Không thể tải video từ tài khoản Private (Kín). OmniFlow hiện tại chỉ hỗ trợ tải nội dung Public (Công khai)."
+        return messages.text("private_account", lang)
 
     # General cleanup: hide traceback or github links
     if "unable to extract data" in lower or "traceback" in lower or "report this issue" in lower or "github.com" in lower:
-        return "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung."
+        return messages.text("extract_failed", lang)
         
-    generic_fallback = "❌ Lỗi: Không thể xử lý liên kết này. Vui lòng kiểm tra lại link hoặc thử lại sau."
+    generic_fallback = messages.text("process_failed", lang)
     if not is_trusted_message:
         return generic_fallback
 
     message = message.removeprefix("ERROR: ")
     first_sentence = message.split(". ")[0].strip()
     if "github" in first_sentence.lower() or "report this issue" in first_sentence.lower():
-        return "❌ Lỗi: Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau."
+        return messages.text("load_failed", lang)
 
     # Last resort: an exception with no usable message at all (e.g. a bare
     # `raise SomeCustomError()`) reaching this point means every earlier,

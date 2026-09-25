@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { translations, type Language, type Translations } from "./translations";
+import { detectLanguage, persistLanguage } from "./storage";
 import { Toaster } from "@/components/ui/sonner";
-
-const STORAGE_KEY = "omniflow-language";
 
 interface LanguageContextValue {
   language: Language;
@@ -12,16 +11,11 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-const readStoredLanguage = (): Language => {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored === "vi" ? "vi" : "en";
-};
-
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguageState] = useState<Language>(readStoredLanguage);
+  const [language, setLanguageState] = useState<Language>(detectLanguage);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, language);
+    persistLanguage(language);
   }, [language]);
 
   const setLanguage = (next: Language) => setLanguageState(next);

@@ -1,4 +1,6 @@
 import { unzipSync } from "fflate";
+import { translations } from "../i18n/translations";
+import { detectLanguage } from "../i18n/storage";
 
 const downloadBlob = (blob: Blob, filename: string): void => {
   const objectUrl = URL.createObjectURL(blob);
@@ -42,7 +44,7 @@ export async function saveDownloadedFile(
 ): Promise<"shared" | "downloaded"> {
   const response = await fetch(url, { credentials: "include" });
   if (!response.ok) {
-    throw new Error(`Failed to fetch file (${response.status})`);
+    throw new Error(translations[detectLanguage()].apiErrors.fileFetchFailed.replace("{status}", String(response.status)));
   }
   const blob = await response.blob();
   const file = new File([blob], filename, {
@@ -83,7 +85,7 @@ export async function saveDownloadedZipAsFiles(
 ): Promise<"shared" | "downloaded"> {
   const response = await fetch(url, { credentials: "include" });
   if (!response.ok) {
-    throw new Error(`Failed to fetch file (${response.status})`);
+    throw new Error(translations[detectLanguage()].apiErrors.fileFetchFailed.replace("{status}", String(response.status)));
   }
   const zipBlob = await response.blob();
 

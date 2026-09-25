@@ -10,6 +10,8 @@ import traceback
 
 import certifi
 
+from backend import messages
+
 # A Python interpreter built inside a Homebrew or conda/micromamba
 # environment (as this project's build machines are - both a Homebrew-based
 # arm64 .venv and a micromamba-based x86_64 env for the Intel build) bakes in
@@ -140,7 +142,7 @@ def get_ffmpeg_path():
     return system_ffmpeg
 
 
-def ffmpeg_unavailable_message():
+def ffmpeg_unavailable_message(lang=None):
     # Called only after get_ffmpeg_path() has already returned falsy (bundled
     # AND system-PATH ffmpeg both failed) - gives the most specific,
     # actionable message available instead of a one-size-fits-all "ffmpeg
@@ -152,9 +154,5 @@ def ffmpeg_unavailable_message():
     if isinstance(err, OSError) and err.errno == _BAD_CPU_TYPE_ERRNO:
         machine = platform.machine()
         wanted_dmg = "OmniFlow-AppleSilicon.dmg" if machine == "arm64" else "OmniFlow-Intel.dmg"
-        return (
-            "❌ Lỗi: Bản OmniFlow này không tương thích với chip của máy Mac bạn đang dùng "
-            f"(kiến trúc {machine}). Vui lòng tải đúng bản dành cho máy bạn "
-            f"({wanted_dmg}) tại trang GitHub Releases của OmniFlow."
-        )
-    return "❌ Lỗi: Không tìm thấy FFmpeg khả dụng. Vui lòng cài FFmpeg (brew install ffmpeg) hoặc tải lại OmniFlow."
+        return messages.text("ffmpeg_wrong_chip", lang, machine=machine, dmg=wanted_dmg)
+    return messages.text("ffmpeg_missing", lang)

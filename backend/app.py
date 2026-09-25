@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 import yt_dlp
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, paths, threads, tiktok
+from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, messages, paths, threads, tiktok
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
@@ -128,18 +128,6 @@ def browse_file():
     return jsonify({"path": path, "cookies_status": config.cookies_status_for(path)})
 
 
-INSTAGRAM_LOCAL_ONLY_ERROR = "Instagram downloads are only available when running OmniFlow locally on your own machine."
-INSTAGRAM_NO_SESSION_ERROR = "❌ Lỗi: Không tìm thấy phiên đăng nhập Instagram nào trên trình duyệt của máy này. Vui lòng đăng nhập Instagram trên Chrome/Safari/Brave (hoặc thêm cookies.txt thủ công trong Settings) rồi thử lại."
-THREADS_LOCAL_ONLY_ERROR = "Threads downloads are only available when running OmniFlow locally on your own machine."
-THREADS_AUTH_ERROR = "❌ Lỗi: Cần một trình duyệt đã đăng nhập Threads (threads.com) trên máy này để tải bài viết. Vui lòng đăng nhập rồi thử lại."
-THREADS_EXTRACT_ERROR = "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung."
-# LinkedIn's native document/slide-deck (PDF) post type has no known resolver
-# (see MISTAKES.md - no example URL to reverse-engineer against yet). This is
-# surfaced as its own specific message rather than falling through to
-# whatever unrelated error yt-dlp happens to raise for the same URL, so the
-# user knows the real reason instead of a generic "couldn't process this link".
-LINKEDIN_DOCUMENT_POST_ERROR = "❌ Lỗi: Bài đăng LinkedIn dạng tài liệu/slide (PDF) hiện chưa được OmniFlow hỗ trợ tải. OmniFlow hiện chỉ hỗ trợ bài đăng LinkedIn dạng video hoặc ảnh."
-
 
 def _save_single_cdn_file(job_id, save_dir, title, cdn_url, ext="jpg"):
     # Shared tail for the LinkedIn og:image and TikTok single-item CDN
@@ -160,6 +148,7 @@ def _save_single_cdn_file(job_id, save_dir, title, cdn_url, ext="jpg"):
 
 @app.post("/api/check")
 def check_link():
+    lang = messages.request_language()
     data = request.get_json(force=True) or {}
     raw_url = (data.get("url") or "").strip()
     if not raw_url:
@@ -175,12 +164,12 @@ def check_link():
     # request. Reject it outright instead of letting it "just fail" on its
     # own, since it might not fail at all if the owner has cookies configured.
     if cls.platform == "Instagram" and not is_local_request():
-        return jsonify({"error": INSTAGRAM_LOCAL_ONLY_ERROR}), 403
+        return jsonify({"error": messages.text("instagram_local_only", lang)}), 403
     # Threads auth is the same story as Instagram: auto-extracted from the
     # local owner's own logged-in browser, so it can't be handed to a remote
     # visitor without burning the owner's own Threads session.
     if cls.platform == "Threads" and not is_local_request():
-        return jsonify({"error": THREADS_LOCAL_ONLY_ERROR}), 403
+        return jsonify({"error": messages.text("threads_local_only", lang)}), 403
 
     # Instagram posts/reels/tv go through our own resolver (so photos and
     # carousels work at all). A resolver failure falls through to yt-dlp as a
@@ -196,7 +185,7 @@ def check_link():
             # yt-dlp's anonymous fallback below is essentially guaranteed to
             # fail too, with a far less helpful message, so say the real
             # reason immediately instead of wasting a round trip on it.
-            return jsonify({"error": INSTAGRAM_NO_SESSION_ERROR}), 400
+            return jsonify({"error": messages.text("instagram_no_session", lang)}), 400
         try:
             media = instagram.fetch_instagram_media_any(url, candidates)
             return jsonify(instagram.instagram_check_response(url, media))
@@ -243,8 +232,8 @@ def check_link():
             finally:
                 cookies._cleanup_temp_cookiefiles(candidates)
         if not candidates or isinstance(last_error, threads.ThreadsAuthError):
-            return jsonify({"error": THREADS_AUTH_ERROR}), 400
-        return jsonify({"error": THREADS_EXTRACT_ERROR}), 400
+            return jsonify({"error": messages.text("threads_auth", lang)}), 400
+        return jsonify({"error": messages.text("extract_failed", lang)}), 400
 
     try:
         info = extraction.extract_video_info(cls)
@@ -257,7 +246,7 @@ def check_link():
                 media = linkedin.fetch_linkedin_image_post(url)
                 return jsonify(instagram.instagram_check_response(url, media))
             except linkedin.LinkedInUnsupportedPostError:
-                return jsonify({"error": LINKEDIN_DOCUMENT_POST_ERROR}), 400
+                return jsonify({"error": messages.text("linkedin_document", lang)}), 400
             except Exception:
                 pass
         # yt-dlp has two separate, unrelated TikTok gaps as of 2026-08-30
@@ -277,7 +266,7 @@ def check_link():
             except Exception:
                 pass
         error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
-        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, config.get_cookies_path())}), 400
+        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, config.get_cookies_path(), lang=lang)}), 400
     except Exception as e:
         # An exception here that ISN'T a yt_dlp.utils.DownloadError is
         # always unexpected (see describe_extraction_error's trusted-type
@@ -286,10 +275,10 @@ def check_link():
         # still leaves something diagnosable.
         paths.log_exception(f"check_link ({cls.platform}): {url}", e)
         error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
-        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, config.get_cookies_path())}), 400
+        return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, config.get_cookies_path(), lang=lang)}), 400
 
     if not info:
-        return jsonify({"error": extraction.describe_extraction_error(url, ig_resolver_error or Exception(""), config.get_cookies_path())}), 400
+        return jsonify({"error": extraction.describe_extraction_error(url, ig_resolver_error or Exception(""), config.get_cookies_path(), lang=lang)}), 400
 
     # Two kinds of playlist resolve here:
     #  - a YouTube playlist/channel or Instagram profile (flat/resolver listing):
@@ -324,6 +313,7 @@ def check_link():
 
 @app.post("/api/download")
 def start_download():
+    lang = messages.request_language()
     data = request.get_json(force=True) or {}
     raw_url = (data.get("url") or "").strip()
     if not raw_url:
@@ -338,9 +328,9 @@ def start_download():
     entry_index = data.get("entry_index") or classify.entry_index_from_url(url)
 
     if cls.platform == "Instagram" and not is_local_request():
-        return jsonify({"error": INSTAGRAM_LOCAL_ONLY_ERROR}), 403
+        return jsonify({"error": messages.text("instagram_local_only", lang)}), 403
     if cls.platform == "Threads" and not is_local_request():
-        return jsonify({"error": THREADS_LOCAL_ONLY_ERROR}), 403
+        return jsonify({"error": messages.text("threads_local_only", lang)}), 403
 
     remote_temp_dir = None
     if is_local_request():
@@ -396,7 +386,7 @@ def start_download():
                 return
             except instagram.InstagramAuthError as e:
                 jobs._remove_job_file(job_id)
-                jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, ig_candidates[0])
+                jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, ig_candidates[0], lang=lang)
                 jobs.jobs[job_id]["status"] = "error"
                 return
             except Exception as e:
@@ -452,7 +442,7 @@ def start_download():
                 return
             except threads.ThreadsAuthError:
                 jobs._remove_job_file(job_id)
-                jobs.jobs[job_id]["text"] = THREADS_AUTH_ERROR
+                jobs.jobs[job_id]["text"] = messages.text("threads_auth", lang)
                 jobs.jobs[job_id]["status"] = "error"
                 return
             except Exception as e:
@@ -472,7 +462,7 @@ def start_download():
 
     ffmpeg_bin = paths.get_ffmpeg_path()
     if not ffmpeg_bin:
-        return jsonify({"error": paths.ffmpeg_unavailable_message()}), 400
+        return jsonify({"error": paths.ffmpeg_unavailable_message(lang)}), 400
 
     ext = "mp3" if "Audio" in quality else "mp4"
     final_output_path = download.get_unique_filename(save_dir, title, ext)
@@ -557,7 +547,7 @@ def start_download():
                     return
                 except linkedin.LinkedInUnsupportedPostError:
                     jobs.jobs[job_id]["status"] = "error"
-                    jobs.jobs[job_id]["text"] = LINKEDIN_DOCUMENT_POST_ERROR
+                    jobs.jobs[job_id]["text"] = messages.text("linkedin_document", lang)
                     return
                 except Exception:
                     pass  # fall through to the friendly error below
@@ -588,7 +578,7 @@ def start_download():
             # plain explanation check_link() already gives for the same error.
             print(f"[download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
-            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path)
+            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path, lang=lang)
             download.cleanup_partial_download(output_path_no_ext)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
@@ -630,6 +620,7 @@ def start_batch_download():
     # can show one bar per video. Each item is identified by its own video "url"
     # (YouTube) or an "entry_index" into the original `url` (Instagram carousel
     # via the resolver, or a Story via yt-dlp playlist_items).
+    lang = messages.request_language()
     data = request.get_json(force=True) or {}
     cls = classify.classify_url((data.get("url") or "").strip())
     url = cls.url
@@ -650,7 +641,7 @@ def start_batch_download():
 
     ffmpeg_bin = paths.get_ffmpeg_path()
     if not ffmpeg_bin:
-        return jsonify({"error": paths.ffmpeg_unavailable_message()}), 400
+        return jsonify({"error": paths.ffmpeg_unavailable_message(lang)}), 400
 
     is_ig_carousel = cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL
     # A TikTok Photo Mode carousel has no dedicated classify.py LinkKind (see
@@ -756,7 +747,7 @@ def start_batch_download():
             # Only a pre-flight failure (e.g. Instagram auth before the pool starts).
             print(f"[batch] job {job_id} failed: {e}")
             cookies._cleanup_temp_cookiefiles(ig_candidates)
-            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e) if is_ig_carousel else (str(e) or "Download failed")
+            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, lang=lang) if is_ig_carousel else (str(e) or "Download failed")
             jobs.jobs[job_id]["status"] = "error"
             return
 

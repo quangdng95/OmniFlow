@@ -151,3 +151,48 @@ def test_unlock_lockout_expires_after_the_window(isolated_state_file, client, mo
     correct = config.get_or_create_token()
     resp = client.post("/unlock", data={"token": correct}, headers=ip)
     assert resp.status_code == 302
+
+
+# ---- /unlock page language ----
+
+
+def test_unlock_is_english_when_nothing_says_otherwise(isolated_state_file, client):
+    body = client.get("/unlock").get_data(as_text=True)
+    assert 'lang="en"' in body and "Access token" in body and "Unlock" in body
+
+
+def test_unlock_follows_the_browsers_accept_language(isolated_state_file, client):
+    body = client.get("/unlock", headers={"Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5"}).get_data(as_text=True)
+    assert 'lang="vi"' in body and "Mở khoá" in body
+
+
+def test_unlock_lang_query_switches_and_remembers_the_choice(isolated_state_file, client):
+    resp = client.get("/unlock?lang=vi")
+    assert 'lang="vi"' in resp.get_data(as_text=True)
+    assert f"{trust.LANGUAGE_COOKIE}=vi" in resp.headers["Set-Cookie"]
+    # The remembered choice also localizes the error page after a wrong token.
+    wrong = client.post("/unlock", data={"token": "nope"})
+    assert wrong.status_code == 401
+    assert "Mã không đúng." in wrong.get_data(as_text=True)
+
+
+def test_unlock_lang_query_beats_the_cookie_and_the_header(isolated_state_file, client):
+    client.set_cookie(trust.LANGUAGE_COOKIE, "vi")
+    body = client.get("/unlock?lang=en", headers={"Accept-Language": "vi"}).get_data(as_text=True)
+    assert 'lang="en"' in body
+
+
+def test_unlock_ignores_an_unknown_lang_value_and_sets_no_cookie(isolated_state_file, client):
+    resp = client.get("/unlock?lang=<script>")
+    assert 'lang="en"' in resp.get_data(as_text=True)
+    assert "<script>" not in resp.get_data(as_text=True)
+    assert "Set-Cookie" not in resp.headers
+
+
+def test_unlock_lockout_message_is_localized(isolated_state_file, client, monkeypatch):
+    monkeypatch.setattr(config, "LOCKOUT_THRESHOLD", 1)
+    client.set_cookie(trust.LANGUAGE_COOKIE, "vi")
+    client.post("/unlock", data={"token": "wrong"})
+    locked = client.post("/unlock", data={"token": "wrong"})
+    assert locked.status_code == 429
+    assert "Thử quá nhiều lần" in locked.get_data(as_text=True)

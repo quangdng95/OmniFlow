@@ -63,6 +63,7 @@ export interface Translations {
   downloadSuccess: { saved: string; openFolder: string; download: string };
   home: {
     introLines: string[];
+    supportedPlatformsHeading: string;
     howToHeading: string;
     steps: { label: string; body: string }[];
     featuresHeading: string;
@@ -137,6 +138,7 @@ export interface Translations {
     warningBody: string;
     valuesTitle: string;
     valuesUrlLabel: string;
+    copied: string;
     valuesTokenNote: string;
     phases: {
       num: string;
@@ -145,6 +147,14 @@ export interface Translations {
       steps: { text: string; nested?: boolean }[];
     }[];
     footerNote: string;
+  };
+  languageSwitcher: { label: string; english: string; vietnamese: string };
+  apiErrors: {
+    unreachable: string;
+    requestFailed: string;
+    requestFailedStatus: string; // "{status}" placeholder
+    uploadFailed: string;
+    fileFetchFailed: string; // "{status}" placeholder
   };
   changelog: {
     eyebrow: string;
@@ -232,6 +242,7 @@ const en: Translations = {
       "Built entirely on our self-developed technology without third-party reliance, OmniFlow ensures lightning-fast processing and safe, verified downloads.",
       "By using OmniFlow, you accept our Terms of Use.",
     ],
+    supportedPlatformsHeading: "Supported Platforms",
     howToHeading: "How to download a video:",
     steps: [
       {
@@ -387,6 +398,7 @@ const en: Translations = {
       "This is built exactly against the real API below (already verified end-to-end on the server side), but there's no way to remote into an iPhone and build/run it inside the Shortcuts app directly. Follow the phases in order, test with one short TikTok link first. If an action's name doesn't match what you see, or something errors, that's worth reporting so it can be fixed.",
     valuesTitle: "2 values used throughout",
     valuesUrlLabel: "Server base URL:",
+    copied: "Copied",
     valuesTokenNote:
       "Token — get it by SSH-ing into the server (python3 -m remote_web.config show) or from whoever manages it. Never paste the real token into the shortcut and then share that shortcut publicly — anyone holding it can use this server the same way you can.",
     phases: [
@@ -509,12 +521,31 @@ const en: Translations = {
     footerNote:
       "Server: remote_web, authenticated via the Authorization: Bearer header (added specifically for a headless client like this — the browser's own cookie login still works the same, side by side). The job's temp file on the server is deleted automatically once Phase 5 pulls it down.",
   },
+  languageSwitcher: { label: "Language", english: "English", vietnamese: "Tiếng Việt" },
+  apiErrors: {
+    unreachable: "Can't reach the OmniFlow server. Make sure it's running, then reload this page.",
+    requestFailed: "Request failed.",
+    requestFailedStatus: "Request failed ({status}).",
+    uploadFailed: "Upload failed.",
+    fileFetchFailed: "Failed to fetch file ({status})",
+  },
   changelog: {
     eyebrow: "Changelog · what's new",
     heading: "What's changed in OmniFlow",
     intro:
       "A running log of what actually shipped, in plain language — newest first. This tracks real changes as they land here, separately from whatever's already described on the download page.",
     releases: [
+      {
+        date: "2026-09-25",
+        title: "Easy English ⇄ Tiếng Việt switch",
+        items: [
+          "New EN | VI switch at the top of every page — no more digging through Settings. On a device set to Vietnamese, the app now starts in Vietnamese by itself.",
+          "Error messages from the server (couldn't read a link, private account, missing FFmpeg…) now follow the language you picked instead of always being Vietnamese.",
+          "The cloud sign-in page is translated too, with its own English / Tiếng Việt link.",
+          "Fixed the top menu being cut off on phones — the items now wrap onto a second line so none are out of reach.",
+          "Translated the last leftover English texts (\"Supported Platforms\", connection errors).",
+        ],
+      },
       {
         date: "2026-09-25",
         title: "Facebook downloads no longer hang on the cloud server",
@@ -660,6 +691,7 @@ const vi: Translations = {
       "Được xây dựng hoàn toàn trên công nghệ tự phát triển, không phụ thuộc bên thứ ba, OmniFlow đảm bảo xử lý cực nhanh và tải xuống an toàn, đã được xác minh.",
       "Bằng việc sử dụng OmniFlow, bạn đồng ý với Điều khoản sử dụng của chúng tôi.",
     ],
+    supportedPlatformsHeading: "Nền tảng được hỗ trợ",
     howToHeading: "Cách tải một video:",
     steps: [
       {
@@ -815,6 +847,7 @@ const vi: Translations = {
       "Thiết kế đúng theo API thật bên dưới (đã test end-to-end phía server), nhưng không remote vào iPhone để tự tay build + chạy thử trong app Shortcuts được. Làm đúng thứ tự các Phase, test với 1 link TikTok ngắn trước. Bước nào tên action không khớp hoặc lỗi thì đáng để báo lại chỉnh.",
     valuesTitle: "2 giá trị dùng xuyên suốt",
     valuesUrlLabel: "Base URL của server:",
+    copied: "Đã copy",
     valuesTokenNote:
       "Token — lấy bằng cách SSH vào server (python3 -m remote_web.config show) hoặc hỏi người quản trị. Đừng dán token thật vào shortcut rồi share công khai — ai cầm được file cũng xài chung được server này y như mày.",
     phases: [
@@ -934,12 +967,31 @@ const vi: Translations = {
     footerNote:
       "Server: remote_web, xác thực qua header Authorization: Bearer (thêm riêng cho client kiểu này — cookie trình duyệt vẫn hoạt động bình thường song song). Job tải xong tự xoá file tạm trên server sau khi Phase 5 lấy về máy.",
   },
+  languageSwitcher: { label: "Ngôn ngữ", english: "English", vietnamese: "Tiếng Việt" },
+  apiErrors: {
+    unreachable: "Không kết nối được tới máy chủ OmniFlow. Hãy đảm bảo máy chủ đang chạy rồi tải lại trang.",
+    requestFailed: "Yêu cầu thất bại.",
+    requestFailedStatus: "Yêu cầu thất bại ({status}).",
+    uploadFailed: "Tải lên thất bại.",
+    fileFetchFailed: "Không lấy được tệp ({status}).",
+  },
   changelog: {
     eyebrow: "Nhật ký cập nhật · có gì mới",
     heading: "OmniFlow đã thay đổi những gì",
     intro:
       "Nhật ký thật các thay đổi đã lên production, viết dễ hiểu — mới nhất ở trên đầu. Trang này ghi lại đúng những gì đã đổi, tách riêng khỏi phần giới thiệu/marketing đã public sẵn ở trang tải.",
     releases: [
+      {
+        date: "25-09-2026",
+        title: "Chuyển nhanh English ⇄ Tiếng Việt",
+        items: [
+          "Thêm nút chuyển EN | VI ở đầu mọi trang — không cần vào Cài đặt nữa. Máy đặt ngôn ngữ tiếng Việt thì app tự mở bằng tiếng Việt.",
+          "Thông báo lỗi từ server (không đọc được link, tài khoản private, thiếu FFmpeg…) giờ theo đúng ngôn ngữ đã chọn thay vì luôn là tiếng Việt.",
+          "Trang đăng nhập của bản cloud cũng được dịch, có link đổi English / Tiếng Việt riêng.",
+          "Sửa lỗi thanh menu phía trên bị cắt trên điện thoại — các mục giờ xuống dòng nên không còn mục nào bị khuất.",
+          "Dịch nốt những chỗ tiếng Anh còn sót (\"Nền tảng được hỗ trợ\", lỗi kết nối).",
+        ],
+      },
       {
         date: "25-09-2026",
         title: "Tải Facebook trên server cloud không còn bị treo",

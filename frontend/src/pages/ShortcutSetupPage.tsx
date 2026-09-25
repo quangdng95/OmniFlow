@@ -69,7 +69,7 @@ const ShortcutSetupPage = ({ onNavigate: _onNavigate }: ShortcutSetupPageProps) 
   const origin = window.location.origin;
 
   const handleCopyUrl = async () => {
-    await copyText(origin, "Đã copy");
+    await copyText(origin, t.shortcutSetup.copied);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
   };

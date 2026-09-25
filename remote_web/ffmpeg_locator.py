@@ -28,7 +28,7 @@ import platform
 import shutil
 import subprocess
 
-from backend import paths
+from backend import messages, paths
 
 _BAD_CPU_TYPE_ERRNO = 86
 
@@ -64,7 +64,7 @@ def resolve_ffmpeg_binary():
     return candidate
 
 
-def ffmpeg_unavailable_message():
+def ffmpeg_unavailable_message(lang=None):
     # Unlike backend.paths.ffmpeg_unavailable_message() (which tells an END
     # USER which .dmg to download instead), remote_web is one long-running
     # deployment on one machine - an unresolvable ffmpeg here means the
@@ -72,12 +72,5 @@ def ffmpeg_unavailable_message():
     # installer. The actionable audience is whoever runs the machine, not
     # the phone on the other end.
     if platform.system() == "Linux":
-        return (
-            "❌ Lỗi: Không tìm thấy FFmpeg khả dụng trên máy chủ này. "
-            "Vui lòng cài đặt qua trình quản lý gói của hệ điều hành "
-            "(vd: apt install ffmpeg) rồi khởi động lại dịch vụ."
-        )
-    return (
-        "❌ Lỗi: Không tìm thấy FFmpeg khả dụng cho kiến trúc CPU của máy chủ này "
-        f"({platform.machine()}). Vui lòng liên hệ quản trị viên để kiểm tra lại triển khai."
-    )
+        return messages.text("ffmpeg_missing_server_linux", lang)
+    return messages.text("ffmpeg_missing_server_other", lang, machine=platform.machine())

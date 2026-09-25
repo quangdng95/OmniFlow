@@ -71,8 +71,27 @@ def is_trusted_request(req):
     return False
 
 
+# The page is plain server-rendered HTML (no React/JS - it must work before the
+# frontend bundle loads), so its language is chosen server-side: an explicit
+# ?lang=, else the language cookie the app itself writes, else the browser's
+# Accept-Language, else English.
+LANGUAGE_COOKIE = "omniflow-language"
+_LANGUAGE_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
+_UNLOCK_TEXT = {
+    "en": {
+        "placeholder": "Access token", "button": "Unlock", "wrong": "Incorrect token.",
+        "locked": "Too many attempts. Try again in a few minutes.",
+        "switch_to": "vi", "switch_label": "Tiếng Việt",
+    },
+    "vi": {
+        "placeholder": "Mã truy cập", "button": "Mở khoá", "wrong": "Mã không đúng.",
+        "locked": "Thử quá nhiều lần. Vui lòng thử lại sau vài phút.",
+        "switch_to": "en", "switch_label": "English",
+    },
+}
+
 _UNLOCK_FORM_HTML = """<!doctype html>
-<html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="{lang}"><head><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OmniFlow</title>
 <style>
 body {{ font-family: -apple-system, sans-serif; display: flex; align-items: center;
@@ -84,20 +103,34 @@ input {{ display: block; width: 100%; padding: .75rem; margin: .5rem 0 1rem; box
 button {{ width: 100%; padding: .75rem; background: #111; color: white; border: none;
          border-radius: 8px; font-size: 1rem; }}
 .error {{ color: #c00; margin: 0 0 1rem; font-size: .875rem; }}
+.lang {{ margin: 1rem 0 0; text-align: center; font-size: .875rem; }}
+.lang a {{ color: #555; }}
 </style></head>
 <body>
 <form method="post" action="/unlock">
 <h2>OmniFlow</h2>
 {error}
-<input type="password" name="token" placeholder="Access token" autofocus required>
-<button type="submit">Unlock</button>
+<input type="password" name="token" placeholder="{placeholder}" autofocus required>
+<button type="submit">{button}</button>
+<p class="lang"><a href="/unlock?lang={switch_to}">{switch_label}</a></p>
 </form>
 </body></html>"""
 
 
-def _render_unlock_form(error=None):
-    error_html = f'<p class="error">{error}</p>' if error else ""
-    return _UNLOCK_FORM_HTML.format(error=error_html)
+def _unlock_language(override=None):
+    for candidate in (override, request.cookies.get(LANGUAGE_COOKIE)):
+        if candidate in _UNLOCK_TEXT:
+            return candidate
+    return request.accept_languages.best_match(list(_UNLOCK_TEXT)) or "en"
+
+
+def _render_unlock_form(lang, error_key=None):
+    text = _UNLOCK_TEXT[lang]
+    error_html = f'<p class="error">{text[error_key]}</p>' if error_key else ""
+    return _UNLOCK_FORM_HTML.format(
+        lang=lang, error=error_html, placeholder=text["placeholder"], button=text["button"],
+        switch_to=text["switch_to"], switch_label=text["switch_label"],
+    )
 
 
 @unlock_bp.get("/unlock")
@@ -105,23 +138,26 @@ def unlock_form():
     # No token ever appears in a URL (spec §4.1) - this is a plain HTML form,
     # no React/JS required, so it renders even before the frontend bundle's
     # own JS has a chance to load.
-    return Response(_render_unlock_form(), mimetype="text/html")
+    override = request.args.get("lang")
+    lang = _unlock_language(override)
+    resp = Response(_render_unlock_form(lang), mimetype="text/html")
+    if override in _UNLOCK_TEXT:
+        resp.set_cookie(LANGUAGE_COOKIE, lang, max_age=_LANGUAGE_COOKIE_MAX_AGE, samesite="Lax", path="/")
+    return resp
 
 
 @unlock_bp.post("/unlock")
 def unlock_submit():
     ip = _client_ip()
+    lang = _unlock_language()
     if _is_locked_out(ip):
-        return Response(
-            _render_unlock_form("Too many attempts. Try again in a few minutes."),
-            mimetype="text/html", status=429,
-        )
+        return Response(_render_unlock_form(lang, "locked"), mimetype="text/html", status=429)
     token = request.form.get("token", "")
     # Constant-time compare (§4.1) - a plain == leaks how many leading
     # characters matched via response-time differences.
     if not hmac.compare_digest(token, config.get_or_create_token()):
         _record_failed_attempt(ip)
-        return Response(_render_unlock_form("Incorrect token."), mimetype="text/html", status=401)
+        return Response(_render_unlock_form(lang, "wrong"), mimetype="text/html", status=401)
     resp = redirect("/")
     resp.set_cookie(
         config.TRUST_COOKIE_NAME,
