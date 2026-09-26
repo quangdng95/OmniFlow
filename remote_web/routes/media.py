@@ -462,6 +462,7 @@ def start_batch_download():
         def download_item(i, item):
             p = prog[i]
             if jobs.jobs[job_id]["cancelled"]:
+                zipper.skip(i)
                 return
             p["status"] = "downloading"
             item_title = item.get("title") or f"Video {i + 1}"
@@ -486,6 +487,7 @@ def start_batch_download():
                     out = download.download_one_video(url, save_dir, item_title, quality, ffmpeg_bin, job_id, entry_index=item["entry_index"], on_progress=on_progress)
                 else:
                     p["status"] = "error"
+                    zipper.skip(i)
                     with lock:
                         state["failed"] += 1
                     recompute_overall()
@@ -493,16 +495,18 @@ def start_batch_download():
                 # Incremental zip (§5.3): append then delete the raw file
                 # immediately - peak disk usage stays near BATCH_CONCURRENCY
                 # in-flight files instead of the whole batch's total size.
-                zipper.add_and_delete(out, os.path.basename(out))
+                zipper.add_and_delete(out, os.path.basename(out), index=i)
                 p["percent"] = 100
                 p["status"] = "done"
                 with lock:
                     state["saved"] += 1
             except yt_dlp.utils.DownloadCancelled:
                 p["status"] = "error"
+                zipper.skip(i)
             except Exception as e:
                 print(f"[remote_web batch] job {job_id} item {i + 1}/{total} failed: {e}")
                 p["status"] = "error"
+                zipper.skip(i)
                 with lock:
                     state["failed"] += 1
             recompute_overall()

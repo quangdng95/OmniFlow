@@ -43,6 +43,10 @@ export interface Translations {
     downloadAgain: string; // per-row action after success
     cancel: string; // stop the running batch
     totalItems: string; // "Total Items:"
+    previewItem: string; // aria-label on a row thumbnail: "Preview {title}"
+    previewHint: string; // screen-reader description of the preview dialog
+    previousItem: string; // preview dialog: previous item
+    nextItem: string; // preview dialog: next item
     downloadAll: string; // header bulk button
     orSelect: string; // "Or you can select items to download"
     download: string; // per-row idle action button
@@ -216,6 +220,10 @@ const en: Translations = {
     downloadAgain: "Download again",
     cancel: "Cancel",
     totalItems: "Total Items:",
+    previewItem: "Preview {title}",
+    previewHint: "Enlarged thumbnail. Use the arrow keys to move between items.",
+    previousItem: "Previous item",
+    nextItem: "Next item",
     downloadAll: "Download All",
     orSelect: "Or you can select items to download",
     download: "Download",
@@ -665,6 +673,10 @@ const vi: Translations = {
     downloadAgain: "Tải lại",
     cancel: "Huỷ",
     totalItems: "Tổng số mục:",
+    previewItem: "Xem trước {title}",
+    previewHint: "Ảnh thu nhỏ được phóng to. Dùng phím mũi tên để chuyển giữa các mục.",
+    previousItem: "Mục trước",
+    nextItem: "Mục sau",
     downloadAll: "Tải tất cả",
     orSelect: "Hoặc bạn có thể chọn từng mục để tải",
     download: "Tải",

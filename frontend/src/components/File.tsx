@@ -19,6 +19,7 @@ interface FileProps {
   checked: boolean;
   onToggle: () => void;
   onAction: () => void;
+  onPreview?: () => void;
   busy: boolean;
   available: boolean;
 }
@@ -36,6 +37,7 @@ export default function File({
   checked,
   onToggle,
   onAction,
+  onPreview,
   busy,
   available,
 }: FileProps) {
@@ -44,6 +46,11 @@ export default function File({
   const handleActionClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onAction();
+  };
+
+  const handlePreviewClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onPreview?.();
   };
 
   const formattedNum = String(position).padStart(numWidth, "0");
@@ -73,21 +80,37 @@ export default function File({
         {formattedNum}.
       </span>
 
-      {/* Thumbnail or Fallback Placeholder */}
-      <div className="h-11 w-11 rounded-lg bg-neutral-100 shrink-0 border border-neutral-200/50 overflow-hidden flex items-center justify-center">
-        {thumbnail ? (
+      {/* Thumbnail (click to enlarge) or Fallback Placeholder */}
+      {thumbnail && onPreview ? (
+        <button
+          type="button"
+          onClick={handlePreviewClick}
+          aria-label={t.playlist.previewItem.replace("{title}", title)}
+          className="h-11 w-11 rounded-lg bg-neutral-100 shrink-0 border border-neutral-200/50 overflow-hidden flex items-center justify-center cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d9585]"
+        >
           <img
             src={thumbnail}
             referrerPolicy="no-referrer"
-            alt={title}
+            alt=""
             className="h-full w-full object-cover"
           />
-        ) : (
-          <span className="text-[14px]">
-            {kind === "image" ? "📷" : "🎥"}
-          </span>
-        )}
-      </div>
+        </button>
+      ) : (
+        <div className="h-11 w-11 rounded-lg bg-neutral-100 shrink-0 border border-neutral-200/50 overflow-hidden flex items-center justify-center">
+          {thumbnail ? (
+            <img
+              src={thumbnail}
+              referrerPolicy="no-referrer"
+              alt={title}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-[14px]">
+              {kind === "image" ? "📷" : "🎥"}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Info Description */}
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">

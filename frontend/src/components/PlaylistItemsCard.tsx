@@ -4,6 +4,7 @@ import { Download, FolderOpen, Loader2, XCircle, FolderCheck, FolderX, RefreshCw
 import SectionCard from "./SectionCard";
 import PlatformTag from "./PlatformTag";
 import File from "./File";
+import ThumbnailPreviewDialog, { type PreviewEntry } from "./ThumbnailPreviewDialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -56,6 +57,8 @@ const PlaylistItemsCard = ({
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [showUnavailable, setShowUnavailable] = useState(false);
   const [savingZip, setSavingZip] = useState(false);
+  // Row index (into `items`) of the thumbnail currently enlarged, or null.
+  const [previewRow, setPreviewRow] = useState<number | null>(null);
 
   const handleSaveZip = async () => {
     if (!downloadUrl) return;
@@ -98,6 +101,25 @@ const PlaylistItemsCard = ({
   const failedCount = failedIndices.length;
   const anyDone = doneCount > 0;
   const numWidth = Math.max(2, String(items.length).length);
+
+  // Rows the preview can step through: the ones on screen that have a thumbnail,
+  // in list order.
+  const previewRows = useMemo(
+    () =>
+      (items || [])
+        .map((_, i) => i)
+        .filter((i) => items[i]?.thumbnail && (isAvailable(items[i]) || showUnavailable)),
+    [items, showUnavailable]
+  );
+  const previewEntries: PreviewEntry[] = previewRows.map((i) => ({
+    thumbnail: items[i].thumbnail as string,
+    title: items[i].title,
+    label: String(items[i].position ?? i + 1).padStart(numWidth, "0"),
+  }));
+  const previewIndex = previewRow === null ? null : previewRows.indexOf(previewRow);
+
+  const handlePreviewIndexChange = (index: number) => setPreviewRow(previewRows[index] ?? null);
+  const handlePreviewClose = () => setPreviewRow(null);
 
   const allSelected = selectableIndices.length > 0 && effectiveSelected.length === selectableIndices.length;
 
@@ -222,6 +244,7 @@ const PlaylistItemsCard = ({
                 checked={selected.has(index) && !isDone}
                 onToggle={() => toggleItem(index)}
                 onAction={() => downloadRows([index])}
+                onPreview={() => setPreviewRow(index)}
                 busy={busy}
                 available={available}
               />
@@ -323,6 +346,12 @@ const PlaylistItemsCard = ({
           </div>
         )}
       </SectionCard>
+      <ThumbnailPreviewDialog
+        entries={previewEntries}
+        index={previewIndex === -1 ? null : previewIndex}
+        onIndexChange={handlePreviewIndexChange}
+        onClose={handlePreviewClose}
+      />
     </>
   );
 };

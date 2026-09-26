@@ -109,3 +109,42 @@ def test_touch_is_a_no_op_when_the_zip_file_is_missing(tmp_path):
     z.close()
     os.remove(zip_path)
     z.touch()  # must not raise
+
+
+# ---- ordering: entries must land in item order, not completion order ----
+
+
+def test_indexed_items_land_in_index_order_even_when_finished_out_of_order(tmp_path):
+    zip_path = str(tmp_path / "batch.zip")
+    z = BatchZipper(zip_path)
+    for index in (2, 0, 1):  # finish order != item order
+        src = _make_file(tmp_path, f"src{index}.jpg", f"content-{index}".encode())
+        z.add_and_delete(src, f"slide{index}.jpg", index=index)
+    z.close()
+    with zipfile.ZipFile(zip_path) as zf:
+        assert zf.namelist() == ["slide0.jpg", "slide1.jpg", "slide2.jpg"]
+        assert zf.read("slide1.jpg") == b"content-1"
+
+
+def test_an_item_is_held_back_until_every_earlier_item_is_resolved(tmp_path):
+    z = BatchZipper(str(tmp_path / "batch.zip"))
+    src1 = _make_file(tmp_path, "src1.jpg")
+    z.add_and_delete(src1, "slide1.jpg", index=1)
+    assert os.path.exists(src1)  # index 0 still outstanding - not written yet
+    z.skip(0)  # item 0 failed: it must not block the rest of the batch
+    assert not os.path.exists(src1)
+    z.close()
+    with zipfile.ZipFile(str(tmp_path / "batch.zip")) as zf:
+        assert zf.namelist() == ["slide1.jpg"]
+
+
+def test_close_flushes_held_items_when_a_gap_is_never_resolved(tmp_path):
+    # e.g. a cancelled batch: an earlier item never reports back at all.
+    zip_path = str(tmp_path / "batch.zip")
+    z = BatchZipper(zip_path)
+    for index in (2, 1):
+        src = _make_file(tmp_path, f"src{index}.jpg")
+        z.add_and_delete(src, f"slide{index}.jpg", index=index)
+    z.close()
+    with zipfile.ZipFile(zip_path) as zf:
+        assert zf.namelist() == ["slide1.jpg", "slide2.jpg"]

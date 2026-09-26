@@ -341,3 +341,35 @@ def test_download_batch_partial_failure_still_saves_the_rest(client, monkeypatch
     job = _wait_for_job(job_id)
     assert job["status"] == "done"
     assert job["saved_count"] == 1
+
+
+def test_download_batch_zip_keeps_the_selected_item_order(client, monkeypatch, tmp_path):
+    # Items download BATCH_CONCURRENCY at a time, so they finish in whatever
+    # order the network allows. The archive (and therefore the order the phone
+    # saves them into Photos) must still match the order they were listed in.
+    import time
+
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+    delays = {"A": 0.3, "B": 0.2, "C": 0.1, "D": 0.0}  # finish order: C, D, B, A
+
+    def fake_download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
+        time.sleep(delays[title])
+        out = os.path.join(save_dir, f"{title}.mp4")
+        with open(out, "wb") as f:
+            f.write(b"fake video")
+        if on_progress:
+            on_progress(100)
+        return out
+
+    monkeypatch.setattr(download_module, "download_one_video", fake_download_one_video)
+
+    resp = client.post("/api/download-batch", json={
+        "url": "https://www.youtube.com/playlist?list=PL1",
+        "quality": "Best",
+        "items": [{"title": t, "url": f"https://youtube.com/watch?v={t}"} for t in "ABCD"],
+    })
+    job = _wait_for_job(resp.get_json()["job_id"])
+    assert job["status"] == "done"
+    with zipfile.ZipFile(job["filepath"]) as zf:
+        assert zf.namelist() == ["A.mp4", "B.mp4", "C.mp4", "D.mp4"]
