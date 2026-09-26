@@ -57,7 +57,7 @@ export default function File({
 
   return (
     <div
-      onClick={() => !busy && available && state !== "Completed" && onToggle()}
+      onClick={() => !busy && available && onToggle()}
       className={`flex items-center gap-4 px-3 rounded-lg border border-transparent transition-colors w-full select-none h-[60px] ${
         !available 
           ? "opacity-45 cursor-default bg-neutral-50/50" 
@@ -68,8 +68,8 @@ export default function File({
     >
       {/* Checkbox */}
       <Checkbox
-        checked={checked && available && state !== "Completed"}
-        disabled={busy || !available || state === "Completed"}
+        checked={checked && available}
+        disabled={busy || !available}
         onClick={(e) => e.stopPropagation()}
         onCheckedChange={() => onToggle()}
         className="shrink-0 w-4 h-4"

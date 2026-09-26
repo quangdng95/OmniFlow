@@ -64,7 +64,7 @@ export interface Translations {
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
-  downloadSuccess: { saved: string; openFolder: string; download: string };
+  downloadSuccess: { saved: string; openFolder: string; download: string; tapAgain: string };
   home: {
     introLines: string[];
     supportedPlatformsHeading: string;
@@ -241,7 +241,7 @@ const en: Translations = {
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
-  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", download: "Download" },
+  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", download: "Download", tapAgain: "Your files are ready - tap Download again to save them." },
   home: {
     introLines: [
       "OmniFlow allows you to easily download videos from YouTube (including entire playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), or LinkedIn.",
@@ -694,7 +694,7 @@ const vi: Translations = {
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
-  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", download: "Tải xuống" },
+  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", download: "Tải xuống", tapAgain: "Tệp đã sẵn sàng - bấm Tải xuống lần nữa để lưu về máy." },
   home: {
     introLines: [
       "OmniFlow giúp bạn dễ dàng tải video từ YouTube (bao gồm cả danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) hoặc LinkedIn.",

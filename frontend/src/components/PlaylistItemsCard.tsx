@@ -1,16 +1,17 @@
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useMemo, useState } from "react";
 import { Download, FolderOpen, Loader2, XCircle, FolderCheck, FolderX, RefreshCw } from "lucide-react";
 import SectionCard from "./SectionCard";
 import PlatformTag from "./PlatformTag";
 import File from "./File";
 import ThumbnailPreviewDialog, { type PreviewEntry } from "./ThumbnailPreviewDialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "../i18n/LanguageContext";
-import { saveDownloadedZipAsFiles } from "../lib/saveFile";
+import { prepareZipFiles } from "../lib/saveFile";
+import { usePreparedSave } from "../hooks/usePreparedSave";
 import type { Platform, PlaylistItem, RowProgress, RowDownloadStatus } from "../types";
 
 export interface BatchSummary {
@@ -56,32 +57,28 @@ const PlaylistItemsCard = ({
 
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [showUnavailable, setShowUnavailable] = useState(false);
-  const [savingZip, setSavingZip] = useState(false);
   // Row index (into `items`) of the thumbnail currently enlarged, or null.
   const [previewRow, setPreviewRow] = useState<number | null>(null);
 
-  const handleSaveZip = async () => {
-    if (!downloadUrl) return;
-    setSavingZip(true);
-    try {
-      await saveDownloadedZipAsFiles(downloadUrl, `${title || "OmniFlow"}.zip`);
-    } catch (e: unknown) {
-      const error = e as Error;
-      if (error.name !== "AbortError") {
-        toast.error(error.message);
-      }
-    } finally {
-      setSavingZip(false);
-    }
-  };
-
-  const selectableIndices = useMemo(
-    () =>
-      (items || [])
-        .map((_, i) => i)
-        .filter((i) => items[i] && isAvailable(items[i]) && statusOf(rowStatus, i) !== "done"),
-    [items, rowStatus]
+  const prepareBatchZip = useCallback(
+    (url: string) => prepareZipFiles(url, `${title || "OmniFlow"}.zip`),
+    [title]
   );
+  const { saving: savingZip, save: handleSaveZip } = usePreparedSave(downloadUrl, prepareBatchZip);
+
+  // Every available row stays selectable - including already-downloaded ones,
+  // so a user can tick several finished rows and grab them again in one go
+  // instead of tapping "Download again" row by row.
+  const selectableIndices = useMemo(
+    () => (items || []).map((_, i) => i).filter((i) => items[i] && isAvailable(items[i])),
+    [items]
+  );
+  // "Download All" grabs what's still missing; once everything is saved it
+  // re-downloads the whole list rather than going dead.
+  const downloadAllIndices = useMemo(() => {
+    const notDone = selectableIndices.filter((i) => statusOf(rowStatus, i) !== "done");
+    return notDone.length > 0 ? notDone : selectableIndices;
+  }, [selectableIndices, rowStatus]);
 
   const hasUnavailable = (items || []).some((it) => it && !isAvailable(it));
 
@@ -141,8 +138,35 @@ const PlaylistItemsCard = ({
   };
 
   const downloadRows = (rowIndices: number[]) => {
-    if (rowIndices.length) onDownloadItems(rowIndices, quality);
+    if (!rowIndices.length) return;
+    setSelected(new Set());
+    onDownloadItems(rowIndices, quality);
   };
+
+  const handleDownloadAll = () => downloadRows(downloadAllIndices);
+
+  // Shown both next to "Download All" and in the footer, so after tapping the
+  // top button the user can save without scrolling to the end of a long list.
+  const canSave = !busy && anyDone && (Boolean(downloadUrl) || Boolean(onOpenFolder));
+  const renderSaveButton = (className: string) =>
+    downloadUrl ? (
+      <Button
+        onClick={handleSaveZip}
+        disabled={savingZip}
+        className={cn("bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold", className)}
+      >
+        {savingZip ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+        {t.downloadSuccess.download}
+      </Button>
+    ) : onOpenFolder ? (
+      <Button
+        onClick={onOpenFolder}
+        className={cn("bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold", className)}
+      >
+        <FolderOpen className="h-4 w-4" />
+        {t.downloadSuccess.openFolder}
+      </Button>
+    ) : null;
 
   if (items.length === 0) {
     return (
@@ -167,14 +191,22 @@ const PlaylistItemsCard = ({
           <span className="text-sm text-slate-600">
             {t.playlist.totalItems} <strong className="text-slate-900 font-semibold">{items.length}</strong>
           </span>
-          <Button
-            onClick={() => downloadRows(selectableIndices)}
-            disabled={busy || selectableIndices.length === 0}
-            className="bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
-          >
-            <Download className="h-4 w-4" />
-            {t.playlist.downloadAll}
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {canSave && renderSaveButton("")}
+            <Button
+              onClick={handleDownloadAll}
+              disabled={busy || downloadAllIndices.length === 0}
+              className={cn(
+                "gap-1.5 rounded-lg",
+                canSave
+                  ? "bg-white hover:bg-neutral-50 text-[#0d9585] border border-[#0d9585] shadow-none"
+                  : "bg-[#0d9585] text-white hover:bg-[#0d9585]/90 shadow-sm"
+              )}
+            >
+              <Download className="h-4 w-4" />
+              {t.playlist.downloadAll}
+            </Button>
+          </div>
         </div>
 
         {/* Select section */}
@@ -217,7 +249,6 @@ const PlaylistItemsCard = ({
             const available = isAvailable(item);
             if (!available && !showUnavailable) return null;
             const status = statusOf(rowStatus, index);
-            const isDone = status === "done";
             
             // Map row status string to FileState variant
             let fileState: "Default" | "Downloading" | "Completed" | "Fail" = "Default";
@@ -241,7 +272,7 @@ const PlaylistItemsCard = ({
                 numWidth={numWidth}
                 state={fileState}
                 percent={rowStatus[index]?.percent ?? 0}
-                checked={selected.has(index) && !isDone}
+                checked={selected.has(index)}
                 onToggle={() => toggleItem(index)}
                 onAction={() => downloadRows([index])}
                 onPreview={() => setPreviewRow(index)}
@@ -297,29 +328,7 @@ const PlaylistItemsCard = ({
                   {t.playlist.retry}
                 </Button>
               )}
-              {onOpenFolder && (
-                <Button
-                  onClick={onOpenFolder}
-                  className="flex-1 w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold py-2"
-                >
-                  <FolderOpen className="h-4 w-4" />
-                  {t.downloadSuccess.openFolder}
-                </Button>
-              )}
-              {downloadUrl && (
-                <Button
-                  onClick={handleSaveZip}
-                  disabled={savingZip}
-                  className="flex-1 w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold py-2"
-                >
-                  {savingZip ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                  {t.downloadSuccess.download}
-                </Button>
-              )}
+              {renderSaveButton("flex-1 w-full py-2")}
             </div>
           </div>
         )}

@@ -1,9 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import type { RowProgress } from "../types";
 import PlaylistItemsCard from "./PlaylistItemsCard";
 import { LanguageProvider } from "../i18n/LanguageContext";
 import type { PlaylistItem } from "../types";
+
+vi.mock("../lib/saveFile", () => ({
+  prepareZipFiles: vi.fn(() => Promise.resolve({ files: [], fallbackBlob: new Blob(), fallbackFilename: "x" })),
+  sharePreparedSave: vi.fn().mockResolvedValue("shared"),
+  isNotAllowedError: () => false,
+}));
 
 const makeItem = (n: number): PlaylistItem =>
   ({
@@ -51,5 +58,78 @@ describe("PlaylistItemsCard thumbnail preview", () => {
     await user.click(screen.getByRole("button", { name: "Previous item" }));
     expect(screen.getByText("01. Slide 1")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Previous item" })).toBeDisabled();
+  });
+});
+
+const allDone = (count: number): Record<number, RowProgress> =>
+  Object.fromEntries(Array.from({ length: count }, (_, i) => [i, { status: "done", percent: 100 }]));
+
+describe("PlaylistItemsCard after a finished batch", () => {
+  it("keeps downloaded rows selectable so several can be downloaded again at once", async () => {
+    const onDownloadItems = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <LanguageProvider>
+        <PlaylistItemsCard
+          title="Carousel"
+          platform="Instagram"
+          items={[makeItem(1), makeItem(2), makeItem(3)]}
+          busy={false}
+          rowStatus={allDone(3)}
+          batchSummary={null}
+          quality="Best"
+          onDownloadItems={onDownloadItems}
+        />
+      </LanguageProvider>
+    );
+
+    const selectAll = screen.getByRole("checkbox", { name: "Select all" });
+    expect(selectAll).not.toHaveAttribute("aria-disabled", "true");
+    await user.click(selectAll);
+    await user.click(screen.getByRole("button", { name: /Download Items Selected/i }));
+
+    expect(onDownloadItems).toHaveBeenCalledWith([0, 1, 2], "Best");
+  });
+
+  it("keeps Download All usable once every row is saved", async () => {
+    const onDownloadItems = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <LanguageProvider>
+        <PlaylistItemsCard
+          title="Carousel"
+          platform="Instagram"
+          items={[makeItem(1), makeItem(2)]}
+          busy={false}
+          rowStatus={allDone(2)}
+          batchSummary={null}
+          quality="Best"
+          onDownloadItems={onDownloadItems}
+        />
+      </LanguageProvider>
+    );
+
+    await user.click(screen.getByRole("button", { name: "Download All" }));
+    expect(onDownloadItems).toHaveBeenCalledWith([0, 1], "Best");
+  });
+
+  it("offers the save-to-device button at the top as well as the bottom", () => {
+    render(
+      <LanguageProvider>
+        <PlaylistItemsCard
+          title="Carousel"
+          platform="Instagram"
+          items={[makeItem(1), makeItem(2)]}
+          busy={false}
+          rowStatus={allDone(2)}
+          batchSummary={null}
+          quality="Best"
+          onDownloadItems={vi.fn()}
+          downloadUrl="/api/download-file/job-1"
+        />
+      </LanguageProvider>
+    );
+
+    expect(screen.getAllByRole("button", { name: "Download" })).toHaveLength(2);
   });
 });

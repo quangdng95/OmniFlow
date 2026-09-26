@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { toast } from "sonner";
+import { useCallback } from "react";
 import { CheckCircle2, Download, Loader2, RefreshCw, FolderOpen, XCircle, AlertCircle } from "lucide-react";
 import PlatformTag from "./PlatformTag";
 import SectionCard from "./SectionCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "../i18n/LanguageContext";
-import { saveDownloadedFile } from "../lib/saveFile";
+import { preparePlainFile } from "../lib/saveFile";
+import { usePreparedSave } from "../hooks/usePreparedSave";
 import type { VideoInfo } from "../types";
 
 export type DownloadActionState = "idle" | "downloading" | "done" | "fail";
@@ -33,24 +33,16 @@ const VideoInfoCard = ({
   downloadUrl,
 }: VideoInfoCardProps) => {
   const { t } = useLanguage();
-  const [saving, setSaving] = useState(false);
-
-  const handleSave = async () => {
-    if (!downloadUrl) return;
-    setSaving(true);
-    try {
-      await saveDownloadedFile(downloadUrl, filename || info.title);
-    } catch (e: unknown) {
-      const error = e as Error;
-      // A user backing out of the share sheet also lands here (AbortError) -
-      // that's a cancel, not a failure, so it shouldn't show as an error toast.
-      if (error.name !== "AbortError") {
-        toast.error(error.message);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
+  const prepareSingleFile = useCallback(
+    (url: string) => preparePlainFile(url, filename || info.title),
+    [filename, info.title]
+  );
+  // downloadUrl exists from the moment the job starts - only prefetch once
+  // the file is actually finished on the server.
+  const { saving, save: handleSave } = usePreparedSave(
+    actionState === "done" ? downloadUrl : undefined,
+    prepareSingleFile
+  );
 
   return (
     <SectionCard className="p-4 bg-white/90 border border-neutral-200 shadow-sm rounded-xl select-none">

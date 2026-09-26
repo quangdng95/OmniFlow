@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HomePage from "./HomePage";
 import { api } from "../api";
-import { saveDownloadedFile } from "../lib/saveFile";
+import { preparePlainFile, sharePreparedSave } from "../lib/saveFile";
 import { LanguageProvider } from "../i18n/LanguageContext";
 import type { Page } from "../components/Header";
 import type { JobProgress, PlaylistCheckResult, VideoInfo } from "../types";
@@ -30,9 +30,12 @@ vi.mock("../api", () => ({
   },
 }));
 
+const PREPARED = { files: [], fallbackBlob: new Blob(), fallbackFilename: "x" };
 vi.mock("../lib/saveFile", () => ({
-  saveDownloadedFile: vi.fn().mockResolvedValue("shared"),
-  saveDownloadedZipAsFiles: vi.fn().mockResolvedValue("shared"),
+  preparePlainFile: vi.fn(() => Promise.resolve(PREPARED)),
+  prepareZipFiles: vi.fn(() => Promise.resolve(PREPARED)),
+  sharePreparedSave: vi.fn().mockResolvedValue("shared"),
+  isNotAllowedError: () => false,
 }));
 
 const mockedApi = vi.mocked(api, true);
@@ -360,8 +363,13 @@ describe("HomePage in remote mode (non-local hostname)", () => {
     const downloadButton = await screen.findByRole("button", { name: "Download" });
     expect(screen.queryByText("Open Folder")).not.toBeInTheDocument();
 
+    // The finished file is fetched ahead of the tap (iOS share() needs a fresh
+    // user gesture), then the tap hands it straight to the share sheet.
+    await waitFor(() =>
+      expect(preparePlainFile).toHaveBeenCalledWith("/api/download-file/job-789", "clip.mp4")
+    );
     await user.click(downloadButton);
-    expect(saveDownloadedFile).toHaveBeenCalledWith("/api/download-file/job-789", "clip.mp4");
+    await waitFor(() => expect(sharePreparedSave).toHaveBeenCalledTimes(1));
   });
 });
 

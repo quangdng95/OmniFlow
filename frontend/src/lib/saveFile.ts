@@ -13,6 +13,14 @@ const downloadBlob = (blob: Blob, filename: string): void => {
   URL.revokeObjectURL(objectUrl);
 };
 
+// A save that's already been fetched (and, for a batch, unzipped) and only
+// needs handing to the share sheet / a download link.
+export interface PreparedSave {
+  files: File[];
+  fallbackBlob: Blob;
+  fallbackFilename: string;
+}
+
 // Saving a finished download on mobile Safari via a plain <a href download>
 // link hands the file to Safari's own download manager - it lands in the
 // Files app's "Downloads" folder (or iCloud Drive), never the Photos app,
@@ -25,32 +33,49 @@ const downloadBlob = (blob: Blob, filename: string): void => {
 // supported (desktop browsers, older WebKit, non-Apple platforms), and
 // whenever `files` is empty - navigator.canShare's handling of an empty
 // file list isn't consistent enough across engines to trust.
-const shareFilesOrDownload = async (
-  files: File[],
-  fallbackBlob: Blob,
-  fallbackFilename: string
-): Promise<"shared" | "downloaded"> => {
+//
+// navigator.share() also needs *transient user activation*: iOS Safari
+// rejects it with NotAllowedError ("The request is not allowed by the user
+// agent or the platform in the current context…") once the tap that
+// triggered it is more than a moment old. Fetching + unzipping a multi-MB
+// batch between the tap and share() routinely burns through that window
+// (MISTAKES.md 2026-09-27) - so callers prepare the files *ahead* of the tap
+// (preparePlainFile / prepareZipFiles) and this function calls share()
+// before any await.
+export async function sharePreparedSave(prepared: PreparedSave): Promise<"shared" | "downloaded"> {
+  const { files, fallbackBlob, fallbackFilename } = prepared;
   if (files.length > 0 && navigator.canShare?.({ files })) {
     await navigator.share({ files });
     return "shared";
   }
   downloadBlob(fallbackBlob, fallbackFilename);
   return "downloaded";
+}
+
+export const isNotAllowedError = (error: unknown): boolean =>
+  error instanceof Error && error.name === "NotAllowedError";
+
+const fetchBlob = async (url: string): Promise<Blob> => {
+  const response = await fetch(url, { credentials: "include" });
+  if (!response.ok) {
+    throw new Error(translations[detectLanguage()].apiErrors.fileFetchFailed.replace("{status}", String(response.status)));
+  }
+  return response.blob();
 };
+
+export async function preparePlainFile(url: string, filename: string): Promise<PreparedSave> {
+  const blob = await fetchBlob(url);
+  const file = new File([blob], filename, {
+    type: blob.type || "application/octet-stream",
+  });
+  return { files: [file], fallbackBlob: blob, fallbackFilename: filename };
+}
 
 export async function saveDownloadedFile(
   url: string,
   filename: string
 ): Promise<"shared" | "downloaded"> {
-  const response = await fetch(url, { credentials: "include" });
-  if (!response.ok) {
-    throw new Error(translations[detectLanguage()].apiErrors.fileFetchFailed.replace("{status}", String(response.status)));
-  }
-  const blob = await response.blob();
-  const file = new File([blob], filename, {
-    type: blob.type || "application/octet-stream",
-  });
-  return shareFilesOrDownload([file], blob, filename);
+  return sharePreparedSave(await preparePlainFile(url, filename));
 }
 
 const MIME_BY_EXTENSION: Record<string, string> = {
@@ -79,15 +104,8 @@ const mimeTypeFor = (filename: string): string => {
 // a single item already does. Falls back to downloading the original .zip
 // wherever share-with-files isn't supported, or if the zip turns out to be
 // empty/corrupt.
-export async function saveDownloadedZipAsFiles(
-  url: string,
-  fallbackFilename: string
-): Promise<"shared" | "downloaded"> {
-  const response = await fetch(url, { credentials: "include" });
-  if (!response.ok) {
-    throw new Error(translations[detectLanguage()].apiErrors.fileFetchFailed.replace("{status}", String(response.status)));
-  }
-  const zipBlob = await response.blob();
+export async function prepareZipFiles(url: string, fallbackFilename: string): Promise<PreparedSave> {
+  const zipBlob = await fetchBlob(url);
 
   let entries: Record<string, Uint8Array>;
   try {
@@ -100,5 +118,12 @@ export async function saveDownloadedZipAsFiles(
     .filter(([name, data]) => !name.endsWith("/") && data.byteLength > 0)
     .map(([name, data]) => new File([new Uint8Array(data)], name, { type: mimeTypeFor(name) }));
 
-  return shareFilesOrDownload(files, zipBlob, fallbackFilename);
+  return { files, fallbackBlob: zipBlob, fallbackFilename };
+}
+
+export async function saveDownloadedZipAsFiles(
+  url: string,
+  fallbackFilename: string
+): Promise<"shared" | "downloaded"> {
+  return sharePreparedSave(await prepareZipFiles(url, fallbackFilename));
 }
