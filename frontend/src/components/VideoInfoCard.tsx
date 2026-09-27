@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { CheckCircle2, Download, Loader2, RefreshCw, FolderOpen, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle2, Download, Save, Loader2, RefreshCw, FolderOpen, XCircle, AlertCircle } from "lucide-react";
 import PlatformTag from "./PlatformTag";
 import SectionCard from "./SectionCard";
 import { Button } from "@/components/ui/button";
@@ -145,9 +145,9 @@ const VideoInfoCard = ({
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Download className="h-4 w-4" />
+                    <Save className="h-4 w-4" />
                   )}
-                  {t.downloadSuccess.download}
+                  {t.downloadSuccess.save}
                 </Button>
               )}
             </div>

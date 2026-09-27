@@ -130,6 +130,6 @@ describe("PlaylistItemsCard after a finished batch", () => {
       </LanguageProvider>
     );
 
-    expect(screen.getAllByRole("button", { name: "Download" })).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Save to device" })).toHaveLength(2);
   });
 });

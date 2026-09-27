@@ -360,7 +360,7 @@ describe("HomePage in remote mode (non-local hostname)", () => {
     await screen.findByText("Video A", undefined, { timeout: 3000 });
     await user.click(screen.getByRole("button", { name: /start download/i }));
 
-    const downloadButton = await screen.findByRole("button", { name: "Download" });
+    const downloadButton = await screen.findByRole("button", { name: "Save to device" });
     expect(screen.queryByText("Open Folder")).not.toBeInTheDocument();
 
     // The finished file is fetched ahead of the tap (iOS share() needs a fresh

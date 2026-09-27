@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Download, FolderOpen, Loader2, XCircle, FolderCheck, FolderX, RefreshCw } from "lucide-react";
+import { Download, Save, FolderOpen, Loader2, XCircle, FolderCheck, FolderX, RefreshCw } from "lucide-react";
 import SectionCard from "./SectionCard";
 import PlatformTag from "./PlatformTag";
 import File from "./File";
@@ -155,8 +155,8 @@ const PlaylistItemsCard = ({
         disabled={savingZip}
         className={cn("bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold", className)}
       >
-        {savingZip ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-        {t.downloadSuccess.download}
+        {savingZip ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {t.downloadSuccess.save}
       </Button>
     ) : onOpenFolder ? (
       <Button
@@ -191,7 +191,12 @@ const PlaylistItemsCard = ({
           <span className="text-sm text-slate-600">
             {t.playlist.totalItems} <strong className="text-slate-900 font-semibold">{items.length}</strong>
           </span>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div
+            className={cn(
+              "flex items-center gap-2",
+              canSave && "w-full grid grid-cols-2 sm:w-auto sm:flex"
+            )}
+          >
             {canSave && renderSaveButton("")}
             <Button
               onClick={handleDownloadAll}
