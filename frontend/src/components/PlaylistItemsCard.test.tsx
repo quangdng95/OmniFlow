@@ -133,3 +133,49 @@ describe("PlaylistItemsCard after a finished batch", () => {
     expect(screen.getAllByRole("button", { name: "Save to device" })).toHaveLength(2);
   });
 });
+
+describe("PlaylistItemsCard row selection", () => {
+  const renderRows = () =>
+    render(
+      <LanguageProvider>
+        <PlaylistItemsCard
+          title="Carousel"
+          platform="Instagram"
+          items={[makeItem(1), makeItem(2)]}
+          busy={false}
+          rowStatus={allDone(2)}
+          batchSummary={null}
+          quality="Best"
+          onDownloadItems={vi.fn()}
+        />
+      </LanguageProvider>
+    );
+
+  it("selects a row by clicking its checkbox", async () => {
+    const user = userEvent.setup();
+    renderRows();
+    const [, rowBox] = screen.getAllByRole("checkbox");
+    await user.click(rowBox);
+    expect(rowBox).toHaveAttribute("aria-checked", "true");
+    await user.click(rowBox);
+    expect(rowBox).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("selects a row by clicking anywhere on the card, without opening the thumbnail preview", async () => {
+    const user = userEvent.setup();
+    renderRows();
+    await user.click(screen.getByText("Slide 1"));
+    expect(screen.getAllByRole("checkbox")[1]).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("keeps the thumbnail preview separate: it opens the preview and does not select the row", async () => {
+    const user = userEvent.setup();
+    renderRows();
+    // Grab the box first: an open dialog aria-hides the rest of the page.
+    const [, rowBox] = screen.getAllByRole("checkbox");
+    await user.click(screen.getByRole("button", { name: "Preview Slide 1" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(rowBox).toHaveAttribute("aria-checked", "false");
+  });
+});

@@ -67,13 +67,19 @@ export default function File({
       }`}
     >
       {/* Checkbox */}
-      <Checkbox
-        checked={checked && available}
-        disabled={busy || !available}
-        onClick={(e) => e.stopPropagation()}
-        onCheckedChange={() => onToggle()}
-        className="shrink-0 w-4 h-4"
-      />
+      {/* Base UI renders a hidden <input> beside the checkbox; a click on the
+          box makes that input fire its own click, which bubbles to the row and
+          would toggle a second time (net: nothing changes). The wrapper
+          swallows both, so the checkbox toggles itself exactly once while a
+          click anywhere else on the row still toggles via the row handler. */}
+      <span className="shrink-0 flex items-center" onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={checked && available}
+          disabled={busy || !available}
+          onCheckedChange={() => onToggle()}
+          className="shrink-0 w-4 h-4"
+        />
+      </span>
 
       {/* Index Number */}
       <span className="text-xs font-semibold text-slate-400 w-8 text-right shrink-0">
