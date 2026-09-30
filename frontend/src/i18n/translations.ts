@@ -77,7 +77,7 @@ export interface Translations {
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
-  downloadSuccess: { saved: string; openFolder: string; save: string; tapAgain: string };
+  downloadSuccess: { saved: string; openFolder: string; save: string; tapAgain: string; savedToDevice: string; downloadStarted: string };
   home: {
     introLines: string[];
     supportedPlatformsHeading: string;
@@ -267,7 +267,7 @@ const en: Translations = {
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
-  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tapAgain: "Your files are ready - tap Save to device again." },
+  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your Downloads" },
   home: {
     introLines: [
       "OmniFlow allows you to easily download videos from YouTube (including entire playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), or LinkedIn.",
@@ -578,6 +578,7 @@ const en: Translations = {
           "Fixed some TikTok videos playing with picture but no sound on iPhone/Mac: their audio came as MP3 inside the video, which Apple players cannot play. It is now converted to AAC automatically (the picture is untouched).",
           "Fixed \"The request is not allowed…\" when saving a large batch to an iPhone: the files are now prepared before you tap the save button.",
           "Already-downloaded rows can be ticked again, and both the checkbox and the whole row now select it. The save button is renamed \"Save to device\" and also appears next to Download All.",
+          "After you save to your device you now get a confirmation message. All action buttons are now the same size, and each download row fits properly on a phone.",
         ],
       },
       {
@@ -744,7 +745,7 @@ const vi: Translations = {
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
-  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa." },
+  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - hãy xem mục Tải xuống" },
   home: {
     introLines: [
       "OmniFlow giúp bạn dễ dàng tải video từ YouTube (bao gồm cả danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) hoặc LinkedIn.",
@@ -1052,6 +1053,7 @@ const vi: Translations = {
           "Sửa lỗi một số video TikTok có hình nhưng không có tiếng trên iPhone/Mac: âm thanh của chúng là MP3 nằm trong video, mà trình phát của Apple không phát được. Giờ app tự đổi sang AAC (hình giữ nguyên).",
           "Sửa lỗi \"The request is not allowed…\" khi lưu một lô lớn về iPhone: các tệp giờ được chuẩn bị sẵn trước khi bạn bấm nút lưu.",
           "Các dòng đã tải xong có thể tick lại, và bấm vào ô checkbox hoặc cả dòng đều chọn được. Nút lưu đổi tên thành \"Lưu về máy\" và cũng hiện cạnh nút Tải tất cả.",
+          "Sau khi lưu về máy, bạn nhận được thông báo xác nhận. Mọi nút hành động giờ có cùng kích thước, và mỗi dòng tải xuống hiển thị gọn trên điện thoại.",
         ],
       },
       {

@@ -710,3 +710,62 @@ describe("HomePage download history", () => {
     });
   });
 });
+
+describe("HomePage save-to-device notification (remote mode)", () => {
+  const originalLocation = window.location;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedApi.cancelJob.mockResolvedValue({ ok: true });
+    Object.defineProperty(window, "location", {
+      value: { ...originalLocation, hostname: "example.com" },
+      writable: true,
+      configurable: true,
+    });
+    mockedApi.checkLink.mockResolvedValue(VIDEO_A);
+    mockedApi.startDownload.mockResolvedValue({ job_id: "job-n" });
+    mockedApi.getProgress.mockResolvedValue({ status: "done", percent: 100, text: "Saved: a.mp4", filename: "a.mp4" });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, "location", {
+      value: originalLocation,
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  const finishDownloadAndPressSave = async () => {
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+    await user.type(screen.getByPlaceholderText("Copy and Paste your url"), "https://youtube.com/watch?v=n");
+    await screen.findByText("Video A", undefined, { timeout: 3000 });
+    await user.click(screen.getByRole("button", { name: /start download/i }));
+    const saveButton = await screen.findByRole("button", { name: "Save to device" });
+    await waitFor(() => expect(preparePlainFile).toHaveBeenCalled());
+    await user.click(saveButton);
+  };
+
+  it("tells the user the file was saved once the share sheet completes", async () => {
+    vi.mocked(sharePreparedSave).mockResolvedValueOnce("shared");
+    await finishDownloadAndPressSave();
+    expect(await screen.findByText("Saved to your device")).toBeInTheDocument();
+  });
+
+  it("tells the user a download started when it fell back to a plain download link", async () => {
+    vi.mocked(sharePreparedSave).mockResolvedValueOnce("downloaded");
+    await finishDownloadAndPressSave();
+    expect(await screen.findByText(/download started/i)).toBeInTheDocument();
+  });
+
+  it("says nothing when the user backs out of the share sheet", async () => {
+    const abort = new Error("cancelled");
+    abort.name = "AbortError";
+    vi.mocked(sharePreparedSave).mockRejectedValueOnce(abort);
+    await finishDownloadAndPressSave();
+    await waitFor(() => expect(sharePreparedSave).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(screen.queryByText("Saved to your device")).not.toBeInTheDocument();
+    expect(screen.queryByText(/download started/i)).not.toBeInTheDocument();
+  });
+});

@@ -56,12 +56,19 @@ export const usePreparedSave = (url: string | undefined, prepare: Preparer): Use
     }
   };
 
+  // sharePreparedSave resolves only once the user finished the share sheet (or
+  // the download link was clicked); backing out rejects with AbortError and
+  // gets no message at all.
+  const notifySaved = (result: "shared" | "downloaded") => {
+    toast.success(result === "shared" ? t.downloadSuccess.savedToDevice : t.downloadSuccess.downloadStarted);
+  };
+
   const save = async () => {
     if (!url) return;
     const ready = preparedRef.current;
     if (ready) {
       try {
-        await sharePreparedSave(ready);
+        notifySaved(await sharePreparedSave(ready));
       } catch (error: unknown) {
         handleShareError(error);
       }
@@ -73,7 +80,7 @@ export const usePreparedSave = (url: string | undefined, prepare: Preparer): Use
       pendingRef.current = pending;
       const prepared = await pending;
       preparedRef.current = prepared;
-      await sharePreparedSave(prepared);
+      notifySaved(await sharePreparedSave(prepared));
     } catch (error: unknown) {
       pendingRef.current = preparedRef.current ? pendingRef.current : null;
       handleShareError(error);

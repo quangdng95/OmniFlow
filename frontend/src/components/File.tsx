@@ -58,7 +58,7 @@ export default function File({
   return (
     <div
       onClick={() => !busy && available && onToggle()}
-      className={`flex items-center gap-4 px-3 rounded-lg border border-transparent transition-colors w-full select-none h-[60px] ${
+      className={`flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-2 sm:gap-4 px-3 py-2 sm:py-0 rounded-lg border border-transparent transition-colors w-full select-none sm:h-[60px] ${
         !available 
           ? "opacity-45 cursor-default bg-neutral-50/50" 
           : busy 
@@ -153,9 +153,11 @@ export default function File({
         </div>
       </div>
 
-      {/* Right Content Area */}
+      {/* Right Content Area. Phones: the status + action drop onto their own line
+          under the row (a 32px button beside the title left no room for it).
+          sm and up: the original fixed 146px column at the right of the row. */}
       {available && (
-        <div className="flex flex-col items-end gap-1 w-[146px] shrink-0 text-right">
+        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1 w-full sm:w-[146px] shrink-0 sm:text-right">
           {state === "Downloading" && (
             <div className="w-full flex flex-col gap-1">
               <span className="text-[11px] font-semibold text-[#0d9585] leading-none">
@@ -166,38 +168,36 @@ export default function File({
           )}
 
           {state === "Completed" && (
-            <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1 w-full sm:w-auto shrink-0">
               <span className="flex items-center gap-1 text-[11px] font-semibold text-[#0d9585] leading-none">
                 <FolderCheck className="h-3.5 w-3.5" />
                 {t.playlist.downloaded}
               </span>
               <Button
                 variant="outline"
-                size="sm"
-                className="h-7 text-xs border-neutral-200 text-slate-700 hover:bg-neutral-100 hover:text-slate-900 gap-1 rounded-md px-2 py-1 shadow-none"
+                className="border-neutral-200 text-slate-700 hover:bg-neutral-100 hover:text-slate-900 rounded-lg shadow-none"
                 onClick={handleActionClick}
                 disabled={busy}
               >
-                <RefreshCw className="h-3 w-3" />
+                <RefreshCw className="h-4 w-4" />
                 {t.playlist.downloadAgain}
               </Button>
             </div>
           )}
 
           {state === "Fail" && (
-            <div className="flex flex-col items-end gap-1 shrink-0">
+            <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1 w-full sm:w-auto shrink-0">
               <span className="flex items-center gap-1 text-[11px] font-semibold text-red-500 leading-none">
                 <FolderX className="h-3.5 w-3.5" />
                 {t.playlist.failed}
               </span>
               <Button
                 variant="destructive"
-                size="sm"
-                className="h-7 text-xs bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 gap-1 rounded-md px-2 py-1 shadow-none border-none"
+                className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg shadow-none border-none"
                 onClick={handleActionClick}
                 disabled={busy}
               >
-                <RefreshCw className="h-3 w-3" />
+                <RefreshCw className="h-4 w-4" />
                 {t.playlist.retry}
               </Button>
             </div>
@@ -206,13 +206,12 @@ export default function File({
           {state === "Default" && (
             <Button
               variant="outline"
-              size="sm"
-              className="h-7 text-xs border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 gap-1 rounded-md px-2.5 py-1 shadow-none"
+              className="ml-auto sm:ml-0 border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 rounded-lg shadow-none"
               onClick={handleActionClick}
               disabled={busy}
               aria-label="download-item"
             >
-              <Download className="h-3.5 w-3.5" />
+              <Download className="h-4 w-4" />
               {t.playlist.download}
             </Button>
           )}

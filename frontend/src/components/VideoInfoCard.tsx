@@ -79,7 +79,7 @@ const VideoInfoCard = ({
         {actionState === "idle" && (
           <Button
             onClick={onDownload}
-            className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg py-2"
+            className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
           >
             <Download className="h-4 w-4" />
             {t.qualityAction.startDownload}
@@ -120,7 +120,7 @@ const VideoInfoCard = ({
               <Button
                 variant="outline"
                 onClick={onDownload}
-                className="flex-1 border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 gap-1.5 shadow-none rounded-lg font-semibold py-2"
+                className="w-full sm:flex-1 border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 gap-1.5 shadow-none rounded-lg font-semibold"
               >
                 <RefreshCw className="h-4 w-4" />
                 {t.qualityAction.downloadAgain}
@@ -129,7 +129,7 @@ const VideoInfoCard = ({
               {onOpenFolder && (
                 <Button
                   onClick={onOpenFolder}
-                  className="flex-1 bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg py-2"
+                  className="w-full sm:flex-1 bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
                 >
                   <FolderOpen className="h-4 w-4" />
                   {t.downloadSuccess.openFolder}
@@ -140,7 +140,7 @@ const VideoInfoCard = ({
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg py-2"
+                  className="w-full sm:flex-1 bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
                 >
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -163,7 +163,7 @@ const VideoInfoCard = ({
             <Button
               onClick={onDownload}
               variant="destructive"
-              className="w-full bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none shadow-none gap-1.5 rounded-lg py-2"
+              className="w-full bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none shadow-none gap-1.5 rounded-lg"
             >
               <RefreshCw className="h-4 w-4" />
               {t.playlist.retry}

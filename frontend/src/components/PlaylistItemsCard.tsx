@@ -292,7 +292,7 @@ const PlaylistItemsCard = ({
         {!busy && effectiveSelected.length > 0 && (
           <Button 
             onClick={() => downloadRows(effectiveSelected)} 
-            className="w-full bg-white hover:bg-neutral-50 text-[#0d9585] border border-[#0d9585] gap-1.5 shadow-none rounded-lg font-semibold py-2 mt-2"
+            className="w-full bg-white hover:bg-neutral-50 text-[#0d9585] border border-[#0d9585] gap-1.5 shadow-none rounded-lg font-semibold mt-2"
           >
             <Download className="h-4 w-4" />
             {t.playlist.downloadItemsSelected}
@@ -327,13 +327,13 @@ const PlaylistItemsCard = ({
               {failedCount > 0 && (
                 <Button
                   onClick={() => downloadRows(failedIndices)}
-                  className="flex-1 w-full bg-red-50 hover:bg-red-100 text-red-600 border-none shadow-none gap-1.5 rounded-lg font-semibold py-2"
+                  className="w-full sm:flex-1 bg-red-50 hover:bg-red-100 text-red-600 border-none shadow-none gap-1.5 rounded-lg font-semibold"
                 >
                   <RefreshCw className="h-4 w-4" />
                   {t.playlist.retry}
                 </Button>
               )}
-              {renderSaveButton("flex-1 w-full py-2")}
+              {renderSaveButton("w-full sm:flex-1")}
             </div>
           </div>
         )}

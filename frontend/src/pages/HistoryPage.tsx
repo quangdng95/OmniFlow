@@ -46,7 +46,6 @@ const HistoryPage = ({ onNavigate: _onNavigate, onOpenUrl }: HistoryPageProps) =
             {entries.length > 0 && (
               <Button
                 variant="ghost"
-                size="sm"
                 onClick={handleClearAll}
                 className="text-red-600 hover:bg-red-50 hover:text-red-700 gap-1.5"
               >
@@ -101,7 +100,6 @@ const HistoryPage = ({ onNavigate: _onNavigate, onOpenUrl }: HistoryPageProps) =
 
             <div className="flex items-center gap-2 flex-wrap">
               <Button
-                size="sm"
                 onClick={() => onOpenUrl(entry.url)}
                 className="bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
               >
@@ -110,7 +108,6 @@ const HistoryPage = ({ onNavigate: _onNavigate, onOpenUrl }: HistoryPageProps) =
               </Button>
               <Button
                 variant="outline"
-                size="sm"
                 onClick={() => void handleCopy(entry.url)}
                 aria-label={`${t.history.copyLink}: ${entry.title || entry.url}`}
                 className="gap-1.5 rounded-lg border-neutral-200 text-slate-700 shadow-none"
@@ -120,7 +117,7 @@ const HistoryPage = ({ onNavigate: _onNavigate, onOpenUrl }: HistoryPageProps) =
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => handleRemove(entry.url)}
                 aria-label={`${t.history.remove}: ${entry.title || entry.url}`}
                 className="text-slate-500 hover:bg-red-50 hover:text-red-600 ml-auto"
