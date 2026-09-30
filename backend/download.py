@@ -290,6 +290,14 @@ def ensure_h264(path, ffmpeg_bin, job_id):
         "-c:a", "aac", "-b:a", "192k",
         "-movflags", "+faststart", tmp_out,
     ]
+    _run_ffmpeg_replacing(cmd, tmp_out, path, job_id)
+
+
+def _run_ffmpeg_replacing(cmd, tmp_out, path, job_id):
+    # Runs an ffmpeg command whose last argument is `tmp_out`, honoring the
+    # cooperative cancel flag, and swaps `tmp_out` over `path` on success. On
+    # failure the original file is kept and the temp output is removed, so a
+    # failed conversion never leaves a truncated file behind.
     proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     while proc.poll() is None:
         if jobs.jobs[job_id]["cancelled"]:
@@ -308,12 +316,57 @@ def ensure_h264(path, ffmpeg_bin, job_id):
     if proc.returncode == 0 and os.path.exists(tmp_out):
         os.replace(tmp_out, path)
     elif os.path.exists(tmp_out):
-        # Re-encode failed - keep the original (still-playable-elsewhere) file
+        # Conversion failed - keep the original (still-playable-elsewhere) file
         # rather than leaving a truncated temp output behind.
         try:
             os.remove(tmp_out)
         except OSError:
             pass
+
+
+# Audio codecs iOS / QuickTime can't decode inside an .mp4. MP3-in-MP4 is the
+# one that actually happens: TikTok serves its 1080p/720p H.265 tiers
+# video-only, so yt-dlp merges them with TikTok's separate `audio` format,
+# which is MP3 (2026-09-30) - the saved file then shows picture with no sound.
+APPLE_INCOMPATIBLE_ACODECS = ("mp3", "opus", "vorbis", "flac")
+
+
+def detect_audio_codec(path, ffmpeg_bin):
+    # Returns the first audio stream's codec name (lowercased) for `path`, or
+    # None if there is none / it can't be determined. Same `ffmpeg -i` stderr
+    # parse as detect_video_codec (no ffprobe dependency).
+    try:
+        result = subprocess.run(
+            [ffmpeg_bin, "-hide_banner", "-i", path],
+            capture_output=True, text=True, timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    for line in result.stderr.splitlines():
+        if "Audio:" in line:
+            m = re.search(r"Audio:\s*([A-Za-z0-9_]+)", line)
+            if m:
+                return m.group(1).lower()
+    return None
+
+
+def ensure_apple_audio(path, ffmpeg_bin, job_id):
+    # Guarantees the finished video's sound is playable on iPhone/macOS. Only
+    # re-encodes when the audio positively is a codec Apple can't decode in an
+    # mp4 (see APPLE_INCOMPATIBLE_ACODECS); the picture is stream-copied, so
+    # this is a couple of seconds even for a long 1080p file. A fast probe and
+    # return for the usual AAC case. Honors the same cancel flag as the rest.
+    codec = detect_audio_codec(path, ffmpeg_bin)
+    if not codec or codec not in APPLE_INCOMPATIBLE_ACODECS:
+        return
+    jobs.jobs[job_id]["text"] = "Converting audio for iPhone/macOS..."
+    tmp_out = path + ".aac.mp4"
+    cmd = [
+        ffmpeg_bin, "-y", "-i", path,
+        "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+        "-movflags", "+faststart", tmp_out,
+    ]
+    _run_ffmpeg_replacing(cmd, tmp_out, path, job_id)
 
 
 def apply_progress_update(job, progress_dict, stream_index, total_streams):
@@ -394,6 +447,7 @@ def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_
             ydl.download([url])
         if "Audio" not in quality:
             ensure_h264(final_output_path, ffmpeg_bin, job_id)
+            ensure_apple_audio(final_output_path, ffmpeg_bin, job_id)
     finally:
         cookies._cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
     return final_output_path

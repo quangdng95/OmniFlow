@@ -516,6 +516,7 @@ def start_download():
             # the common already-h264 case and for audio-only jobs.
             if "Audio" not in quality:
                 download.ensure_h264(final_output_path, ffmpeg_bin, job_id)
+                download.ensure_apple_audio(final_output_path, ffmpeg_bin, job_id)
         except yt_dlp.utils.DownloadCancelled:
             jobs.jobs[job_id]["status"] = "cancelled"
             jobs.jobs[job_id]["text"] = "Cancelled"

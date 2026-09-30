@@ -438,6 +438,105 @@ def test_ensure_h264_honors_cancel_mid_reencode(monkeypatch, tmp_path):
     assert not (tmp_path / "clip.mp4.h264.mp4").exists()  # partial temp removed
 
 
+# ---- Apple-playable audio safety net (detect_audio_codec / ensure_apple_audio) ----
+#
+# 2026-09-30: a TikTok video whose H.265 tiers are video-only downloaded as
+# HEVC 1080p + TikTok's separate `audio` track, which is MP3. MP3 inside an
+# .mp4 is not decodable by iOS/QuickTime, so the file played with picture and
+# no sound. The fix keeps the picture untouched and re-encodes only the audio.
+
+
+def _fake_ffmpeg_info(stderr_text):
+    class Result:
+        stderr = stderr_text
+
+    return lambda *a, **k: Result()
+
+
+def test_detect_audio_codec_parses_ffmpeg_stderr(monkeypatch):
+    stderr = (
+        "  Stream #0:0[0x1](und): Video: hevc (Main) (hvc1 / 0x31637668), yuv420p, 1080x1920\n"
+        "  Stream #0:1[0x2](und): Audio: mp3 (mp3float) (mp4a / 0x6134706D), 44100 Hz, stereo, fltp, 127 kb/s\n"
+    )
+    monkeypatch.setattr(subprocess, "run", _fake_ffmpeg_info(stderr))
+    assert download_module.detect_audio_codec("x.mp4", "/ff") == "mp3"
+
+
+def test_detect_audio_codec_is_none_when_there_is_no_audio_stream(monkeypatch):
+    monkeypatch.setattr(subprocess, "run", _fake_ffmpeg_info("  Stream #0:0: Video: h264\n"))
+    assert download_module.detect_audio_codec("x.mp4", "/ff") is None
+
+
+def test_ensure_apple_audio_is_a_noop_for_aac(monkeypatch):
+    jobs_module.jobs["j-aac"] = {"cancelled": False, "text": "", "status": "running"}
+    monkeypatch.setattr(download_module, "detect_audio_codec", lambda path, ff: "aac")
+
+    def fail(*a, **k):
+        raise AssertionError("must not touch a file whose audio is already AAC")
+
+    monkeypatch.setattr(subprocess, "Popen", fail)
+    download_module.ensure_apple_audio("/tmp/some.mp4", "/ff", "j-aac")
+
+
+def test_ensure_apple_audio_is_a_noop_when_there_is_no_audio(monkeypatch):
+    jobs_module.jobs["j-none"] = {"cancelled": False, "text": "", "status": "running"}
+    monkeypatch.setattr(download_module, "detect_audio_codec", lambda path, ff: None)
+    monkeypatch.setattr(subprocess, "Popen", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no")))
+    download_module.ensure_apple_audio("/tmp/some.mp4", "/ff", "j-none")
+
+
+@pytest.mark.parametrize("codec", ["mp3", "opus", "vorbis", "flac"])
+def test_ensure_apple_audio_reencodes_only_the_audio_in_place(monkeypatch, tmp_path, codec):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"hevc-video+mp3-audio")
+    jobs_module.jobs["j-mp3"] = {"cancelled": False, "text": "", "status": "running"}
+    monkeypatch.setattr(download_module, "detect_audio_codec", lambda path, ff: codec)
+    captured = {}
+
+    class FakePopen:
+        def __init__(self, cmd, stdout=None, stderr=None):
+            captured["cmd"] = cmd
+            self.returncode = 0
+            with open(cmd[-1], "wb") as f:
+                f.write(b"hevc-video+aac-audio")
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
+    download_module.ensure_apple_audio(str(video), "/ff", "j-mp3")
+
+    cmd = captured["cmd"]
+    assert video.read_bytes() == b"hevc-video+aac-audio"
+    # The picture must be copied, never re-encoded (that would be slow and lossy)...
+    assert cmd[cmd.index("-c:v") + 1] == "copy"
+    # ...and the audio must land as AAC, the codec Apple players decode in an mp4.
+    assert cmd[cmd.index("-c:a") + 1] == "aac"
+    # No leftover temp file beside the download.
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["clip.mp4"]
+
+
+def test_ensure_apple_audio_keeps_the_original_when_ffmpeg_fails(monkeypatch, tmp_path):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"original")
+    jobs_module.jobs["j-fail"] = {"cancelled": False, "text": "", "status": "running"}
+    monkeypatch.setattr(download_module, "detect_audio_codec", lambda path, ff: "mp3")
+
+    class FailingPopen:
+        def __init__(self, cmd, stdout=None, stderr=None):
+            self.returncode = 1
+            with open(cmd[-1], "wb") as f:
+                f.write(b"truncated")
+
+        def poll(self):
+            return 1
+
+    monkeypatch.setattr(subprocess, "Popen", FailingPopen)
+    download_module.ensure_apple_audio(str(video), "/ff", "j-fail")
+    assert video.read_bytes() == b"original"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["clip.mp4"]
+
+
 # ---- download_direct_url ----
 #
 # Zero test coverage existed for this function before 2026-07-07 - every

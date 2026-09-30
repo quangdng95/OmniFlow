@@ -575,6 +575,7 @@ const en: Translations = {
         items: [
           "New History tab: the last 10 links you downloaded on this device. Download again, copy a link, or remove entries. It is stored only in your browser - nothing is sent to the server.",
           "TikTok videos can now be saved as audio only (MP3) even when the video is fetched through the backup service - before, only the video was offered.",
+          "Fixed some TikTok videos playing with picture but no sound on iPhone/Mac: their audio came as MP3 inside the video, which Apple players cannot play. It is now converted to AAC automatically (the picture is untouched).",
           "Fixed \"The request is not allowed…\" when saving a large batch to an iPhone: the files are now prepared before you tap the save button.",
           "Already-downloaded rows can be ticked again, and both the checkbox and the whole row now select it. The save button is renamed \"Save to device\" and also appears next to Download All.",
         ],
@@ -1048,6 +1049,7 @@ const vi: Translations = {
         items: [
           "Thêm tab Lịch sử: 10 liên kết bạn đã tải gần nhất trên thiết bị này. Có thể tải lại, sao chép liên kết hoặc xoá từng mục. Dữ liệu chỉ lưu trong trình duyệt của bạn - không gửi gì lên server.",
           "Video TikTok giờ có thể lưu riêng âm thanh (MP3) kể cả khi video được lấy qua dịch vụ dự phòng - trước đây chỉ có video.",
+          "Sửa lỗi một số video TikTok có hình nhưng không có tiếng trên iPhone/Mac: âm thanh của chúng là MP3 nằm trong video, mà trình phát của Apple không phát được. Giờ app tự đổi sang AAC (hình giữ nguyên).",
           "Sửa lỗi \"The request is not allowed…\" khi lưu một lô lớn về iPhone: các tệp giờ được chuẩn bị sẵn trước khi bạn bấm nút lưu.",
           "Các dòng đã tải xong có thể tick lại, và bấm vào ô checkbox hoặc cả dòng đều chọn được. Nút lưu đổi tên thành \"Lưu về máy\" và cũng hiện cạnh nút Tải tất cả.",
         ],
