@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HomePage from "./HomePage";
 import { api } from "../api";
 import { preparePlainFile, sharePreparedSave } from "../lib/saveFile";
+import { loadHistory } from "../lib/history";
 import { LanguageProvider } from "../i18n/LanguageContext";
 import type { Page } from "../components/Header";
 import type { JobProgress, PlaylistCheckResult, VideoInfo } from "../types";
@@ -617,5 +618,95 @@ describe("HomePage with Instagram photos", () => {
         { title: "Slide 2", url: undefined, entryIndex: 2 },
       ])
     );
+  });
+});
+
+describe("HomePage download history", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    mockedApi.cancelJob.mockResolvedValue({ ok: true });
+  });
+
+  it("records a finished single download in the history", async () => {
+    mockedApi.checkLink.mockResolvedValue(VIDEO_B);
+    mockedApi.startDownload.mockResolvedValue({ job_id: "job-h1" });
+    mockedApi.getProgress.mockResolvedValue({ status: "done", percent: 100, text: "Saved: b.mp4", filename: "b.mp4" });
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+    await user.type(screen.getByPlaceholderText("Copy and Paste your url"), "https://tiktok.com/@x/video/1");
+    await screen.findByText("Video B", undefined, { timeout: 3000 });
+    expect(loadHistory()).toEqual([]); // checking a link alone is not a download
+
+    await user.click(screen.getByRole("button", { name: /start download/i }));
+
+    await waitFor(() => expect(loadHistory()).toHaveLength(1));
+    expect(loadHistory()[0]).toMatchObject({
+      url: "https://tiktok.com/@x/video/1",
+      title: "Video B",
+      platform: "TikTok",
+    });
+  });
+
+  it("does not record a failed download", async () => {
+    mockedApi.checkLink.mockResolvedValue(VIDEO_B);
+    mockedApi.startDownload.mockResolvedValue({ job_id: "job-h2" });
+    mockedApi.getProgress.mockResolvedValue({ status: "error", percent: 0, text: "boom", filename: null });
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+    await user.type(screen.getByPlaceholderText("Copy and Paste your url"), "https://tiktok.com/@x/video/2");
+    await screen.findByText("Video B", undefined, { timeout: 3000 });
+    await user.click(screen.getByRole("button", { name: /start download/i }));
+
+    await waitFor(() => expect(mockedApi.getProgress).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(loadHistory()).toEqual([]);
+  });
+
+  it("records a finished batch once, as a single link", async () => {
+    mockedApi.checkLink.mockResolvedValue(YT_PLAYLIST);
+    mockedApi.startBatchDownload.mockResolvedValue({ job_id: "job-h3" });
+    mockedApi.getProgress.mockResolvedValue({
+      status: "done",
+      percent: 100,
+      text: "",
+      filename: null,
+      items_progress: [
+        { title: "Playlist Video 1", status: "done", percent: 100 },
+        { title: "Playlist Video 2", status: "done", percent: 100 },
+      ],
+    });
+
+    const user = userEvent.setup({ delay: null });
+    renderHomePage();
+    await user.type(screen.getByPlaceholderText("Copy and Paste your url"), "https://youtube.com/playlist?list=PLh");
+    await screen.findByText("Playlist Video 1", undefined, { timeout: 3000 });
+    await user.click(screen.getByRole("button", { name: /download all/i }));
+
+    await waitFor(() => expect(loadHistory()).toHaveLength(1));
+    expect(loadHistory()[0]).toMatchObject({
+      url: "https://youtube.com/playlist?list=PLh",
+      title: "My Playlist",
+      platform: "YouTube",
+    });
+  });
+
+  it("fills in and checks a link picked from the history page, then hands it back as consumed", async () => {
+    mockedApi.checkLink.mockResolvedValue(VIDEO_A);
+    const consumed = vi.fn();
+
+    render(
+      <LanguageProvider>
+        <HomePage onNavigate={vi.fn()} pendingUrl="https://youtube.com/watch?v=again" onPendingUrlConsumed={consumed} />
+      </LanguageProvider>
+    );
+
+    expect(screen.getByPlaceholderText("Copy and Paste your url")).toHaveValue("https://youtube.com/watch?v=again");
+    expect(consumed).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockedApi.checkLink).toHaveBeenCalledWith("https://youtube.com/watch?v=again"), {
+      timeout: 2000,
+    });
   });
 });

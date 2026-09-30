@@ -16,6 +16,7 @@ import { api } from "../api";
 import type { CheckResult, PlaylistItem, RowProgress, VideoInfo } from "../types";
 import { useLanguage } from "../i18n/LanguageContext";
 import { isLocal } from "../isLocal";
+import { recordDownload } from "../lib/history";
 
 import youtube from "../assets/tags/Youtube.svg";
 import tiktok from "../assets/tags/Tiktok.svg";
@@ -41,9 +42,12 @@ const platforms = [
 
 interface HomePageProps {
   onNavigate: (page: Page) => void;
+  // A link chosen on the History page, to fill in and check.
+  pendingUrl?: string | null;
+  onPendingUrlConsumed?: () => void;
 }
 
-const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
+const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlConsumed }: HomePageProps) => {
   const { t } = useLanguage();
   const [url, setUrl] = useState("");
   const [checking, setChecking] = useState(false);
@@ -248,6 +252,39 @@ const HomePage = ({ onNavigate: _onNavigate }: HomePageProps) => {
     (checkResult?.type === "playlist"
       ? checkResult.items.find((it) => it && it.qualities && it.qualities.length > 1)?.qualities ?? []
       : []);
+
+  // A link picked on the History page: fill it in, which re-runs the check.
+  useEffect(() => {
+    if (pendingUrl === null) return;
+    setUrl(pendingUrl);
+    onPendingUrlConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingUrl]);
+
+  // Remember what this device downloaded (the History page lists the last 10).
+  // Keyed on the transition to "done" / a newly finished batch job, so a
+  // re-render never records the same download twice.
+  useEffect(() => {
+    if (downloadState !== "done" || !selectedItem) return;
+    recordDownload({
+      url: url.trim(),
+      title: selectedItem.title,
+      platform: selectedItem.platform,
+      thumbnail: selectedItem.thumbnail ?? null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [downloadState]);
+
+  useEffect(() => {
+    if (!finishedBatchJobId || checkResult?.type !== "playlist") return;
+    recordDownload({
+      url: url.trim(),
+      title: checkResult.title || "",
+      platform: checkResult.platform,
+      thumbnail: checkResult.items.find((item) => item?.thumbnail)?.thumbnail ?? null,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finishedBatchJobId]);
 
   const handleStartDownload = async () => {
     if (!selectedItem) return;

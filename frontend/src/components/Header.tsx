@@ -5,7 +5,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { useLanguage } from "../i18n/LanguageContext";
 import { isLocal } from "../isLocal";
 
-export type Page = "home" | "settings" | "terms" | "shortcut" | "changelog";
+export type Page = "home" | "history" | "settings" | "terms" | "shortcut" | "changelog";
 
 interface HeaderProps {
   active: Page;
@@ -13,6 +13,7 @@ interface HeaderProps {
 }
 
 const PAGE_TITLES: Record<Exclude<Page, "home">, (t: ReturnType<typeof useLanguage>["t"]) => string> = {
+  history: (t) => t.header.history.title,
   settings: (t) => t.header.settings.title,
   terms: (t) => t.header.terms.title,
   shortcut: (t) => t.header.shortcut.title,
@@ -24,6 +25,7 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
 
   const navItems: { key: Page; label: string }[] = [
     { key: "home", label: t.header.nav.home },
+    { key: "history", label: t.header.nav.history },
     { key: "changelog", label: t.header.nav.changelog },
     { key: "settings", label: t.header.nav.settings },
     { key: "terms", label: t.header.nav.terms },
