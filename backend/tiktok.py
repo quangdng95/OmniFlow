@@ -116,4 +116,22 @@ def fetch_tiktok_post(url):
         items = [{"kind": "image", "url": image_url, "thumbnail": image_url} for image_url in images]
     else:
         items = [{"kind": "video", "url": play_url, "thumbnail": cover}]
-    return {"title": title, "items": items}
+    # The post's original sound, as its own mp3 link. Surfaced so a video that
+    # resolves through this fallback can still offer "Audio Only" like the
+    # yt-dlp path does (MISTAKES.md 2026-09-30). Deliberately NOT appended to a
+    # Photo Mode post's `items`: a mixed image+mp3 batch stops iOS's share
+    # sheet offering "Save to Photos" for the slides.
+    music_info = data.get("music_info") or {}
+    audio_url = data.get("music") or music_info.get("play") or None
+    return {"title": title, "items": items, "audio_url": audio_url}
+
+
+def pick_download_target(media, quality):
+    # Which CDN url + file extension a single-item download of `media` should
+    # save, given the quality the user picked. "Audio Only" (only ever offered
+    # when the post has a soundtrack, see instagram_check_response) saves the
+    # mp3; anything else saves the first item, as before.
+    if "Audio" in (quality or "") and media.get("audio_url"):
+        return media["audio_url"], "mp3"
+    item = media["items"][0]
+    return item["url"], ("mp4" if item["kind"] == "video" else "jpg")

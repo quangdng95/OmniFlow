@@ -207,6 +207,12 @@ def instagram_check_response(url, media):
 
     if len(items) == 1:
         item = items[0]
+        qualities = quality_label(item["kind"])
+        # A video whose resolver also found its soundtrack (TikTok via
+        # tikwm.com) can be saved as audio only, matching what the yt-dlp
+        # path offers for the same platform.
+        if item["kind"] == "video" and media.get("audio_url"):
+            qualities = qualities + ["Audio Only"]
         return {
             "type": "video",
             "title": title,
@@ -214,7 +220,7 @@ def instagram_check_response(url, media):
             "thumbnail": item.get("thumbnail"),
             "platform": platform,
             "kind": item["kind"],
-            "qualities": quality_label(item["kind"]),
+            "qualities": qualities,
             "duration": None,
         }
     entries = []

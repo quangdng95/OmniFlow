@@ -190,6 +190,50 @@ def test_download_always_stages_into_a_temp_dir_not_a_configured_folder(client, 
     assert str(tmp_path) in job["filepath"]
 
 
+def test_download_tiktok_resolver_audio_only_saves_the_soundtrack_as_mp3(client, monkeypatch, tmp_path):
+    # Mirrors tests/test_api.py: a TikTok video that falls back to tikwm.com
+    # must honor "Audio Only" by saving the soundtrack, not the mp4
+    # (MISTAKES.md 2026-09-30).
+    from backend import tiktok as tiktok_module
+
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+
+    import yt_dlp
+
+    def yt_fails(opts):
+        raise yt_dlp.utils.DownloadError("Unable to extract universal data for rehydration")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", yt_fails)
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_post",
+        lambda url: {
+            "title": "A real video",
+            "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": None}],
+            "audio_url": "http://cdn/sound.mp3",
+        },
+    )
+    fetched = []
+
+    def fake_direct(cdn_url, output_path, job_id, *args, **kwargs):
+        fetched.append((cdn_url, output_path))
+        with open(output_path, "wb") as f:
+            f.write(b"fake mp3")
+
+    monkeypatch.setattr(download_module, "download_direct_url", fake_direct)
+
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.tiktok.com/@someone/video/123", "title": "A real video", "quality": "Audio Only"},
+    )
+    assert resp.status_code == 200
+    job = _wait_for_job(resp.get_json()["job_id"])
+    assert job["status"] == "done"
+    assert [url for url, _ in fetched] == ["http://cdn/sound.mp3"]
+    assert job["filename"].endswith(".mp3")
+
+
 # ---- /api/download-batch ----
 
 import os

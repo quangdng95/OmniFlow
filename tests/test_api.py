@@ -812,6 +812,77 @@ def test_check_link_tiktok_real_video_failure_uses_the_resolver_when_it_succeeds
     assert body["kind"] == "video"
 
 
+def test_check_link_tiktok_resolver_video_offers_audio_only(client, monkeypatch):
+    # A TikTok video resolved through the tikwm fallback used to report only
+    # ["Video"], so there was no way to download its sound (MISTAKES.md
+    # 2026-09-30). The yt-dlp path already offers "Audio Only"; keep parity.
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("Unable to extract universal data for rehydration")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_post",
+        lambda url: {
+            "title": "A real video",
+            "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": None}],
+            "audio_url": "http://cdn/sound.mp3",
+        },
+    )
+    resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/video/123"})
+    assert resp.status_code == 200
+    assert resp.get_json()["qualities"] == ["Video", "Audio Only"]
+
+
+def test_check_link_tiktok_resolver_video_without_music_does_not_offer_audio(client, monkeypatch):
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("Unable to extract universal data for rehydration")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_post",
+        lambda url: {"title": "v", "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": None}], "audio_url": None},
+    )
+    resp = client.post("/api/check", json={"url": "https://www.tiktok.com/@someone/video/123"})
+    assert resp.get_json()["qualities"] == ["Video"]
+
+
+def test_start_download_tiktok_resolver_audio_only_saves_the_soundtrack_as_mp3(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+
+    def yt_fails(*args, **kwargs):
+        raise yt_dlp.utils.DownloadError("Unable to extract universal data for rehydration")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", yt_fails)
+    monkeypatch.setattr(
+        tiktok_module,
+        "fetch_tiktok_post",
+        lambda url: {
+            "title": "A real video",
+            "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": None}],
+            "audio_url": "http://cdn/sound.mp3",
+        },
+    )
+    fetched = []
+    monkeypatch.setattr(download_module, "download_direct_url", lambda cdn_url, output_path, job_id: fetched.append((cdn_url, output_path)))
+
+    class SyncThread:
+        def __init__(self, target=None, daemon=None):
+            self._target = target
+
+        def start(self):
+            self._target()
+
+    monkeypatch.setattr(threading, "Thread", SyncThread)
+    resp = client.post(
+        "/api/download",
+        json={"url": "https://www.tiktok.com/@someone/video/123", "quality": "Audio Only", "title": "A real video"},
+    )
+    assert resp.status_code == 200
+    assert fetched == [("http://cdn/sound.mp3", str(tmp_path / "A real video.mp3"))]
+
+
 def test_start_download_threads_saves_with_correct_extension(client, monkeypatch, tmp_path):
     monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
     monkeypatch.setattr(threads_module, "threads_cookiefile_candidates", lambda: ["/acct.txt"])

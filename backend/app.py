@@ -562,9 +562,8 @@ def start_download():
             if cls.platform == "TikTok":
                 try:
                     tiktok_media = tiktok.fetch_tiktok_post(url)
-                    tiktok_item = tiktok_media["items"][0]
-                    tiktok_ext = "mp4" if tiktok_item["kind"] == "video" else "jpg"
-                    _save_single_cdn_file(job_id, save_dir, title, tiktok_item["url"], ext=tiktok_ext)
+                    tiktok_url, tiktok_ext = tiktok.pick_download_target(tiktok_media, quality)
+                    _save_single_cdn_file(job_id, save_dir, title, tiktok_url, ext=tiktok_ext)
                     return
                 except yt_dlp.utils.DownloadCancelled:
                     jobs.jobs[job_id]["status"] = "cancelled"

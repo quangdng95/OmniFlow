@@ -171,3 +171,44 @@ def test_fetch_tiktok_post_gives_up_after_repeated_rate_limiting(monkeypatch):
 
     with pytest.raises(TikTokResolverError):
         fetch_tiktok_post("https://www.tiktok.com/@someone/video/123")
+
+
+def test_fetch_tiktok_post_exposes_the_soundtrack_for_a_video(monkeypatch):
+    # tikwm returns the post's original sound as `music` (an mp3 link). Without
+    # surfacing it, a TikTok video resolved through this fallback had no way to
+    # download the audio (MISTAKES.md 2026-09-30).
+    payload = {
+        "code": 0,
+        "msg": "success",
+        "data": {
+            "title": "A real video",
+            "cover": "https://cdn/cover.jpg",
+            "play": "https://cdn/v.mp4",
+            "music": "https://cdn/sound.mp3",
+        },
+    }
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=20: _JsonResponse(payload))
+
+    media = fetch_tiktok_post("https://www.tiktok.com/@someone/video/123")
+
+    assert media["audio_url"] == "https://cdn/sound.mp3"
+    # The video stays ONE item: a single video must not turn into a 2-row list.
+    assert [item["kind"] for item in media["items"]] == ["video"]
+
+
+def test_fetch_tiktok_post_falls_back_to_music_info_play_for_the_soundtrack(monkeypatch):
+    payload = {
+        "code": 0,
+        "msg": "success",
+        "data": {"title": "t", "play": "https://cdn/v.mp4", "music_info": {"play": "https://cdn/sound2.mp3"}},
+    }
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=20: _JsonResponse(payload))
+
+    assert fetch_tiktok_post("https://www.tiktok.com/@someone/video/123")["audio_url"] == "https://cdn/sound2.mp3"
+
+
+def test_fetch_tiktok_post_audio_url_is_none_when_tikwm_has_no_music(monkeypatch):
+    payload = {"code": 0, "msg": "success", "data": {"title": "t", "play": "https://cdn/v.mp4"}}
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout=20: _JsonResponse(payload))
+
+    assert fetch_tiktok_post("https://www.tiktok.com/@someone/video/123")["audio_url"] is None
