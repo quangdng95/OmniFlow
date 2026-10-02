@@ -185,8 +185,8 @@ const en: Translations = {
   header: {
     nav: { home: "Home", history: "History", settings: "Settings", terms: "Terms of Use", shortcut: "Shortcut Setup", changelog: "Changelog" },
     home: {
-      title: "OmniFlow – All-in-One Video Downloader",
-      descriptionLine1: "Download videos and media instantly with OmniFlow.",
+      title: "Vidrop – All-in-One Video Downloader",
+      descriptionLine1: "Download videos and media instantly with Vidrop.",
       descriptionLine2: "It's fast, free, and fully compatible with all your devices!",
     },
     settings: { title: "Settings" },
@@ -270,11 +270,11 @@ const en: Translations = {
   downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your Downloads" },
   home: {
     introLines: [
-      "OmniFlow allows you to easily download videos from YouTube (including entire playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), or LinkedIn.",
+      "Vidrop allows you to easily download videos from YouTube (including entire playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), or LinkedIn.",
       "The service is completely free and requires no sign-up or additional software.",
       "It's optimized to work seamlessly across all modern devices, from your computer to your phone.",
-      "Built entirely on our self-developed technology without third-party reliance, OmniFlow ensures lightning-fast processing and safe, verified downloads.",
-      "By using OmniFlow, you accept our Terms of Use.",
+      "Built entirely on our self-developed technology without third-party reliance, Vidrop ensures lightning-fast processing and safe, verified downloads.",
+      "By using Vidrop, you accept our Terms of Use.",
     ],
     supportedPlatformsHeading: "Supported Platforms",
     howToHeading: "How to download a video:",
@@ -285,14 +285,14 @@ const en: Translations = {
       },
       {
         label: "Paste & Choose Format:",
-        body: 'Paste the URL into the OmniFlow input box above. Choose whether you want MP4 (Video) or MP3 (Audio), and select your preferred quality.',
+        body: 'Paste the URL into the Vidrop input box above. Choose whether you want MP4 (Video) or MP3 (Audio), and select your preferred quality.',
       },
       {
         label: "Download:",
         body: 'Click the "Convert" button. Once the fast processing is complete, hit "Download" to save the file straight to your device.',
       },
     ],
-    featuresHeading: "Why use OmniFlow Video Downloader:",
+    featuresHeading: "Why use Vidrop Video Downloader:",
     features: [
       { title: "100% Free", desc: "No subscriptions, no hidden limits, completely free forever." },
       { title: "No Registration", desc: "Start downloading immediately without sign-up or accounts." },
@@ -309,15 +309,15 @@ const en: Translations = {
       },
       {
         q: "How do I download playlist or channel videos?",
-        a: "Just paste the link of a YouTube playlist or channel. OmniFlow will automatically scan it and display a list where you can select and download all items.",
+        a: "Just paste the link of a YouTube playlist or channel. Vidrop will automatically scan it and display a list where you can select and download all items.",
       },
       {
-        q: "Does OmniFlow support audio conversion?",
+        q: "Does Vidrop support audio conversion?",
         a: "Yes! You can choose to extract audio (MP3) or keep video (MP4) in various resolutions before clicking download.",
       },
       {
-        q: "Is it safe to use OmniFlow?",
-        a: "Yes. OmniFlow is fully local, processes everything directly, contains no malware or third-party ads, and requires no registration.",
+        q: "Is it safe to use Vidrop?",
+        a: "Yes. Vidrop is fully local, processes everything directly, contains no malware or third-party ads, and requires no registration.",
       },
     ],
   },
@@ -344,7 +344,7 @@ const en: Translations = {
     },
     language: {
       heading: "Language",
-      description: "Please select a language from the list below. You have to restart OmniFlow in order to apply your selection.",
+      description: "Please select a language from the list below. You have to restart Vidrop in order to apply your selection.",
       english: "English",
       vietnamese: "Vietnamese",
     },
@@ -367,38 +367,38 @@ const en: Translations = {
     },
     resetSettings: {
       heading: "Reset App Data",
-      description: "If check/download keeps failing for no clear reason, clearing OmniFlow's saved settings (download path, saved cookies, etc.) and starting fresh can help — this does not delete any of your downloaded files.",
+      description: "If check/download keeps failing for no clear reason, clearing Vidrop's saved settings (download path, saved cookies, etc.) and starting fresh can help — this does not delete any of your downloaded files.",
       button: "Clear Cache & Reset Settings",
       confirm: "This will reset your save folder, language, and saved settings back to default. Continue?",
       done: "Settings have been reset.",
     },
   },
   terms: {
-    heading: "Terms of Use for OmniFlow",
+    heading: "Terms of Use for Vidrop",
     lastUpdatedLabel: "Last Updated:",
     lastUpdatedValue: "27-02-2026",
     intro:
-      "By accessing or using OmniFlow, you agree to be bound by these Terms of Use. If you do not agree with any part of these terms, please stop using our service immediately.",
+      "By accessing or using Vidrop, you agree to be bound by these Terms of Use. If you do not agree with any part of these terms, please stop using our service immediately.",
     sections: [
       {
         heading: "1. Our Service",
-        body: "OmniFlow is a free, general-purpose utility tool designed to help users download video and audio content from third-party platforms, including YouTube (with full support for playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), and LinkedIn.",
+        body: "Vidrop is a free, general-purpose utility tool designed to help users download video and audio content from third-party platforms, including YouTube (with full support for playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), and LinkedIn.",
       },
       {
         heading: "2. Personal & Non-Commercial Use",
-        body: "We grant you a limited, non-exclusive right to use OmniFlow strictly for your personal, non-commercial purposes. You agree not to use our service to license, sell, distribute, or commercially exploit any downloaded content.",
+        body: "We grant you a limited, non-exclusive right to use Vidrop strictly for your personal, non-commercial purposes. You agree not to use our service to license, sell, distribute, or commercially exploit any downloaded content.",
       },
       {
         heading: "3. Copyright & User Responsibility",
-        body: "OmniFlow acts only as a technical conduit. We do not host, store, or own any of the media content downloaded through our service.",
+        body: "Vidrop acts only as a technical conduit. We do not host, store, or own any of the media content downloaded through our service.",
         list: [
           "Your Responsibility: You are solely responsible for the media you download. You must ensure you have the legal right, explicit permission, or fair-use justification from the rightful copyright owner to download and use the content.",
-          "No Infringement: OmniFlow does not encourage, condone, or support the unauthorized downloading or distribution of copyrighted material.",
+          "No Infringement: Vidrop does not encourage, condone, or support the unauthorized downloading or distribution of copyrighted material.",
         ],
       },
       {
         heading: "4. Acceptable Conduct",
-        body: "To keep OmniFlow running smoothly for everyone, you agree NOT to:",
+        body: "To keep Vidrop running smoothly for everyone, you agree NOT to:",
         list: [
           "Use any automated scripts, bots, crawlers, or data mining tools on our website.",
           "Take any action that imposes an unreasonable load on our server infrastructure.",
@@ -410,21 +410,21 @@ const en: Translations = {
       },
       {
         heading: "5. Disclaimer of Warranties",
-        body: 'OmniFlow is provided on an "AS-IS" and "AS-AVAILABLE" basis. While we strive for the best experience, we do not guarantee that the service will be entirely error-free, perfectly secure, or uninterrupted, especially since third-party platforms constantly update their systems.',
+        body: 'Vidrop is provided on an "AS-IS" and "AS-AVAILABLE" basis. While we strive for the best experience, we do not guarantee that the service will be entirely error-free, perfectly secure, or uninterrupted, especially since third-party platforms constantly update their systems.',
       },
       {
         heading: "6. Limitation of Liability",
-        body: "To the maximum extent permitted by law, OmniFlow and its team shall not be held liable for any direct, indirect, incidental, or consequential damages resulting from your use of the website, including but not limited to data loss, device issues, or legal claims from third parties regarding the content you download.",
+        body: "To the maximum extent permitted by law, Vidrop and its team shall not be held liable for any direct, indirect, incidental, or consequential damages resulting from your use of the website, including but not limited to data loss, device issues, or legal claims from third parties regarding the content you download.",
       },
       {
         heading: "7. Changes to These Terms",
-        body: "We reserve the right to modify these Terms at any time. Your continued use of OmniFlow after any changes indicates your acceptance of the updated terms.",
+        body: "We reserve the right to modify these Terms at any time. Your continued use of Vidrop after any changes indicates your acceptance of the updated terms.",
       },
     ],
   },
   shortcutSetup: {
     eyebrow: "iOS Shortcut · build it once",
-    heading: "Share a link → OmniFlow downloads it",
+    heading: "Share a link → Vidrop downloads it",
     intro:
       "Watching something on Instagram/TikTok, hit Share → pick this shortcut → it calls this server and saves the file for you. Build it once, then share the shortcut itself so any other iPhone can use it too.",
     warningTitle: "⚠️ Not verified on a real iPhone yet",
@@ -439,7 +439,7 @@ const en: Translations = {
       {
         num: "PHASE 0",
         title: "Create the shortcut",
-        desc: 'Shortcuts app → tap + → name it "OmniFlow Download"',
+        desc: 'Shortcuts app → tap + → name it "Vidrop Download"',
         steps: [
           {
             text: 'Tap the ⓘ (Shortcut Details) icon at the top → enable "Use as Share Sheet Action" → under Share Sheet Types, choose only URLs.',
@@ -557,7 +557,7 @@ const en: Translations = {
   },
   languageSwitcher: { label: "Language", english: "English", vietnamese: "Tiếng Việt" },
   apiErrors: {
-    unreachable: "Can't reach the OmniFlow server. Make sure it's running, then reload this page.",
+    unreachable: "Can't reach the Vidrop server. Make sure it's running, then reload this page.",
     requestFailed: "Request failed.",
     requestFailedStatus: "Request failed ({status}).",
     uploadFailed: "Upload failed.",
@@ -565,7 +565,7 @@ const en: Translations = {
   },
   changelog: {
     eyebrow: "Changelog · what's new",
-    heading: "What's changed in OmniFlow",
+    heading: "What's changed in Vidrop",
     intro:
       "A running log of what actually shipped, in plain language — newest first. This tracks real changes as they land here, separately from whatever's already described on the download page.",
     releases: [
@@ -615,19 +615,19 @@ const en: Translations = {
         title: "YouTube fix, API tokens, mobile Share Sheet saves",
         items: [
           "Fixed YouTube downloads breaking after YouTube rolled out a newer anti-bot streaming protocol (SABR).",
-          "Added secure API token (Bearer) authentication, so OmniFlow can be automated from other apps/devices — like the new iOS Shortcut below — without logging in through a browser each time.",
-          "Sharing a link straight from Instagram/TikTok/etc. to OmniFlow on your phone (via the Share Sheet) now saves the result directly, including bulk saves.",
-          "New: an iOS Shortcut Setup guide — build a Share-Sheet shortcut once so any iPhone can send a link to your OmniFlow server and get the file back, no browser needed.",
+          "Added secure API token (Bearer) authentication, so Vidrop can be automated from other apps/devices — like the new iOS Shortcut below — without logging in through a browser each time.",
+          "Sharing a link straight from Instagram/TikTok/etc. to Vidrop on your phone (via the Share Sheet) now saves the result directly, including bulk saves.",
+          "New: an iOS Shortcut Setup guide — build a Share-Sheet shortcut once so any iPhone can send a link to your Vidrop server and get the file back, no browser needed.",
           "Locked remote SSH/server management down to the app's own purchase gate, closing an access path that shouldn't have been open.",
         ],
       },
       {
         date: "2026-08-29 → 2026-09-10",
-        title: "Remote access: use OmniFlow from your phone",
+        title: "Remote access: use Vidrop from your phone",
         items: [
-          "Added Remote Web Access — run OmniFlow on your own small cloud server and reach it securely from your phone or any device via a private URL, protected by a login/trust-cookie gate.",
+          "Added Remote Web Access — run Vidrop on your own small cloud server and reach it securely from your phone or any device via a private URL, protected by a login/trust-cookie gate.",
           "Batch downloads (playlists, carousels) over remote access now assemble into a single ZIP you download in one go.",
-          "Instagram/Threads login sessions now sync from your Mac to a cloud server, so authenticated downloads keep working even when OmniFlow isn't running on your own machine.",
+          "Instagram/Threads login sessions now sync from your Mac to a cloud server, so authenticated downloads keep working even when Vidrop isn't running on your own machine.",
           "Added a manual cookies.txt upload option for headless/cloud servers that have no browser to auto-extract cookies from.",
           "Fixed ffmpeg not being found on Linux-based cloud servers.",
         ],
@@ -663,8 +663,8 @@ const vi: Translations = {
   header: {
     nav: { home: "Trang chủ", history: "Lịch sử", settings: "Cài đặt", terms: "Điều khoản sử dụng", shortcut: "Cài Shortcut", changelog: "Nhật ký cập nhật" },
     home: {
-      title: "OmniFlow – Tải video từ mọi nền tảng",
-      descriptionLine1: "Tải video và media ngay lập tức với OmniFlow.",
+      title: "Vidrop – Tải video từ mọi nền tảng",
+      descriptionLine1: "Tải video và media ngay lập tức với Vidrop.",
       descriptionLine2: "Nhanh, miễn phí và tương thích với mọi thiết bị của bạn!",
     },
     settings: { title: "Cài đặt" },
@@ -748,11 +748,11 @@ const vi: Translations = {
   downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - hãy xem mục Tải xuống" },
   home: {
     introLines: [
-      "OmniFlow giúp bạn dễ dàng tải video từ YouTube (bao gồm cả danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) hoặc LinkedIn.",
+      "Vidrop giúp bạn dễ dàng tải video từ YouTube (bao gồm cả danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) hoặc LinkedIn.",
       "Dịch vụ hoàn toàn miễn phí và không yêu cầu đăng ký hay cài thêm phần mềm nào khác.",
       "Được tối ưu để hoạt động mượt mà trên mọi thiết bị hiện đại, từ máy tính đến điện thoại.",
-      "Được xây dựng hoàn toàn trên công nghệ tự phát triển, không phụ thuộc bên thứ ba, OmniFlow đảm bảo xử lý cực nhanh và tải xuống an toàn, đã được xác minh.",
-      "Bằng việc sử dụng OmniFlow, bạn đồng ý với Điều khoản sử dụng của chúng tôi.",
+      "Được xây dựng hoàn toàn trên công nghệ tự phát triển, không phụ thuộc bên thứ ba, Vidrop đảm bảo xử lý cực nhanh và tải xuống an toàn, đã được xác minh.",
+      "Bằng việc sử dụng Vidrop, bạn đồng ý với Điều khoản sử dụng của chúng tôi.",
     ],
     supportedPlatformsHeading: "Nền tảng được hỗ trợ",
     howToHeading: "Cách tải một video:",
@@ -763,14 +763,14 @@ const vi: Translations = {
       },
       {
         label: "Dán & Chọn định dạng:",
-        body: "Dán đường dẫn vào ô nhập của OmniFlow ở trên. Chọn MP4 (Video) hoặc MP3 (Âm thanh), và chọn chất lượng bạn muốn.",
+        body: "Dán đường dẫn vào ô nhập của Vidrop ở trên. Chọn MP4 (Video) hoặc MP3 (Âm thanh), và chọn chất lượng bạn muốn.",
       },
       {
         label: "Tải xuống:",
         body: 'Nhấn nút "Bắt đầu tải xuống". Sau khi xử lý xong, tệp sẽ được lưu thẳng vào thiết bị của bạn.',
       },
     ],
-    featuresHeading: "Tại sao nên dùng OmniFlow Downloader:",
+    featuresHeading: "Tại sao nên dùng Vidrop Downloader:",
     features: [
       { title: "100% Miễn phí", desc: "Không yêu cầu phí dịch vụ, không giới hạn tải xuống, miễn phí trọn đời." },
       { title: "Không cần đăng ký", desc: "Tải ngay lập tức mà không cần tạo tài khoản hay đăng nhập." },
@@ -787,15 +787,15 @@ const vi: Translations = {
       },
       {
         q: "Làm thế nào để tải toàn bộ danh sách phát hoặc kênh?",
-        a: "Bạn chỉ cần dán liên kết danh sách phát hoặc kênh YouTube vào ô nhập liệu. OmniFlow sẽ quét và hiển thị danh sách để bạn chọn tải về hàng loạt.",
+        a: "Bạn chỉ cần dán liên kết danh sách phát hoặc kênh YouTube vào ô nhập liệu. Vidrop sẽ quét và hiển thị danh sách để bạn chọn tải về hàng loạt.",
       },
       {
-        q: "OmniFlow có hỗ trợ chuyển đổi sang MP3 không?",
+        q: "Vidrop có hỗ trợ chuyển đổi sang MP3 không?",
         a: "Có! Bạn có thể chọn tải về định dạng Âm thanh (MP3) hoặc Video (MP4) với các mức chất lượng khác nhau.",
       },
       {
-        q: "Sử dụng OmniFlow có an toàn không?",
-        a: "Có. OmniFlow chạy hoàn toàn cục bộ, không chứa quảng cáo bên thứ ba độc hại và không yêu cầu cung cấp thông tin cá nhân.",
+        q: "Sử dụng Vidrop có an toàn không?",
+        a: "Có. Vidrop chạy hoàn toàn cục bộ, không chứa quảng cáo bên thứ ba độc hại và không yêu cầu cung cấp thông tin cá nhân.",
       },
     ],
   },
@@ -822,7 +822,7 @@ const vi: Translations = {
     },
     language: {
       heading: "Ngôn ngữ",
-      description: "Vui lòng chọn ngôn ngữ từ danh sách bên dưới. Bạn cần khởi động lại OmniFlow để áp dụng lựa chọn.",
+      description: "Vui lòng chọn ngôn ngữ từ danh sách bên dưới. Bạn cần khởi động lại Vidrop để áp dụng lựa chọn.",
       english: "Tiếng Anh",
       vietnamese: "Tiếng Việt",
     },
@@ -845,38 +845,38 @@ const vi: Translations = {
     },
     resetSettings: {
       heading: "Đặt lại dữ liệu ứng dụng",
-      description: "Nếu việc check/tải liên tục báo lỗi không rõ nguyên nhân, xóa cấu hình đã lưu của OmniFlow (thư mục lưu, cookies đã lưu, v.v.) và bắt đầu lại từ đầu có thể giúp ích — thao tác này không xóa bất kỳ file đã tải nào của bạn.",
+      description: "Nếu việc check/tải liên tục báo lỗi không rõ nguyên nhân, xóa cấu hình đã lưu của Vidrop (thư mục lưu, cookies đã lưu, v.v.) và bắt đầu lại từ đầu có thể giúp ích — thao tác này không xóa bất kỳ file đã tải nào của bạn.",
       button: "Xóa Cache & Đặt lại Cài đặt",
       confirm: "Thao tác này sẽ đặt lại thư mục lưu, ngôn ngữ và các cài đặt đã lưu về mặc định. Tiếp tục?",
       done: "Đã đặt lại cài đặt.",
     },
   },
   terms: {
-    heading: "Điều khoản sử dụng OmniFlow",
+    heading: "Điều khoản sử dụng Vidrop",
     lastUpdatedLabel: "Cập nhật lần cuối:",
     lastUpdatedValue: "27-02-2026",
     intro:
-      "Khi truy cập hoặc sử dụng OmniFlow, bạn đồng ý tuân theo các Điều khoản sử dụng này. Nếu bạn không đồng ý với bất kỳ phần nào trong các điều khoản này, vui lòng ngừng sử dụng dịch vụ của chúng tôi ngay lập tức.",
+      "Khi truy cập hoặc sử dụng Vidrop, bạn đồng ý tuân theo các Điều khoản sử dụng này. Nếu bạn không đồng ý với bất kỳ phần nào trong các điều khoản này, vui lòng ngừng sử dụng dịch vụ của chúng tôi ngay lập tức.",
     sections: [
       {
         heading: "1. Dịch vụ của chúng tôi",
-        body: "OmniFlow là một công cụ tiện ích miễn phí, đa năng, được thiết kế để giúp người dùng tải video và âm thanh từ các nền tảng bên thứ ba, bao gồm YouTube (hỗ trợ đầy đủ danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) và LinkedIn.",
+        body: "Vidrop là một công cụ tiện ích miễn phí, đa năng, được thiết kế để giúp người dùng tải video và âm thanh từ các nền tảng bên thứ ba, bao gồm YouTube (hỗ trợ đầy đủ danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) và LinkedIn.",
       },
       {
         heading: "2. Sử dụng cá nhân & phi thương mại",
-        body: "Chúng tôi cấp cho bạn quyền hạn chế, không độc quyền để sử dụng OmniFlow chỉ cho mục đích cá nhân, phi thương mại. Bạn đồng ý không sử dụng dịch vụ của chúng tôi để cấp phép, bán, phân phối hoặc khai thác thương mại bất kỳ nội dung nào đã tải xuống.",
+        body: "Chúng tôi cấp cho bạn quyền hạn chế, không độc quyền để sử dụng Vidrop chỉ cho mục đích cá nhân, phi thương mại. Bạn đồng ý không sử dụng dịch vụ của chúng tôi để cấp phép, bán, phân phối hoặc khai thác thương mại bất kỳ nội dung nào đã tải xuống.",
       },
       {
         heading: "3. Bản quyền & Trách nhiệm của người dùng",
-        body: "OmniFlow chỉ đóng vai trò là công cụ kỹ thuật trung gian. Chúng tôi không lưu trữ, sở hữu bất kỳ nội dung media nào được tải xuống thông qua dịch vụ của chúng tôi.",
+        body: "Vidrop chỉ đóng vai trò là công cụ kỹ thuật trung gian. Chúng tôi không lưu trữ, sở hữu bất kỳ nội dung media nào được tải xuống thông qua dịch vụ của chúng tôi.",
         list: [
           "Trách nhiệm của bạn: Bạn hoàn toàn chịu trách nhiệm về nội dung mình tải xuống. Bạn phải đảm bảo có quyền hợp pháp, được cho phép rõ ràng, hoặc có căn cứ sử dụng hợp lý từ chủ sở hữu bản quyền hợp pháp để tải xuống và sử dụng nội dung đó.",
-          "Không vi phạm: OmniFlow không khuyến khích, dung túng hay hỗ trợ việc tải xuống hoặc phân phối trái phép nội dung có bản quyền.",
+          "Không vi phạm: Vidrop không khuyến khích, dung túng hay hỗ trợ việc tải xuống hoặc phân phối trái phép nội dung có bản quyền.",
         ],
       },
       {
         heading: "4. Hành vi được chấp nhận",
-        body: "Để OmniFlow vận hành trơn tru cho mọi người, bạn đồng ý KHÔNG:",
+        body: "Để Vidrop vận hành trơn tru cho mọi người, bạn đồng ý KHÔNG:",
         list: [
           "Sử dụng bất kỳ script tự động, bot, crawler hoặc công cụ khai thác dữ liệu nào trên website của chúng tôi.",
           "Thực hiện bất kỳ hành động nào gây tải trọng bất hợp lý lên hạ tầng máy chủ của chúng tôi.",
@@ -888,21 +888,21 @@ const vi: Translations = {
       },
       {
         heading: "5. Từ chối bảo đảm",
-        body: 'OmniFlow được cung cấp trên cơ sở "NGUYÊN TRẠNG" và "TUỲ THEO SẴN CÓ". Mặc dù chúng tôi luôn cố gắng mang lại trải nghiệm tốt nhất, chúng tôi không đảm bảo dịch vụ sẽ hoàn toàn không có lỗi, an toàn tuyệt đối hoặc không bị gián đoạn, đặc biệt khi các nền tảng bên thứ ba liên tục thay đổi hệ thống của họ.',
+        body: 'Vidrop được cung cấp trên cơ sở "NGUYÊN TRẠNG" và "TUỲ THEO SẴN CÓ". Mặc dù chúng tôi luôn cố gắng mang lại trải nghiệm tốt nhất, chúng tôi không đảm bảo dịch vụ sẽ hoàn toàn không có lỗi, an toàn tuyệt đối hoặc không bị gián đoạn, đặc biệt khi các nền tảng bên thứ ba liên tục thay đổi hệ thống của họ.',
       },
       {
         heading: "6. Giới hạn trách nhiệm pháp lý",
-        body: "Trong phạm vi tối đa được pháp luật cho phép, OmniFlow và đội ngũ của chúng tôi sẽ không chịu trách nhiệm cho bất kỳ thiệt hại trực tiếp, gián tiếp, ngẫu nhiên hay hệ quả nào phát sinh từ việc bạn sử dụng website, bao gồm nhưng không giới hạn ở mất dữ liệu, hư hỏng thiết bị, hoặc khiếu nại pháp lý từ bên thứ ba liên quan đến nội dung bạn tải xuống.",
+        body: "Trong phạm vi tối đa được pháp luật cho phép, Vidrop và đội ngũ của chúng tôi sẽ không chịu trách nhiệm cho bất kỳ thiệt hại trực tiếp, gián tiếp, ngẫu nhiên hay hệ quả nào phát sinh từ việc bạn sử dụng website, bao gồm nhưng không giới hạn ở mất dữ liệu, hư hỏng thiết bị, hoặc khiếu nại pháp lý từ bên thứ ba liên quan đến nội dung bạn tải xuống.",
       },
       {
         heading: "7. Thay đổi điều khoản",
-        body: "Chúng tôi có quyền chỉnh sửa các Điều khoản này bất kỳ lúc nào. Việc bạn tiếp tục sử dụng OmniFlow sau khi có thay đổi đồng nghĩa với việc bạn chấp nhận các điều khoản đã cập nhật.",
+        body: "Chúng tôi có quyền chỉnh sửa các Điều khoản này bất kỳ lúc nào. Việc bạn tiếp tục sử dụng Vidrop sau khi có thay đổi đồng nghĩa với việc bạn chấp nhận các điều khoản đã cập nhật.",
       },
     ],
   },
   shortcutSetup: {
     eyebrow: "iOS Shortcut · tự build 1 lần",
-    heading: "Share link → OmniFlow tự tải",
+    heading: "Share link → Vidrop tự tải",
     intro:
       "Coi video trên Instagram/TikTok, bấm Share → chọn shortcut này → nó tự gọi server này, tải xong tự lưu file. Build 1 lần, xong share iCloud link của chính cái shortcut đó cho máy khác xài chung.",
     warningTitle: "⚠️ Chưa test trên iPhone thật",
@@ -917,7 +917,7 @@ const vi: Translations = {
       {
         num: "PHASE 0",
         title: "Tạo shortcut mới",
-        desc: 'App Shortcuts → dấu + → đặt tên "OmniFlow Tải Video"',
+        desc: 'App Shortcuts → dấu + → đặt tên "Vidrop Tải Video"',
         steps: [
           {
             text: 'Bấm icon ⓘ (Shortcut Details) ở góc trên → bật "Use as Share Sheet Action" → mục Share Sheet Types chỉ chọn URLs.',
@@ -1032,7 +1032,7 @@ const vi: Translations = {
   },
   languageSwitcher: { label: "Ngôn ngữ", english: "English", vietnamese: "Tiếng Việt" },
   apiErrors: {
-    unreachable: "Không kết nối được tới máy chủ OmniFlow. Hãy đảm bảo máy chủ đang chạy rồi tải lại trang.",
+    unreachable: "Không kết nối được tới máy chủ Vidrop. Hãy đảm bảo máy chủ đang chạy rồi tải lại trang.",
     requestFailed: "Yêu cầu thất bại.",
     requestFailedStatus: "Yêu cầu thất bại ({status}).",
     uploadFailed: "Tải lên thất bại.",
@@ -1040,7 +1040,7 @@ const vi: Translations = {
   },
   changelog: {
     eyebrow: "Nhật ký cập nhật · có gì mới",
-    heading: "OmniFlow đã thay đổi những gì",
+    heading: "Vidrop đã thay đổi những gì",
     intro:
       "Nhật ký thật các thay đổi đã lên production, viết dễ hiểu — mới nhất ở trên đầu. Trang này ghi lại đúng những gì đã đổi, tách riêng khỏi phần giới thiệu/marketing đã public sẵn ở trang tải.",
     releases: [
@@ -1090,19 +1090,19 @@ const vi: Translations = {
         title: "Sửa YouTube, thêm API token, lưu qua Share Sheet",
         items: [
           "Sửa lỗi tải YouTube bị chặn sau khi YouTube áp dụng giao thức chống bot mới (SABR).",
-          "Thêm xác thực bằng API token (Bearer) — OmniFlow giờ tự động hoá được từ app/thiết bị khác (như iOS Shortcut mới bên dưới) mà không cần đăng nhập qua trình duyệt mỗi lần.",
-          "Share link từ Instagram/TikTok/... thẳng vào OmniFlow trên điện thoại (qua Share Sheet) giờ tự lưu kết quả, kể cả lưu hàng loạt.",
-          "Mới: hướng dẫn cài iOS Shortcut — build 1 lần để iPhone nào cũng gửi link thẳng tới server OmniFlow và nhận lại file, không cần mở trình duyệt.",
+          "Thêm xác thực bằng API token (Bearer) — Vidrop giờ tự động hoá được từ app/thiết bị khác (như iOS Shortcut mới bên dưới) mà không cần đăng nhập qua trình duyệt mỗi lần.",
+          "Share link từ Instagram/TikTok/... thẳng vào Vidrop trên điện thoại (qua Share Sheet) giờ tự lưu kết quả, kể cả lưu hàng loạt.",
+          "Mới: hướng dẫn cài iOS Shortcut — build 1 lần để iPhone nào cũng gửi link thẳng tới server Vidrop và nhận lại file, không cần mở trình duyệt.",
           "Khoá quyền quản trị SSH từ xa lại sau cổng mua hàng (IAP) của app, đóng một đường truy cập lẽ ra không nên mở.",
         ],
       },
       {
         date: "29-08-2026 → 10-09-2026",
-        title: "Truy cập từ xa: dùng OmniFlow ngay trên điện thoại",
+        title: "Truy cập từ xa: dùng Vidrop ngay trên điện thoại",
         items: [
-          "Thêm Remote Web Access — chạy OmniFlow trên server cloud riêng và truy cập an toàn từ điện thoại hoặc thiết bị khác qua URL riêng, có cổng đăng nhập/trust-cookie bảo vệ.",
+          "Thêm Remote Web Access — chạy Vidrop trên server cloud riêng và truy cập an toàn từ điện thoại hoặc thiết bị khác qua URL riêng, có cổng đăng nhập/trust-cookie bảo vệ.",
           "Tải hàng loạt (playlist, carousel) qua remote access giờ gộp lại thành 1 file ZIP duy nhất để tải về một lần.",
-          "Đồng bộ session đăng nhập Instagram/Threads từ Mac lên server cloud, nên tải có xác thực vẫn chạy được kể cả khi OmniFlow không chạy trên máy của mày.",
+          "Đồng bộ session đăng nhập Instagram/Threads từ Mac lên server cloud, nên tải có xác thực vẫn chạy được kể cả khi Vidrop không chạy trên máy của mày.",
           "Thêm tuỳ chọn upload cookies.txt thủ công cho server headless/cloud không có trình duyệt để tự lấy cookie.",
           "Sửa lỗi không tìm thấy ffmpeg trên server cloud chạy Linux.",
         ],

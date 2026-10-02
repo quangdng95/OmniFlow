@@ -15,7 +15,7 @@ import {
 import { api } from "../api";
 import type { CheckResult, PlaylistItem, RowProgress, VideoInfo } from "../types";
 import { useLanguage } from "../i18n/LanguageContext";
-import { isLocal } from "../isLocal";
+import { isLocal, isMobileRemote } from "../isLocal";
 import { recordDownload } from "../lib/history";
 
 import youtube from "../assets/tags/Youtube.svg";
@@ -286,6 +286,17 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finishedBatchJobId]);
 
+  // Phone: skip the "Start Download" tap - the user's only job is "Save to device".
+  const autoStartedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isMobileRemote() || !selectedItem || downloadState !== "idle" || checking) return;
+    const key = `${url.trim()}|${selectedItem.title}`;
+    if (autoStartedRef.current === key) return;
+    autoStartedRef.current = key;
+    void handleStartDownload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItem, downloadState, checking]);
+
   const handleStartDownload = async () => {
     if (!selectedItem) return;
     setDownloadState("downloading");
@@ -500,6 +511,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
               onCancel={handleCancelDownload}
               onOpenFolder={isLocal() ? handleOpenFolder : undefined}
               downloadUrl={isLocal() || !jobId ? undefined : `/api/download-file/${jobId}`}
+              autoSave={isMobileRemote()}
             />
           )}
 

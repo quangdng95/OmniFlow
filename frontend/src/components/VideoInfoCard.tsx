@@ -20,6 +20,9 @@ interface VideoInfoCardProps {
   onCancel: () => void;
   onOpenFolder?: () => void;
   downloadUrl?: string;
+  // Phone/remote: HomePage starts the download itself, so the card only shows
+  // progress and then a single "Save to device" button.
+  autoSave?: boolean;
 }
 
 const VideoInfoCard = ({
@@ -31,6 +34,7 @@ const VideoInfoCard = ({
   onCancel,
   onOpenFolder,
   downloadUrl,
+  autoSave = false,
 }: VideoInfoCardProps) => {
   const { t } = useLanguage();
   const prepareSingleFile = useCallback(
@@ -76,7 +80,7 @@ const VideoInfoCard = ({
 
       {/* Action States inside the card */}
       <div className="w-full border-t border-neutral-100 pt-4 flex flex-col gap-3">
-        {actionState === "idle" && (
+        {actionState === "idle" && !autoSave && (
           <Button
             onClick={onDownload}
             className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
@@ -86,7 +90,7 @@ const VideoInfoCard = ({
           </Button>
         )}
 
-        {actionState === "downloading" && (
+        {(actionState === "downloading" || (autoSave && actionState === "idle")) && (
           <div className="flex flex-col gap-3 w-full">
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-[#0d9585] leading-none">
@@ -107,7 +111,18 @@ const VideoInfoCard = ({
           </div>
         )}
 
-        {actionState === "done" && (
+        {actionState === "done" && autoSave && downloadUrl && (
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {t.downloadSuccess.save}
+          </Button>
+        )}
+
+        {actionState === "done" && !autoSave && (
           <div className="flex flex-col gap-3 w-full">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0d9585]">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
