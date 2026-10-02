@@ -10,7 +10,7 @@ describe("api request error handling", () => {
     );
 
     await expect(api.checkLink("https://youtube.com/watch?v=abc")).rejects.toThrow(
-      "Can't reach the OmniFlow server. Make sure it's running, then reload this page."
+      "Can't reach the Vidrop server. Make sure it's running, then reload this page."
     );
 
     vi.unstubAllGlobals();
@@ -71,7 +71,7 @@ describe("api language", () => {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, "vi");
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
 
-    await expect(api.checkLink("https://a.com/x")).rejects.toThrow("Không kết nối được tới máy chủ OmniFlow");
+    await expect(api.checkLink("https://a.com/x")).rejects.toThrow("Không kết nối được tới máy chủ Vidrop");
   });
 
   it("localizes the fallback for a non-JSON response (with its status) too", async () => {

@@ -8,3 +8,11 @@
 // re-import modules.
 export const isLocal = () =>
   window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+
+// A phone/tablet (touch-first) visiting a remote deployment: the flow there is
+// paste -> auto-download -> "Save to device", with no manual download step.
+// A function for the same test-override reason as isLocal.
+export const isMobileRemote = () =>
+  !isLocal() &&
+  (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform)));

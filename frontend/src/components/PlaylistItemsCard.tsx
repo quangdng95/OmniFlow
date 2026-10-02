@@ -61,7 +61,7 @@ const PlaylistItemsCard = ({
   const [previewRow, setPreviewRow] = useState<number | null>(null);
 
   const prepareBatchZip = useCallback(
-    (url: string) => prepareZipFiles(url, `${title || "OmniFlow"}.zip`),
+    (url: string) => prepareZipFiles(url, `${title || "Vidrop"}.zip`),
     [title]
   );
   const { saving: savingZip, save: handleSaveZip } = usePreparedSave(downloadUrl, prepareBatchZip);

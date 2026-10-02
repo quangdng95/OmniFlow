@@ -18,12 +18,12 @@ LANGUAGE_HEADER = "X-Language"
 
 _CATALOG = {
     "instagram_local_only": {
-        VI: "Chỉ tải được Instagram khi chạy OmniFlow trực tiếp trên máy của bạn.",
-        EN: "Instagram downloads are only available when running OmniFlow locally on your own machine.",
+        VI: "Chỉ tải được Instagram khi chạy Vidrop trực tiếp trên máy của bạn.",
+        EN: "Instagram downloads are only available when running Vidrop locally on your own machine.",
     },
     "threads_local_only": {
-        VI: "Chỉ tải được Threads khi chạy OmniFlow trực tiếp trên máy của bạn.",
-        EN: "Threads downloads are only available when running OmniFlow locally on your own machine.",
+        VI: "Chỉ tải được Threads khi chạy Vidrop trực tiếp trên máy của bạn.",
+        EN: "Threads downloads are only available when running Vidrop locally on your own machine.",
     },
     "instagram_no_session": {
         VI: "❌ Lỗi: Không tìm thấy phiên đăng nhập Instagram nào trên trình duyệt của máy này. Vui lòng đăng nhập Instagram trên Chrome/Safari/Brave (hoặc thêm cookies.txt thủ công trong Settings) rồi thử lại.",
@@ -41,8 +41,8 @@ _CATALOG = {
     # resolver (see MISTAKES.md), so it gets its own specific message rather
     # than whatever unrelated error yt-dlp raises for the same URL.
     "linkedin_document": {
-        VI: "❌ Lỗi: Bài đăng LinkedIn dạng tài liệu/slide (PDF) hiện chưa được OmniFlow hỗ trợ tải. OmniFlow hiện chỉ hỗ trợ bài đăng LinkedIn dạng video hoặc ảnh.",
-        EN: "❌ Error: LinkedIn document/slide (PDF) posts aren't supported by OmniFlow yet. OmniFlow currently supports LinkedIn video and image posts only.",
+        VI: "❌ Lỗi: Bài đăng LinkedIn dạng tài liệu/slide (PDF) hiện chưa được Vidrop hỗ trợ tải. Vidrop hiện chỉ hỗ trợ bài đăng LinkedIn dạng video hoặc ảnh.",
+        EN: "❌ Error: LinkedIn document/slide (PDF) posts aren't supported by Vidrop yet. Vidrop currently supports LinkedIn video and image posts only.",
     },
     "network_unreachable": {
         VI: "❌ Lỗi: Không thể kết nối mạng để xử lý liên kết này. Vui lòng kiểm tra kết nối Internet (hoặc tường lửa/VPN) rồi thử lại.",
@@ -57,8 +57,8 @@ _CATALOG = {
         EN: "❌ Error: Your IP is temporarily blocked or rate-limited by this platform. Please try again in a few minutes or switch networks.",
     },
     "private_account": {
-        VI: "❌ Lỗi: Không thể tải video từ tài khoản Private (Kín). OmniFlow hiện tại chỉ hỗ trợ tải nội dung Public (Công khai).",
-        EN: "❌ Error: Can't download videos from a Private account. OmniFlow only supports Public content.",
+        VI: "❌ Lỗi: Không thể tải video từ tài khoản Private (Kín). Vidrop hiện tại chỉ hỗ trợ tải nội dung Public (Công khai).",
+        EN: "❌ Error: Can't download videos from a Private account. Vidrop only supports Public content.",
     },
     "process_failed": {
         VI: "❌ Lỗi: Không thể xử lý liên kết này. Vui lòng kiểm tra lại link hoặc thử lại sau.",
@@ -69,12 +69,12 @@ _CATALOG = {
         EN: "❌ Error: Something went wrong while loading the content. Please try again later.",
     },
     "ffmpeg_wrong_chip": {
-        VI: "❌ Lỗi: Bản OmniFlow này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc {machine}). Vui lòng tải đúng bản dành cho máy bạn ({dmg}) tại trang GitHub Releases của OmniFlow.",
-        EN: "❌ Error: This build of OmniFlow isn't compatible with your Mac's chip ({machine} architecture). Please download the right build for your Mac ({dmg}) from OmniFlow's GitHub Releases page.",
+        VI: "❌ Lỗi: Bản Vidrop này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc {machine}). Vui lòng tải đúng bản dành cho máy bạn ({dmg}) tại trang GitHub Releases của Vidrop.",
+        EN: "❌ Error: This build of Vidrop isn't compatible with your Mac's chip ({machine} architecture). Please download the right build for your Mac ({dmg}) from Vidrop's GitHub Releases page.",
     },
     "ffmpeg_missing": {
-        VI: "❌ Lỗi: Không tìm thấy FFmpeg khả dụng. Vui lòng cài FFmpeg (brew install ffmpeg) hoặc tải lại OmniFlow.",
-        EN: "❌ Error: No usable FFmpeg was found. Please install FFmpeg (brew install ffmpeg) or re-download OmniFlow.",
+        VI: "❌ Lỗi: Không tìm thấy FFmpeg khả dụng. Vui lòng cài FFmpeg (brew install ffmpeg) hoặc tải lại Vidrop.",
+        EN: "❌ Error: No usable FFmpeg was found. Please install FFmpeg (brew install ffmpeg) or re-download Vidrop.",
     },
     "ffmpeg_missing_server_linux": {
         VI: "❌ Lỗi: Không tìm thấy FFmpeg khả dụng trên máy chủ này. Vui lòng cài đặt qua trình quản lý gói của hệ điều hành (vd: apt install ffmpeg) rồi khởi động lại dịch vụ.",
