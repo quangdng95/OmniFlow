@@ -2,6 +2,7 @@ export type Language = "en" | "vi";
 
 export interface Translations {
   header: {
+    menu: string;
     nav: { home: string; history: string; settings: string; terms: string; shortcut: string; changelog: string };
     home: { title: string; descriptionLine1: string; descriptionLine2: string };
     settings: { title: string };
@@ -183,6 +184,7 @@ export interface Translations {
 
 const en: Translations = {
   header: {
+    menu: "Menu",
     nav: { home: "Home", history: "History", settings: "Settings", terms: "Terms of Use", shortcut: "Shortcut Setup", changelog: "Changelog" },
     home: {
       title: "Vidrop – All-in-One Video Downloader",
@@ -661,6 +663,7 @@ const en: Translations = {
 
 const vi: Translations = {
   header: {
+    menu: "Menu",
     nav: { home: "Trang chủ", history: "Lịch sử", settings: "Cài đặt", terms: "Điều khoản sử dụng", shortcut: "Cài Shortcut", changelog: "Nhật ký cập nhật" },
     home: {
       title: "Vidrop – Tải video từ mọi nền tảng",

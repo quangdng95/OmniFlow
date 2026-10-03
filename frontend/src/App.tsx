@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import Header, { type Page } from "./components/Header";
+import PageTitle from "./components/PageTitle";
 import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import { LanguageProvider } from "./i18n/LanguageContext";
@@ -28,12 +29,13 @@ const App = () => {
         <Header active={page} onNavigate={setPage} />
 
         {/* Content area */}
-        <div className="w-full max-w-[680px] flex flex-col gap-4 py-6 px-4 flex-grow">
+        <div className="w-full max-w-[680px] flex flex-col gap-4 py-4 px-4 flex-grow">
           {/* Home stays mounted across navigation so an in-progress check/download
               survives a trip to Settings or Terms and back. */}
           <div style={{ display: page === "home" ? "contents" : "none" }}>
             <HomePage onNavigate={setPage} pendingUrl={pendingUrl} onPendingUrlConsumed={() => setPendingUrl(null)} />
           </div>
+          {page !== "home" && <PageTitle page={page} />}
           {page !== "home" && (
             <Suspense fallback={null}>
               {page === "history" && <HistoryPage onNavigate={setPage} onOpenUrl={handleOpenHistoryUrl} />}

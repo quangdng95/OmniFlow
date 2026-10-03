@@ -366,6 +366,13 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   return (
     <div className="w-full select-none">
       <div className="w-full flex flex-col gap-4">
+          {/* Short intro (it used to be the bottom half of a ~340px-tall header). */}
+          <div className="flex flex-col items-center gap-1 text-center">
+            <h1 className="m-0 text-lg font-semibold leading-snug text-[#334155]">{t.header.home.title}</h1>
+            <p className="m-0 max-w-[480px] text-[13px] font-light leading-relaxed text-neutral-500">
+              {t.header.home.descriptionLine1} {t.header.home.descriptionLine2}
+            </p>
+          </div>
           <UrlInputCard
             ref={inputRef}
             value={url}
