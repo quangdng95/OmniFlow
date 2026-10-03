@@ -1,7 +1,8 @@
 #!/bin/bash
 # Installs a LaunchAgent that runs sync_cloud_cookies.py every 6 hours, so
 # the OmniFlow cloud deployment's YouTube/Instagram/Threads session stays
-# fresh while this Mac is on. Also runs it once now.
+# fresh while this Mac is on. Also runs it once now. It pushes over HTTPS with
+# the cloud access token (saved once by set-cloud-token.sh) - no SSH needed.
 #
 # Usage:  bash remote_web/scripts/install-cloud-cookie-sync.sh
 set -euo pipefail
@@ -15,6 +16,11 @@ LOG_DIR="$HOME/Library/Logs/OmniFlowCloudCookies"
 [ -x "$PY" ] || { echo "No venv python at $PY - run the repo setup first"; exit 1; }
 [ -f "$SCRIPT" ] || { echo "Missing $SCRIPT"; exit 1; }
 mkdir -p "$LOG_DIR"
+
+if [ -z "${OMNIFLOW_CLOUD_TOKEN:-}" ] && [ ! -s "$HOME/.config/omniflow/cloud_token" ]; then
+  echo "### no cloud token saved yet"
+  bash "$REPO_ROOT/remote_web/scripts/set-cloud-token.sh"
+fi
 
 echo "### one-off sync now (approve the Keychain prompt if it appears)"
 "$PY" "$SCRIPT"

@@ -10,6 +10,7 @@ from flask import Blueprint, jsonify
 from backend import cookies as backend_cookies
 from backend import threads as backend_threads
 from remote_web import config, ffmpeg_locator
+from remote_web.routes import settings as settings_routes
 
 bp = Blueprint("health", __name__)
 
@@ -33,6 +34,14 @@ def _compute_detail():
     }
 
 
+def _cookies_age_hours():
+    try:
+        age_seconds = time.time() - os.path.getmtime(settings_routes._COOKIES_FILE)
+    except OSError:
+        return None
+    return round(age_seconds / 3600, 2)
+
+
 @bp.get("/health")
 def health():
     # Unauthenticated (§4.4/§4.6) - no detail beyond "something is
@@ -51,4 +60,8 @@ def health_detail():
     if _detail_cache["payload"] is None or now - _detail_cache["at"] > config.HEALTH_CACHE_SECONDS:
         _detail_cache["payload"] = _compute_detail()
         _detail_cache["at"] = now
-    return jsonify(_detail_cache["payload"])
+    # Computed on every request, not cached with the rest: it exists so a
+    # silently-broken Mac cookie sync is noticeable (it failed unseen from
+    # 2026-10-01), and a 5-minute-old age would be fine but a stale cache of
+    # "fresh" must never mask it.
+    return jsonify({**_detail_cache["payload"], "cookies_age_hours": _cookies_age_hours()})

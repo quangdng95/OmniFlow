@@ -104,3 +104,27 @@ def test_health_detail_recomputes_after_cache_expiry(client, monkeypatch):
     client.get("/api/health/detail")
     client.get("/api/health/detail")
     assert calls["count"] == 2
+
+
+def test_health_detail_reports_how_old_the_synced_cookies_are(client, monkeypatch, tmp_path):
+    # The Mac syncs cookies unattended; the only way to notice it silently
+    # stopped (it did, 2026-10-01) is to expose the age somewhere visible.
+    import os
+    import time
+
+    cookies = tmp_path / ".manual_cookies.txt"
+    cookies.write_text("x")
+    two_hours_ago = time.time() - 2 * 3600
+    os.utime(cookies, (two_hours_ago, two_hours_ago))
+    monkeypatch.setattr("remote_web.routes.settings._COOKIES_FILE", str(cookies))
+    health_routes._detail_cache["payload"] = None
+    _unlock(client)
+    age = client.get("/api/health/detail").get_json()["cookies_age_hours"]
+    assert 1.9 < age < 2.2
+
+
+def test_health_detail_cookie_age_is_null_when_no_cookies_were_ever_synced(client, monkeypatch, tmp_path):
+    monkeypatch.setattr("remote_web.routes.settings._COOKIES_FILE", str(tmp_path / "missing.txt"))
+    health_routes._detail_cache["payload"] = None
+    _unlock(client)
+    assert client.get("/api/health/detail").get_json()["cookies_age_hours"] is None

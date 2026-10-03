@@ -32,6 +32,7 @@ behind isLocal(), see frontend/src/pages/SettingsPage.tsx).
 
 import json
 import os
+import tempfile
 
 from flask import Blueprint, jsonify, request
 
@@ -45,7 +46,44 @@ _DEFAULT_LANGUAGE = "en"
 # (original design spec §5.4) must never treat this as an orphaned job
 # directory and delete a live credential.
 _COOKIES_FILE = os.path.join(os.path.dirname(config.STATE_FILE), ".manual_cookies.txt")
-_MAX_COOKIES_FILE_BYTES = 64 * 1024
+# A real Chrome login jar (Google + YouTube + Instagram + Threads) is ~26 KB
+# today; 256 KiB leaves wide headroom while still rejecting an accidental
+# huge upload.
+_MAX_COOKIES_FILE_BYTES = 256 * 1024
+
+
+def _looks_like_cookie_jar(body):
+    # Netscape cookies.txt: at least one real row of 7 tab-separated fields
+    # (domain, include-subdomains, path, secure, expiry, name, value). The Mac
+    # now overwrites the live file unattended every 6 hours, so something that
+    # is clearly NOT a jar (a login page's HTML, an empty/comment-only file)
+    # must be refused instead of replacing working cookies. "#HttpOnly_" rows
+    # are real cookies, every other "#" line is a comment.
+    for line in body.decode("utf-8", "replace").splitlines():
+        stripped = line.strip()
+        if not stripped or (stripped.startswith("#") and not stripped.startswith("#HttpOnly_")):
+            continue
+        if len(line.split("\t")) >= 7:
+            return True
+    return False
+
+
+def _write_atomically(path, body):
+    # Write beside the target and os.replace(): a download reading the file
+    # mid-upload sees either the old jar or the new one, never half of it.
+    directory = os.path.dirname(path)
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(dir=directory, prefix="." + os.path.basename(path) + ".", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(body)
+        # A live session credential, same care as config.STATE_FILE.
+        os.chmod(tmp_path, 0o600)
+        os.replace(tmp_path, path)
+    except BaseException:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
 
 
 def _get_settings_file():
@@ -105,15 +143,16 @@ def upload_cookies():
     if not body:
         return jsonify({"error": "Uploaded file is empty"}), 400
     if len(body) > _MAX_COOKIES_FILE_BYTES:
-        return jsonify({"error": "Uploaded file is too large (max 64 KiB) - this doesn't look like a real cookies.txt"}), 400
+        return jsonify({"error": "Uploaded file is too large (max 256 KiB) - this doesn't look like a real cookies.txt"}), 400
+    if not _looks_like_cookie_jar(body):
+        return jsonify({"error": "Uploaded file doesn't look like a cookies.txt (no cookie rows found) - kept the existing cookies"}), 400
 
-    os.makedirs(os.path.dirname(_COOKIES_FILE), exist_ok=True)
-    with open(_COOKIES_FILE, "wb") as f:
-        f.write(body)
-    # This is a live session credential, same care as config.STATE_FILE.
-    os.chmod(_COOKIES_FILE, 0o600)
+    _write_atomically(_COOKIES_FILE, body)
 
     session = backend_config.load_session()
     backend_config.save_session(session["path"], _COOKIES_FILE, session["browser"], session["playlist_limit"])
 
-    return jsonify({"cookies_status": backend_config.cookies_status_for(_COOKIES_FILE)})
+    return jsonify({
+        "cookies_status": backend_config.cookies_status_for(_COOKIES_FILE),
+        "updated_at": int(os.path.getmtime(_COOKIES_FILE)),
+    })

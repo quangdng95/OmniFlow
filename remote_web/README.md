@@ -7,15 +7,29 @@ install required on that device.
 
 **Design spec:** [docs/superpowers/specs/2026-08-29-remote-web-access-design.md](../docs/superpowers/specs/2026-08-29-remote-web-access-design.md)
 
-This is a *separate deployment* from the native `.app` — it does not touch
-`backend/`, `server.py`, `desktop_app.py`, or `OmniFlow.spec` at all, and is
-meant to run continuously on a dedicated, always-on Mac (an older machine,
-**not** the same Mac used for day-to-day development), reachable through a
-free Cloudflare Tunnel rather than a paid cloud VPS — running it from a
-residential IP matters for platforms (TikTok especially) that are more
-likely to rate-limit or block a cloud-provider IP range.
+> **Where this runs in production: a free Google Cloud VM, not a Mac.**
+> The live site (`cloud.southframevn.com`) is served by a GCP `e2-micro`
+> (Always Free) running three `systemd` units — this app, a Cloudflare Tunnel
+> (`cloudflared`) and a YouTube bot-check helper. There is **no CI/CD**: an
+> update is built and copied up by hand, see
+> [Deploying an update](#deploying-an-update-to-the-cloud-vm). Vercel and
+> similar hosts are not used (this needs `ffmpeg`, `yt-dlp` and long-running
+> jobs). The "dedicated Mac" setup below is the *alternative* design this
+> project started with; it is kept for reference only.
+> Start at [Free-tier cloud deployment](#free-tier-cloud-deployment-linux--the-primary-deployment).
 
-## One-time setup, on the dedicated Mac
+This is a *separate deployment* from the native `.app` — it does not touch
+`backend/`, `server.py`, `desktop_app.py`, or `OmniFlow.spec` at all. The
+original design ran it on a dedicated, always-on Mac (an older machine,
+**not** the one used for day-to-day development) behind a free Cloudflare
+Tunnel, because a residential IP matters for platforms (TikTok especially)
+that rate-limit cloud-provider IP ranges; in practice only YouTube,
+Instagram and Threads need a residential login session, which the cloud
+deployment gets pushed up from a Mac (see below).
+
+## Alternative: one-time setup, on a dedicated Mac
+
+> Not what production uses — see the note at the top.
 
 1. Clone the repo (a full checkout — `remote_web/` imports `backend/*` as a
    normal Python package):
@@ -184,7 +198,9 @@ and the only free way to get one onto a datacenter box is to **push it up
 from a Mac** that's logged into those sites in a browser
 (`remote_web/scripts/sync_cloud_cookies.py`, step 7). The Mac only has to be
 awake briefly for each sync — it is not a parallel deployment, just a
-cookie source.
+cookie source. The synced sessions stay valid for months (their expiry is
+roughly a year), so the Mac does not need to be on constantly; it refreshes
+them whenever it is awake.
 
 ### Setup
 
@@ -266,10 +282,17 @@ there).
 7. **The actual YouTube/Instagram/Threads fix** — on a Mac logged into those
    sites, run `bash remote_web/scripts/install-cloud-cookie-sync.sh`. It
    reads the browser sessions (`browser_cookie3`, one Keychain
-   "Always Allow" prompt on first run), `scp`s a combined `cookies.txt` to
-   the VM's `remote_web/.manual_cookies.txt`, and installs a LaunchAgent
-   that repeats every 6 hours while the Mac is awake. On the VM, point the
-   backend at that file once:
+   "Always Allow" prompt on first run), pushes a combined `cookies.txt` to
+   the VM **over HTTPS** (`POST /api/settings/cookies`, authenticated with
+   the access token, which `remote_web/scripts/set-cloud-token.sh` saves once
+   to `~/.config/omniflow/cloud_token`, mode 600), and installs a LaunchAgent
+   that repeats every 6 hours while the Mac is awake. It deliberately does
+   not use SSH: the VM's SSH is closed to the internet, and an earlier
+   SSH-based version failed silently for days. A failed run now exits
+   non-zero **and** raises a macOS notification; the server also refuses an
+   upload that is not a real cookie jar, so a bad run can never replace working
+   cookies. `GET /api/health/detail` reports `cookies_age_hours` so a stalled
+   sync is visible. On the VM, point the backend at the file once:
    `~/omniflow/.venv/bin/python3 -c "from backend import config as c;
    s=c.load_session(); c.save_session(s['path'],
    '/home/<user>/omniflow/remote_web/.manual_cookies.txt', s['browser'],
@@ -285,6 +308,27 @@ there).
    Settings still shows a manual cookies-upload box (works as a one-off if
    you have no Mac to run the sync from), but with the sync installed you
    never touch it.
+
+### Deploying an update to the cloud VM
+
+Run from the development Mac, from the repo root. The VM's SSH port is only
+reachable through Google's IAP tunnel, so open that first (use the project,
+zone and instance name from your own GCP console):
+
+```bash
+cd frontend && npm ci && npm run build && cd ..          # frontend/dist
+gcloud compute start-iap-tunnel <instance> 22 --local-host-port=localhost:2222 \
+  --project=<project> --zone=<zone> &
+# only git-tracked server files, so the VM's own state (token, cookies) is never overwritten
+git ls-files backend remote_web requirements.txt | grep -v /tests/ > /tmp/deploy.txt
+rsync -az -e "ssh -i ~/.ssh/omniflow_cloud -p 2222" --files-from=/tmp/deploy.txt ./ <user>@localhost:~/omniflow/
+rsync -az --delete -e "ssh -i ~/.ssh/omniflow_cloud -p 2222" frontend/dist/ <user>@localhost:~/omniflow/frontend/dist/
+ssh -i ~/.ssh/omniflow_cloud -p 2222 <user>@localhost 'sudo systemctl restart omniflow-remote'
+```
+
+Then check `https://cloud.southframevn.com/health` returns `{"status":"ok"}`.
+Cloudflare may keep serving a cached 404 for a static file you probed before
+deploying it; a cache-busting `?v=` query shows whether the file is really there.
 
 ### Cost
 
@@ -350,8 +394,11 @@ significant change:
 - [ ] (Cloud deployment only) After `sync_cloud_cookies.py` has run from a
       logged-in Mac, a YouTube **and** an Instagram check/download both
       succeed on the cloud hostname.
-- [ ] (Cloud deployment only) `~/Library/Logs/OmniFlowCloudCookies/err.log`
-      on the Mac shows the 6-hourly sync completing, not a Keychain denial.
+- [ ] (Cloud deployment only) `~/Library/Logs/OmniFlowCloudCookies/out.log`
+      on the Mac ends with `synced -> https://…`, and `err.log` shows no
+      Keychain denial or `cookie sync FAILED`.
+- [ ] (Cloud deployment only) `cookies_age_hours` in `GET /api/health/detail`
+      is small after a sync (a value in the hundreds means the sync stopped).
 
 ## Testing
 
