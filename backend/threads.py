@@ -16,7 +16,7 @@ import json
 import urllib.error
 import urllib.request
 
-from backend import classify, cookies
+from backend import classify, config, cookies
 
 THREADS_APP_ID = "238260118697367"  # Threads' own web app id - distinct from Instagram's
 THREADS_UA = (
@@ -41,9 +41,21 @@ def threads_media_id_from_shortcode(shortcode):
 
 
 def threads_cookiefile_candidates():
-    # No manual "Threads Cookies" Settings field exists (unlike Instagram) -
-    # auto-extracted browser cookies are the only source for now.
-    return cookies.cookiefiles_from_browsers("threads.com")
+    # No dedicated "Threads Cookies" Settings field exists, but the one
+    # uploaded/synced cookies.txt (config.get_cookies_path - Settings on the
+    # native app, the Mac's automatic sync on the headless cloud VM) is a full
+    # browser jar that normally carries a threads.com session too, so it is
+    # tried first when it does. Without this a cloud deployment, which has no
+    # browser to extract from, could never resolve a Threads link (2026-10-03).
+    # Browser-extracted cookies are appended as before. The manual file is
+    # never a temp file, so _cleanup_temp_cookiefiles (guarded on its
+    # "omniflow-cookies-" prefix) leaves it alone.
+    candidates = []
+    manual = config.get_cookies_path()
+    if manual and _parse_threads_cookies(manual).get("sessionid"):
+        candidates.append(manual)
+    candidates.extend(cookies.cookiefiles_from_browsers("threads.com"))
+    return candidates
 
 
 def _parse_threads_cookies(cookies_path):

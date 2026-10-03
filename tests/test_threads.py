@@ -155,3 +155,40 @@ def test_fetch_threads_media_any_raises_auth_error_when_all_unauthorized(monkeyp
     monkeypatch.setattr(threads_module, "fetch_threads_media", always_auth)
     with pytest.raises(ThreadsAuthError):
         threads_module.fetch_threads_media_any("https://www.threads.com/@someone/post/abc", ["/a.txt", "/b.txt"])
+
+
+# ---- threads_cookiefile_candidates: the uploaded cookies.txt (2026-10-03) ----
+#
+# On the headless cloud VM there is no browser to extract from, so the ONLY
+# Threads session it can have is the cookies.txt the Mac syncs up. Instagram
+# already consulted that file (backend.cookies.instagram_cookiefile_candidates);
+# Threads did not, so every Threads link on the cloud failed with "needs a
+# logged-in browser on this machine" even though the uploaded jar carried a
+# threads.com sessionid.
+
+THREADS_JAR = ".threads.com\tTRUE\t/\tTRUE\t1999999999\tsessionid\tabc\n"
+INSTAGRAM_ONLY_JAR = ".instagram.com\tTRUE\t/\tTRUE\t1999999999\tsessionid\tabc\n"
+
+
+def test_threads_candidates_include_the_uploaded_cookie_file_when_it_has_a_threads_session(monkeypatch, tmp_path):
+    jar = tmp_path / "manual.txt"
+    jar.write_text(THREADS_JAR)
+    monkeypatch.setattr(threads_module.config, "get_cookies_path", lambda: str(jar))
+    monkeypatch.setattr(threads_module.cookies, "cookiefiles_from_browsers", lambda domain="": ["/tmp/omniflow-cookies-browser.txt"])
+
+    # The manual file comes first and is never one of the temp files that get cleaned up.
+    assert threads_module.threads_cookiefile_candidates() == [str(jar), "/tmp/omniflow-cookies-browser.txt"]
+
+
+def test_threads_candidates_skip_an_uploaded_file_with_no_threads_session(monkeypatch, tmp_path):
+    jar = tmp_path / "manual.txt"
+    jar.write_text(INSTAGRAM_ONLY_JAR)
+    monkeypatch.setattr(threads_module.config, "get_cookies_path", lambda: str(jar))
+    monkeypatch.setattr(threads_module.cookies, "cookiefiles_from_browsers", lambda domain="": [])
+    assert threads_module.threads_cookiefile_candidates() == []
+
+
+def test_threads_candidates_work_with_no_uploaded_file(monkeypatch):
+    monkeypatch.setattr(threads_module.config, "get_cookies_path", lambda: None)
+    monkeypatch.setattr(threads_module.cookies, "cookiefiles_from_browsers", lambda domain="": ["/tmp/b.txt"])
+    assert threads_module.threads_cookiefile_candidates() == ["/tmp/b.txt"]
