@@ -9,7 +9,7 @@ from flask import Blueprint, jsonify
 
 from backend import cookies as backend_cookies
 from backend import threads as backend_threads
-from remote_web import config, ffmpeg_locator
+from remote_web import config, ffmpeg_locator, selfheal
 from remote_web.routes import settings as settings_routes
 
 bp = Blueprint("health", __name__)
@@ -64,4 +64,4 @@ def health_detail():
     # silently-broken Mac cookie sync is noticeable (it failed unseen from
     # 2026-10-01), and a 5-minute-old age would be fine but a stale cache of
     # "fresh" must never mask it.
-    return jsonify({**_detail_cache["payload"], "cookies_age_hours": _cookies_age_hours()})
+    return jsonify({**_detail_cache["payload"], "cookies_age_hours": _cookies_age_hours(), "canary": selfheal.summary()})

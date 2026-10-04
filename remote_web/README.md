@@ -309,6 +309,23 @@ there).
    you have no Mac to run the sync from), but with the sync installed you
    never touch it.
 
+### Self-maintenance (yt-dlp upgrades + canary)
+
+Most "can't check a link / can't download" breakages are `yt-dlp` falling
+behind a platform change, so the VM looks after it itself.
+`omniflow-selfheal.timer` runs `python -m remote_web.selfheal run` every 6
+hours: it upgrades `yt-dlp`, then checks a small set of known-good links per
+platform through the app's own API (`remote_web/canary_urls.json`, plus one tiny
+YouTube download). If an upgrade makes a platform that worked before stop
+working — or the service doesn't come back — it **rolls `yt-dlp` back
+automatically**. The result is in `remote_web/.canary.json` and in the
+`canary` field of `GET /api/health/detail` (which platforms are failing, the
+`yt-dlp` version, whether it rolled back). A platform failing means upstream
+hasn't caught up yet, or a link in `canary_urls.json` went stale. Install once
+on the VM with `bash remote_web/scripts/install-selfheal.sh`. Set
+`OMNIFLOW_NTFY_TOPIC` in the service file for a phone push when a platform
+newly fails; nothing is sent anywhere unless it is set.
+
 ### Deploying an update to the cloud VM
 
 Run from the development Mac, from the repo root. The VM's SSH port is only

@@ -1,0 +1,12 @@
+[Unit]
+Description=OmniFlow self-heal (upgrade yt-dlp, run the canary, roll back on a regression)
+After=network-online.target omniflow-remote.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=omniflow
+WorkingDirectory=/home/omniflow/omniflow
+ExecStart=/home/omniflow/omniflow/.venv/bin/python -m remote_web.selfheal run
+# A download canary plus a possible roll back and a second canary can take a while on an e2-micro.
+TimeoutStartSec=1500
