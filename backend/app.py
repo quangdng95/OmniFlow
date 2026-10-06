@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 import yt_dlp
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, messages, paths, threads, tiktok
+from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, messages, paths, shortlinks, threads, tiktok
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
@@ -141,6 +141,11 @@ def _save_single_cdn_file(job_id, save_dir, title, cdn_url, ext="jpg"):
     jobs.jobs[job_id]["filename"] = os.path.basename(out_path)
     jobs.jobs[job_id]["filepath"] = out_path
     download.download_direct_url(cdn_url, out_path, job_id)
+    fixed_path = download.fix_image_extension(out_path)
+    if fixed_path != out_path:
+        out_path = fixed_path
+        jobs.jobs[job_id]["filename"] = os.path.basename(out_path)
+        jobs.jobs[job_id]["filepath"] = out_path
     jobs.jobs[job_id]["percent"] = 100
     jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
     jobs.jobs[job_id]["status"] = "done"
@@ -153,7 +158,7 @@ def check_link():
     raw_url = (data.get("url") or "").strip()
     if not raw_url:
         return jsonify({"error": "Missing url"}), 400
-    cls = classify.classify_url(raw_url)
+    cls = classify.classify_url(shortlinks.expand(raw_url))
     url = cls.url
 
     # Instagram only works with a cookies.txt file configured in Settings, and
@@ -318,7 +323,7 @@ def start_download():
     raw_url = (data.get("url") or "").strip()
     if not raw_url:
         return jsonify({"error": "Missing url"}), 400
-    cls = classify.classify_url(raw_url)
+    cls = classify.classify_url(shortlinks.expand(raw_url))
     # Always download cls.url (the pasted link, RedNote-normalized) - NEVER
     # cls.extraction_url: for a watch?v=X&list=PL… link the user picked video X,
     # while extraction_url deliberately widens to the whole playlist for /api/check.
@@ -622,7 +627,7 @@ def start_batch_download():
     # via the resolver, or a Story via yt-dlp playlist_items).
     lang = messages.request_language()
     data = request.get_json(force=True) or {}
-    cls = classify.classify_url((data.get("url") or "").strip())
+    cls = classify.classify_url(shortlinks.expand((data.get("url") or "").strip()))
     url = cls.url
     quality = data.get("quality") or "Best"
     items = data.get("items") or []
@@ -649,6 +654,9 @@ def start_batch_download():
     # type:"playlist" for a TikTok URL via that Photo Mode fallback, so
     # reaching here with platform TikTok reliably means one.
     is_tiktok_photo = cls.platform == "TikTok"
+    # Likewise a LinkedIn "playlist" can only be a native document (a PDF carousel):
+    # an image post is one item and a video post never reaches the batch route.
+    is_linkedin_document = cls.platform == "LinkedIn"
 
     job_id = uuid.uuid4().hex
     total = len(items)
@@ -687,7 +695,7 @@ def start_batch_download():
                 recompute_overall()
 
             try:
-                if is_ig_carousel or is_tiktok_photo:
+                if is_ig_carousel or is_tiktok_photo or is_linkedin_document:
                     idx = item.get("entry_index") or (i + 1)
                     node = media_holder["media"]["items"][idx - 1]
                     cdn_url = node.get("url")
@@ -696,6 +704,8 @@ def start_batch_download():
                     ext = "jpg" if node["kind"] == "image" else "mp4"
                     out = download.get_unique_filename(save_dir, item_title, ext)
                     download.download_direct_url(cdn_url, out, job_id, on_progress=on_progress)
+                    if node["kind"] == "image":
+                        out = download.fix_image_extension(out)
                 elif item.get("url"):
                     out = download.download_one_video(item["url"], save_dir, item_title, quality, ffmpeg_bin, job_id, on_progress=on_progress)
                 elif item.get("entry_index"):
@@ -736,6 +746,8 @@ def start_batch_download():
                 # one-resolve-reuse-across-slides pattern as the Instagram
                 # carousel above (backend/tiktok.py).
                 media_holder["media"] = tiktok.fetch_tiktok_post(url)
+            elif is_linkedin_document:
+                media_holder["media"] = linkedin.fetch_linkedin_image_post(url)
 
             # Download BATCH_CONCURRENCY items at once. download_item swallows its
             # own per-item errors, so a future never raises here.

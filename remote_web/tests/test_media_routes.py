@@ -287,6 +287,37 @@ def test_download_batch_produces_a_zip_with_every_item(client, monkeypatch, tmp_
         assert zf.getinfo(zf.namelist()[0]).compress_type == zipfile.ZIP_STORED
 
 
+def test_download_batch_linkedin_document_zips_the_selected_pages(client, monkeypatch, tmp_path):
+    from backend import linkedin as linkedin_module
+    from backend import shortlinks
+
+    shortlinks._cache.clear()
+    monkeypatch.setattr(shortlinks, "_fetch_location", lambda url: "https://www.linkedin.com/posts/someone_deck-ugcPost-1-abcd/")
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+    pages = [{"kind": "image", "url": f"http://cdn/p{n}.jpg", "thumbnail": None} for n in (1, 2, 3)]
+    monkeypatch.setattr(linkedin_module, "fetch_linkedin_image_post", lambda url: {"title": "UX Deck", "items": pages})
+
+    def fake_direct(cdn_url, output_path, job_id, on_progress=None):
+        with open(output_path, "wb") as f:
+            f.write(cdn_url.encode())
+        if on_progress:
+            on_progress(100)
+
+    monkeypatch.setattr(download_module, "download_direct_url", fake_direct)
+
+    resp = client.post("/api/download-batch", json={
+        "url": "https://lnkd.in/p/gGaVJcim",  # the short link the owner pasted
+        "quality": "Best",
+        "items": [{"title": f"UX Deck ({n})", "entry_index": n} for n in (1, 2, 3)],
+    })
+    assert resp.status_code == 200
+    job = _wait_for_job(resp.get_json()["job_id"])
+    assert job["status"] == "done" and job["saved_count"] == 3
+    with zipfile.ZipFile(job["filepath"]) as zf:
+        assert len(zf.namelist()) == 3 and all(n.endswith(".jpg") for n in zf.namelist())
+
+
 def test_download_batch_deletes_raw_files_as_it_goes(client, monkeypatch, tmp_path):
     monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
     monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")

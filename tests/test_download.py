@@ -572,3 +572,56 @@ def test_download_direct_url_writes_the_response_body_to_disk(tmp_path, monkeypa
 
     assert out_path.read_bytes() == b"fake-cdn-bytes"
     assert jobs_module.jobs["j-direct"]["percent"] == 100
+
+
+# ---- image extension from the file's real content (2026-10-06) ----
+#
+# LinkedIn document pages are PNGs but were saved as ".jpg" (the extension was
+# chosen from the item "kind" alone). Most apps sniff the content and cope, but
+# a wrong extension is a bug waiting for the app that doesn't (e.g. importing
+# into Photos), so the extension now follows the actual bytes.
+
+PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"rest"
+JPEG_BYTES = b"\xff\xd8\xff\xe0" + b"rest"
+WEBP_BYTES = b"RIFF\x00\x00\x00\x00WEBPVP8 "
+
+
+@pytest.mark.parametrize(
+    "data, expected",
+    [(PNG_BYTES, "png"), (JPEG_BYTES, "jpg"), (WEBP_BYTES, "webp"), (b"GIF89a....", "gif"), (b"<html>", None), (b"", None)],
+)
+def test_sniff_image_extension(tmp_path, data, expected):
+    f = tmp_path / "x.bin"
+    f.write_bytes(data)
+    assert download_module.sniff_image_extension(str(f)) == expected
+
+
+def test_a_png_saved_as_jpg_is_renamed_to_png(tmp_path):
+    wrong = tmp_path / "Deck (1).jpg"
+    wrong.write_bytes(PNG_BYTES)
+    fixed = download_module.fix_image_extension(str(wrong))
+    assert fixed == str(tmp_path / "Deck (1).png")
+    assert not wrong.exists() and (tmp_path / "Deck (1).png").read_bytes() == PNG_BYTES
+
+
+def test_a_correctly_named_image_is_left_alone(tmp_path):
+    ok = tmp_path / "Photo.jpg"
+    ok.write_bytes(JPEG_BYTES)
+    assert download_module.fix_image_extension(str(ok)) == str(ok)
+    assert ok.exists()
+
+
+def test_an_unrecognised_file_keeps_its_name(tmp_path):
+    other = tmp_path / "Thing.jpg"
+    other.write_bytes(b"<html>nope</html>")
+    assert download_module.fix_image_extension(str(other)) == str(other)
+
+
+def test_the_rename_never_overwrites_an_existing_file(tmp_path):
+    (tmp_path / "Deck (1).png").write_bytes(b"existing")
+    wrong = tmp_path / "Deck (1).jpg"
+    wrong.write_bytes(PNG_BYTES)
+    fixed = download_module.fix_image_extension(str(wrong))
+    assert fixed != str(tmp_path / "Deck (1).png")
+    assert (tmp_path / "Deck (1).png").read_bytes() == b"existing"
+    assert open(fixed, "rb").read() == PNG_BYTES

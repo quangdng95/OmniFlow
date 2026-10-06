@@ -28,7 +28,7 @@ from flask import Blueprint, jsonify, request
 
 from backend import classify
 from backend import config as backend_config
-from backend import cookies, download, extraction, instagram, jobs, linkedin, messages, paths, threads, tiktok
+from backend import cookies, download, extraction, instagram, jobs, linkedin, messages, paths, shortlinks, threads, tiktok
 from remote_web import config, ffmpeg_locator
 from remote_web import zipper as zipper_module
 
@@ -42,7 +42,7 @@ def check_link():
     raw_url = (data.get("url") or "").strip()
     if not raw_url:
         return jsonify({"error": "Missing url"}), 400
-    cls = classify.classify_url(raw_url)
+    cls = classify.classify_url(shortlinks.expand(raw_url))
     url = cls.url
 
     # No Instagram/Threads local-only rejection here at all - the whole
@@ -158,6 +158,11 @@ def _save_single_cdn_file(job_id, save_dir, title, cdn_url, ext="jpg"):
     jobs.jobs[job_id]["filename"] = os.path.basename(out_path)
     jobs.jobs[job_id]["filepath"] = out_path
     download.download_direct_url(cdn_url, out_path, job_id)
+    fixed_path = download.fix_image_extension(out_path)
+    if fixed_path != out_path:
+        out_path = fixed_path
+        jobs.jobs[job_id]["filename"] = os.path.basename(out_path)
+        jobs.jobs[job_id]["filepath"] = out_path
     jobs.jobs[job_id]["percent"] = 100
     jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
     jobs.jobs[job_id]["status"] = "done"
@@ -170,7 +175,7 @@ def start_download():
     raw_url = (data.get("url") or "").strip()
     if not raw_url:
         return jsonify({"error": "Missing url"}), 400
-    cls = classify.classify_url(raw_url)
+    cls = classify.classify_url(shortlinks.expand(raw_url))
     url = cls.url
     title = data.get("title") or "Video"
     quality = data.get("quality") or "Best"
@@ -402,7 +407,7 @@ BATCH_CONCURRENCY = 3
 def start_batch_download():
     lang = messages.request_language()
     data = request.get_json(force=True) or {}
-    cls = classify.classify_url((data.get("url") or "").strip())
+    cls = classify.classify_url(shortlinks.expand((data.get("url") or "").strip()))
     url = cls.url
     quality = data.get("quality") or "Best"
     items = data.get("items") or []
@@ -422,6 +427,9 @@ def start_batch_download():
 
     is_ig_carousel = cls.kind == classify.LinkKind.INSTAGRAM_POST_OR_CAROUSEL
     is_tiktok_photo = cls.platform == "TikTok"
+    # Likewise a LinkedIn "playlist" can only be a native document (a PDF carousel):
+    # an image post is one item and a video post never reaches the batch route.
+    is_linkedin_document = cls.platform == "LinkedIn"
 
     job_id = uuid.uuid4().hex
     total = len(items)
@@ -472,7 +480,7 @@ def start_batch_download():
                 recompute_overall()
 
             try:
-                if is_ig_carousel or is_tiktok_photo:
+                if is_ig_carousel or is_tiktok_photo or is_linkedin_document:
                     idx = item.get("entry_index") or (i + 1)
                     node = media_holder["media"]["items"][idx - 1]
                     cdn_url = node.get("url")
@@ -481,6 +489,8 @@ def start_batch_download():
                     ext = "jpg" if node["kind"] == "image" else "mp4"
                     out = download.get_unique_filename(save_dir, item_title, ext)
                     download.download_direct_url(cdn_url, out, job_id, on_progress=on_progress)
+                    if node["kind"] == "image":
+                        out = download.fix_image_extension(out)
                 elif item.get("url"):
                     out = download.download_one_video(item["url"], save_dir, item_title, quality, ffmpeg_bin, job_id, on_progress=on_progress)
                 elif item.get("entry_index"):
@@ -523,6 +533,8 @@ def start_batch_download():
                 # single item, never type:"playlist"), so this is still
                 # exclusively the Photo Mode case.
                 media_holder["media"] = tiktok.fetch_tiktok_post(url)
+            elif is_linkedin_document:
+                media_holder["media"] = linkedin.fetch_linkedin_image_post(url)
 
             with ThreadPoolExecutor(max_workers=min(BATCH_CONCURRENCY, total)) as ex:
                 futures = [ex.submit(download_item, i, item) for i, item in enumerate(items)]

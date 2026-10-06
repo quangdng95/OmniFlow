@@ -62,6 +62,45 @@ def get_unique_filename(directory, filename, extension):
     return full_path
 
 
+_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
+
+
+def sniff_image_extension(path):
+    # The extension an image file's own bytes call for, or None if it is not a
+    # recognisable image (or unreadable).
+    try:
+        with open(path, "rb") as f:
+            head = f.read(12)
+    except OSError:
+        return None
+    if head.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if head.startswith(b"\xff\xd8\xff"):
+        return "jpg"
+    if head.startswith(b"GIF8"):
+        return "gif"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "webp"
+    return None
+
+
+def fix_image_extension(path):
+    # Rename a downloaded image so its extension matches its real format (a
+    # LinkedIn document page is a PNG but was saved as ".jpg" because the name
+    # was picked from the item kind alone). Never overwrites: the new name goes
+    # through get_unique_filename. Non-images and unrecognised files are untouched.
+    stem, ext = os.path.splitext(path)
+    current = ext.lstrip(".").lower()
+    if current not in _IMAGE_EXTENSIONS:
+        return path
+    real = sniff_image_extension(path)
+    if real is None or real == ("jpg" if current in ("jpg", "jpeg") else current):
+        return path
+    fixed = get_unique_filename(os.path.dirname(path), os.path.basename(stem), real)
+    os.replace(path, fixed)
+    return fixed
+
+
 def combined_download_percent(stream_index, raw_percent, total_streams):
     return min(100.0, (stream_index * 100 + raw_percent) / total_streams)
 

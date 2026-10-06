@@ -679,6 +679,86 @@ def test_check_link_linkedin_falls_back_to_image_resolver(client, monkeypatch):
     assert body["kind"] == "image"
 
 
+def test_check_link_lnkd_in_short_link_is_expanded_and_handled_as_linkedin(client, monkeypatch):
+    # 2026-10-06: a LinkedIn share link (lnkd.in/p/...) was classified as the
+    # generic "Link" platform and failed, though the full URL works.
+    from backend import shortlinks
+
+    shortlinks._cache.clear()
+    seen = {}
+    monkeypatch.setattr(shortlinks, "_fetch_location", lambda url: "https://www.linkedin.com/posts/someone_topic-ugcPost-123-abcd/")
+
+    def fake_extract(cls):
+        seen["platform"], seen["url"] = cls.platform, cls.url
+        raise yt_dlp.utils.DownloadError("Unable to extract video")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    monkeypatch.setattr(
+        linkedin_module,
+        "fetch_linkedin_image_post",
+        lambda url: {"title": "A post", "items": [{"kind": "image", "url": "http://cdn/i.jpg", "thumbnail": "http://cdn/i.jpg"}]},
+    )
+    resp = client.post("/api/check", json={"url": "https://lnkd.in/p/gGaVJcim"})
+
+    assert resp.status_code == 200
+    assert resp.get_json()["kind"] == "image"
+    assert seen["platform"] == "LinkedIn"
+    assert seen["url"].startswith("https://www.linkedin.com/posts/")  # the expanded URL, not the short one
+    shortlinks._cache.clear()
+
+
+def test_check_link_linkedin_document_post_lists_every_page(client, monkeypatch):
+    # A native LinkedIn document (PDF carousel) used to come back as ONE image
+    # (its cover). It is a multi-item post like an Instagram carousel.
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("Unable to extract video")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    pages = [{"kind": "image", "url": f"http://cdn/p{n}.jpg", "thumbnail": f"http://cdn/p{n}.jpg"} for n in (1, 2, 3)]
+    monkeypatch.setattr(linkedin_module, "fetch_linkedin_image_post", lambda url: {"title": "UX Deck", "items": pages})
+    resp = client.post("/api/check", json={"url": "https://www.linkedin.com/posts/someone_deck-ugcPost-1-abcd"})
+    body = resp.get_json()
+    assert resp.status_code == 200
+    assert body["type"] == "playlist" and len(body["items"]) == 3
+    assert [i["entry_index"] for i in body["items"]] == [1, 2, 3]
+
+
+def test_start_batch_download_linkedin_document_picks_each_page(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path)})
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
+    resolved = []
+    pages = [{"kind": "image", "url": f"http://cdn/p{n}.jpg", "thumbnail": None} for n in (1, 2, 3)]
+    monkeypatch.setattr(linkedin_module, "fetch_linkedin_image_post", lambda url: resolved.append(url) or {"title": "UX Deck", "items": pages})
+    downloaded = []
+
+    def fake_download_direct_url(cdn_url, output_path, job_id, on_progress=None):
+        downloaded.append((cdn_url, output_path))
+        with open(output_path, "wb") as f:
+            f.write(b"\x89PNG\r\n\x1a\n" + b"x")
+        if on_progress:
+            on_progress(100)
+
+    monkeypatch.setattr(download_module, "download_direct_url", fake_download_direct_url)
+    resp = client.post("/api/download-batch", json={
+        "url": "https://www.linkedin.com/posts/someone_deck-ugcPost-1-abcd",
+        "quality": "Best",
+        "items": [{"title": f"UX Deck ({n})", "entry_index": n} for n in (1, 3)],
+    })
+    job_id = resp.get_json()["job_id"]
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+
+    assert jobs_module.jobs[job_id]["status"] == "done"
+    assert sorted(url for url, _ in downloaded) == ["http://cdn/p1.jpg", "http://cdn/p3.jpg"]  # pages 1 and 3, not 2
+    # LinkedIn serves these pages as PNG; the saved extension follows the bytes.
+    assert all(name.endswith(".png") for name in sorted(os.listdir(tmp_path)))
+    assert len(os.listdir(tmp_path)) == 2
+    assert len(resolved) == 1  # the document is resolved ONCE and reused for every page
+
+
 def test_check_link_linkedin_video_post_unaffected(client, monkeypatch):
     # A real LinkedIn video post never reaches the image fallback - the
     # standard yt-dlp path handles it exactly like every other platform.

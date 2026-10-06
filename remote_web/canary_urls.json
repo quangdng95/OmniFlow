@@ -1,9 +1,50 @@
 [
-  {"name": "youtube", "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw", "expect": "video", "download": true},
-  {"name": "tiktok", "url": "https://www.tiktok.com/@vio_decor127/video/7650834126223805717", "expect": "video", "download": false},
-  {"name": "instagram", "url": "https://www.instagram.com/p/DYTRs5Loe6A", "expect": "video", "download": false},
-  {"name": "facebook", "url": "https://www.facebook.com/reel/2194732404711942", "expect": "video", "download": false},
-  {"name": "x", "url": "https://x.com/yui540/status/2074033238293856397", "expect": "video", "download": false},
-  {"name": "threads", "url": "https://www.threads.com/@vogiatontruong/post/DaklqoZjieo", "expect": "video", "download": false},
-  {"name": "linkedin", "url": "https://www.linkedin.com/posts/themaheshkamble_figma-figmamcp-uxdesign-activity-7477954117269811200-7QhJ", "expect": "video", "download": false}
+  {
+    "name": "youtube",
+    "url": "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+    "expect": "video",
+    "download": true
+  },
+  {
+    "name": "tiktok",
+    "url": "https://www.tiktok.com/@vio_decor127/video/7650834126223805717",
+    "expect": "video",
+    "download": false
+  },
+  {
+    "name": "instagram",
+    "url": "https://www.instagram.com/p/DYTRs5Loe6A",
+    "expect": "video",
+    "download": false
+  },
+  {
+    "name": "facebook",
+    "url": "https://www.facebook.com/reel/2194732404711942",
+    "expect": "video",
+    "download": false
+  },
+  {
+    "name": "x",
+    "url": "https://x.com/yui540/status/2074033238293856397",
+    "expect": "video",
+    "download": false
+  },
+  {
+    "name": "threads",
+    "url": "https://www.threads.com/@vogiatontruong/post/DaklqoZjieo",
+    "expect": "video",
+    "download": false
+  },
+  {
+    "name": "linkedin",
+    "url": "https://www.linkedin.com/posts/themaheshkamble_figma-figmamcp-uxdesign-activity-7477954117269811200-7QhJ",
+    "expect": "video",
+    "download": false
+  },
+  {
+    "name": "linkedin-document",
+    "url": "https://lnkd.in/p/gGaVJcim",
+    "expect": "playlist",
+    "download": false
+  }
 ]
