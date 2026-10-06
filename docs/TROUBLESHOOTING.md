@@ -103,17 +103,24 @@ Some platforms (TikTok especially) rate-limit or temporarily block an IP address
 many requests in a short time. Wait a few minutes and try again, or switch networks (e.g. mobile
 hotspot) if it persists.
 
-### "This LinkedIn document/slide-deck post isn't supported"
+### "Couldn't read this LinkedIn post"
 
-> ❌ Lỗi: Bài đăng LinkedIn dạng tài liệu/slide (PDF) hiện chưa được OmniFlow hỗ trợ tải. OmniFlow
-> hiện chỉ hỗ trợ bài đăng LinkedIn dạng video hoặc ảnh.
+> ❌ Error: Couldn't read this LinkedIn post. It may have been removed or be private, or it is a
+> document/slide (PDF) whose pages couldn't be read.
 
-LinkedIn has three different post types: video, image, and native document/slide-deck (PDF)
-posts. OmniFlow supports the first two; the third has no known way to extract yet. This message
-means the link you pasted is specifically that third, unsupported type — it's not a bug, just a
-gap that's still open (see the [Roadmap](../README.md#roadmap) in the main README). If you have a
-public example of this post type, opening a GitHub Issue with the link would help move this
-forward.
+LinkedIn video, image **and** native document/slide-deck (PDF) posts are supported — a document is
+listed with one image per page, like a carousel. `lnkd.in` share links work too. This message means
+the post itself couldn't be read: it was removed, it isn't public, or LinkedIn changed how it
+serves it. Open the link in a private browser window to check it is public; if it is and the
+message persists, a GitHub Issue with the link helps.
+
+### RedNote asks you to sign in
+
+> ❌ Error: RedNote requires a signed-in session to view this post.
+
+RedNote now sends every post page to its login screen, so a RedNote login is required. On the
+desktop app, sign in to RedNote (rednote.com) in a browser on this Mac and try again. On the cloud
+deployment, the Mac that syncs cookies (see `remote_web/README.md`) must be signed in to RedNote.
 
 ### A generic "couldn't process this link" message
 

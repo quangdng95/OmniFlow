@@ -55,8 +55,8 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
 | TikTok | ✅ Video, slideshow Photo Mode | — | |
 | Instagram | ✅ Post, Reel, ảnh | ✅ Carousel, Story, profile/Reels | Nội dung riêng tư cần đăng nhập trên trình duyệt |
 | Facebook | ✅ Reel | — | |
-| RedNote (Xiaohongshu) | ✅ Video, ảnh | — | |
-| LinkedIn | ✅ Bài video, bài ảnh | — | Bài dạng tài liệu/slide chưa hỗ trợ |
+| RedNote (Xiaohongshu) | ✅ Video, ảnh | — | Cần phiên đăng nhập RedNote (RedNote giờ yêu cầu đăng nhập để xem bài) |
+| LinkedIn | ✅ Bài video, bài ảnh | ✅ Tài liệu/slide (PDF) — mỗi trang là một ảnh | Link rút gọn `lnkd.in` dùng được |
 | Threads | ✅ Bài video, bài ảnh | — | Cần đăng nhập trên trình duyệt |
 | X (Twitter) | ✅ Bài video | — | |
 
@@ -170,9 +170,8 @@ Những gap còn tồn đọng, được ghi nhận trung thực thay vì giấu
 - [ ] Code signing + notarization, để macOS không còn cảnh báo "nhà phát triển không xác định"
   khi mở lần đầu — cần một tài khoản Apple Developer trả phí; xem [First Launch](docs/FIRST_LAUNCH.vi.md)
   để biết cách xử lý tạm thời (miễn phí, chỉ làm một lần) trong lúc chờ
-- [ ] Hỗ trợ bài đăng LinkedIn dạng tài liệu/slide (PDF) — vẫn chưa có cách trích xuất nào (cần
-  một link ví dụ thật để reverse-engineer), nhưng app giờ báo rõ ràng khi link thuộc dạng bài đăng
-  chưa hỗ trợ này thay vì báo lỗi chung chung
+- [x] Hỗ trợ bài đăng LinkedIn dạng tài liệu/slide (PDF) — liệt kê và tải từng trang thành ảnh
+  (kèm link rút gọn `lnkd.in`, giờ được mở rộng trước khi phân loại link)
 - [ ] Build cho Windows / Linux
 
 **Mở rộng nền tảng**

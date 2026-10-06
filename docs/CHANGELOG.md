@@ -5,6 +5,40 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-06
+
+### Added
+
+- [x] **History tab** — the last 10 links downloaded on this device (`localStorage`, newest first,
+  one row per URL); "Download again" refills Home and re-checks the link.
+- [x] **Slim sticky header** — one 49px bar (logo at half its old size, EN | VI, one menu button
+  holding every page) instead of ~340px of nav pills; Home's intro moved into the page content.
+- [x] **LinkedIn document / slide-deck posts** — the page embeds a manifest of every page
+  (`backend/linkedin.py`); each page is an image item, downloaded like a carousel. Previously only the
+  cover was saved. `lnkd.in` / `t.co` / `fb.me` short links are expanded before classification
+  (`backend/shortlinks.py`, allowlisted hosts, redirects followed by hand, destination never fetched).
+- [x] **RedNote resolver** (`backend/rednote.py`) — RedNote now requires a login and renamed the stream
+  groups, so yt-dlp's extractor fails even when logged in; the note is read from the page state with the
+  user's own session. The Mac's browser scan now includes Arc.
+- [x] **Self-maintenance on the cloud VM** (`remote_web/selfheal.py`, systemd timer every 6 h) — upgrades
+  yt-dlp, runs a canary per platform through the app's own API, rolls yt-dlp back if an upgrade breaks a
+  platform; result in `/api/health/detail` (`canary`, `cookies_age_hours`).
+- [x] TikTok videos resolved through the tikwm fallback offer **Audio Only** (MP3).
+
+### Fixed
+
+- [x] iPhone "The request is not allowed…" when saving a batch: the file is prepared before the tap so
+  `navigator.share()` runs inside the user-activation window; a confirmation toast follows a save.
+- [x] TikTok videos with no sound on iPhone/Mac (H.265 video-only tier merged with an MP3 track, which
+  Apple players can't play): the audio is re-encoded to AAC after download (`ensure_apple_audio`).
+- [x] Downloaded images get their extension from their real bytes (LinkedIn pages are PNG, were `.jpg`).
+- [x] Row checkboxes could not be toggled (Base UI's hidden input double-toggled); downloaded rows stay
+  selectable; all action buttons share one size.
+- [x] The Mac→VM cookie sync had silently failed since public SSH was closed: it now POSTs over HTTPS
+  with the access token, waits for the network after a wake, runs hourly, and notifies on failure; the
+  server refuses anything that isn't a cookie jar and writes atomically.
+- [x] Threads now uses the uploaded cookie file (a headless VM has no browser to extract from).
+
 ## 2026-09-25
 
 ### Added — English / Vietnamese switch

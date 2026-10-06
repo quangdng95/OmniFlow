@@ -45,8 +45,8 @@ _CATALOG = {
     # resolver (see MISTAKES.md), so it gets its own specific message rather
     # than whatever unrelated error yt-dlp raises for the same URL.
     "linkedin_document": {
-        VI: "❌ Lỗi: Bài đăng LinkedIn dạng tài liệu/slide (PDF) hiện chưa được Vidrop hỗ trợ tải. Vidrop hiện chỉ hỗ trợ bài đăng LinkedIn dạng video hoặc ảnh.",
-        EN: "❌ Error: LinkedIn document/slide (PDF) posts aren't supported by Vidrop yet. Vidrop currently supports LinkedIn video and image posts only.",
+        VI: "❌ Lỗi: Không đọc được nội dung bài đăng LinkedIn này. Bài có thể đã bị xoá hoặc ở chế độ riêng tư, hoặc là tài liệu/slide (PDF) mà các trang không đọc được. Vidrop hỗ trợ bài LinkedIn công khai dạng video, ảnh và tài liệu.",
+        EN: "❌ Error: Couldn't read this LinkedIn post. It may have been removed or be private, or it is a document/slide (PDF) whose pages couldn't be read. Vidrop supports public LinkedIn video, image and document posts.",
     },
     "network_unreachable": {
         VI: "❌ Lỗi: Không thể kết nối mạng để xử lý liên kết này. Vui lòng kiểm tra kết nối Internet (hoặc tường lửa/VPN) rồi thử lại.",

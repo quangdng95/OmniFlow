@@ -53,8 +53,8 @@ platforms creators, designers, and researchers actually pull reference material 
 | TikTok | ✅ Video, Photo Mode slideshow | — | |
 | Instagram | ✅ Post, Reel, photo | ✅ Carousel, Story, profile/Reels | Private content needs a logged-in browser session |
 | Facebook | ✅ Reel | — | |
-| RedNote (Xiaohongshu) | ✅ Video, image | — | |
-| LinkedIn | ✅ Video post, image post | — | Native document/slide-deck posts not yet supported |
+| RedNote (Xiaohongshu) | ✅ Video, image | — | Needs a logged-in RedNote session (RedNote now requires a login to show any post) |
+| LinkedIn | ✅ Video post, image post | ✅ Document / slide-deck (PDF) — every page as an image | `lnkd.in` share links work |
 | Threads | ✅ Video post, image post | — | Needs a logged-in browser session |
 | X (Twitter) | ✅ Video post | — | |
 
@@ -166,9 +166,8 @@ Known gaps, tracked honestly rather than hidden.
 - [ ] Code signing + notarization, so macOS stops warning about an unidentified developer on
   first launch — needs a paid Apple Developer account; see [First Launch](docs/FIRST_LAUNCH.md)
   for the free one-time workaround in the meantime
-- [ ] LinkedIn native document/slide-deck (PDF) post support — still no known resolver (needs a
-  real example URL to reverse-engineer against), but the app now tells you clearly when a link is
-  this unsupported post type instead of a generic error
+- [x] LinkedIn native document/slide-deck (PDF) posts — every page is listed and downloaded as an image
+  (also `lnkd.in` short links, which are now expanded before the link is classified)
 - [ ] Windows / Linux builds
 
 **Platform expansion**

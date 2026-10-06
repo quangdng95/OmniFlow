@@ -106,17 +106,24 @@ Một số nền tảng (đặc biệt là TikTok) giới hạn tốc độ ho�
 request trong thời gian ngắn. Đợi vài phút rồi thử lại, hoặc đổi mạng (ví dụ: phát Wi-Fi từ điện
 thoại) nếu vẫn còn lỗi.
 
-### Bài đăng LinkedIn dạng tài liệu/slide (PDF)
+### "Không đọc được bài đăng LinkedIn này"
 
-> ❌ Lỗi: Bài đăng LinkedIn dạng tài liệu/slide (PDF) hiện chưa được OmniFlow hỗ trợ tải. OmniFlow
-> hiện chỉ hỗ trợ bài đăng LinkedIn dạng video hoặc ảnh.
+> ❌ Lỗi: Không đọc được nội dung bài đăng LinkedIn này. Bài có thể đã bị xoá hoặc ở chế độ riêng
+> tư, hoặc là tài liệu/slide (PDF) mà các trang không đọc được.
 
-LinkedIn có ba dạng bài đăng khác nhau: video, ảnh, và bài dạng tài liệu/slide (PDF) native.
-OmniFlow hỗ trợ hai dạng đầu; dạng thứ ba hiện chưa có cách nào để trích xuất. Thông báo này nghĩa
-là link bạn dán vào chính xác thuộc dạng thứ ba, chưa được hỗ trợ này — đây không phải lỗi (bug),
-chỉ là một gap vẫn còn tồn đọng (xem [Roadmap](../README.vi.md#roadmap) trong README chính). Nếu
-bạn có một ví dụ công khai của dạng bài đăng này, mở một GitHub Issue kèm link đó sẽ giúp ích cho
-việc phát triển tính năng này.
+Vidrop hỗ trợ bài LinkedIn dạng video, ảnh **và** tài liệu/slide (PDF): tài liệu được liệt kê mỗi
+trang một ảnh, giống một carousel. Link rút gọn `lnkd.in` cũng dùng được. Thông báo này nghĩa là
+chính bài đăng không đọc được: đã bị xoá, không công khai, hoặc LinkedIn đã đổi cách phục vụ. Hãy mở
+link trong cửa sổ ẩn danh để kiểm tra bài có công khai không; nếu có mà vẫn lỗi, mở một GitHub
+Issue kèm link sẽ giúp ích.
+
+### RedNote yêu cầu đăng nhập
+
+> ❌ Lỗi: RedNote yêu cầu đăng nhập để xem bài này.
+
+RedNote giờ chuyển mọi trang bài đăng sang màn hình đăng nhập, nên cần có phiên đăng nhập RedNote.
+Với app desktop: đăng nhập RedNote (rednote.com) trong một trình duyệt trên máy Mac này rồi thử lại.
+Với bản cloud: máy Mac đồng bộ cookie (xem `remote_web/README.md`) phải đang đăng nhập RedNote.
 
 ### Thông báo chung chung "Không thể xử lý liên kết này"
 
