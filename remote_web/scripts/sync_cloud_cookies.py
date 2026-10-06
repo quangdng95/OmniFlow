@@ -31,7 +31,7 @@ Storage'") - click **Always Allow**, or a headless LaunchAgent run later
 can't read the cookies.
 
 Run manually whenever you like, or install the LaunchAgent
-(install-cloud-cookie-sync.sh) to run it every 6 hours while the Mac is on.
+(install-cloud-cookie-sync.sh) to run it every hour while the Mac is on.
 """
 
 import http.cookiejar
@@ -49,7 +49,9 @@ import uuid
 # --- deployment target ------------------------------------------------------
 CLOUD_URL = os.environ.get("OMNIFLOW_CLOUD_URL", "https://cloud.southframevn.com")
 TOKEN_FILE = os.path.expanduser("~/.config/omniflow/cloud_token")
-_UPLOAD_ATTEMPTS = 3
+_UPLOAD_ATTEMPTS = 3  # for server (HTTP 5xx) errors
+# Seconds to wait between tries when there is no network at all (~3 min in total).
+_NETWORK_WAITS = (5, 10, 20, 30, 60, 60)
 _UPLOAD_TIMEOUT_SECONDS = 30
 
 
@@ -156,8 +158,9 @@ def _ssl_context():
 def _upload(jar_bytes, token, base_url=None, sleep=time.sleep):
     url = (base_url or CLOUD_URL).rstrip("/") + "/api/settings/cookies"
     body, content_type = _multipart("cookies", "cookies.txt", jar_bytes)
-    last_problem = "unknown error"
-    for attempt in range(1, _UPLOAD_ATTEMPTS + 1):
+    where = base_url or CLOUD_URL
+    http_failures = network_failures = 0
+    while True:
         request = urllib.request.Request(
             url, data=body, method="POST",
             # Own User-Agent on purpose: Cloudflare rejects the default
@@ -178,16 +181,24 @@ def _upload(jar_bytes, token, base_url=None, sleep=time.sleep):
                     detail = raw.strip()[:120]  # e.g. Cloudflare's plain "error code: 1010"
             except OSError:
                 pass
-            last_problem = f"HTTP {e.code} {detail}".strip()
+            problem = f"HTTP {e.code} {detail}".strip()
             if 400 <= e.code < 500:
                 # A wrong token / a payload the server refused will never succeed on retry.
-                raise SyncError(f"upload to {base_url or CLOUD_URL} rejected: {last_problem}") from None
+                raise SyncError(f"upload to {where} rejected: {problem}") from None
+            http_failures += 1
+            if http_failures >= _UPLOAD_ATTEMPTS:
+                raise SyncError(f"upload to {where} failed after {http_failures} attempts: {problem}") from None
+            sleep(2 * http_failures)
         except (urllib.error.URLError, TimeoutError, OSError) as e:
             # str(e) never contains the token (it is only in a header), so this is safe to show.
-            last_problem = f"network error: {getattr(e, 'reason', e)}"
-        if attempt < _UPLOAD_ATTEMPTS:
-            sleep(2 * attempt)
-    raise SyncError(f"upload to {base_url or CLOUD_URL} failed after {_UPLOAD_ATTEMPTS} attempts: {last_problem}")
+            problem = f"network error: {getattr(e, 'reason', e)}"
+            # A run right after the Mac wakes finds Wi-Fi/DNS not back yet (09:55
+            # on 2026-10-06 failed 3x in ~10 s and nothing retried for 6 hours,
+            # so the VM's YouTube cookies went stale): wait the network out.
+            if network_failures >= len(_NETWORK_WAITS):
+                raise SyncError(f"upload to {where} failed - no network after waiting: {problem}") from None
+            sleep(_NETWORK_WAITS[network_failures])
+            network_failures += 1
 
 
 def _notify(message):

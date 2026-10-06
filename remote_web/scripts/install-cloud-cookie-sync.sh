@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installs a LaunchAgent that runs sync_cloud_cookies.py every 6 hours, so
+# Installs a LaunchAgent that runs sync_cloud_cookies.py every hour, so
 # the OmniFlow cloud deployment's YouTube/Instagram/Threads session stays
 # fresh while this Mac is on. Also runs it once now. It pushes over HTTPS with
 # the cloud access token (saved once by set-cloud-token.sh) - no SSH needed.
@@ -37,7 +37,7 @@ cat > "$PLIST" <<PL
     <string>$PY</string>
     <string>$SCRIPT</string>
   </array>
-  <key>StartInterval</key><integer>21600</integer>
+  <key>StartInterval</key><integer>3600</integer>
   <key>RunAtLoad</key><true/>
   <key>StandardOutPath</key><string>$LOG_DIR/out.log</string>
   <key>StandardErrorPath</key><string>$LOG_DIR/err.log</string>
@@ -47,5 +47,5 @@ PL
 
 launchctl unload "$PLIST" 2>/dev/null || true
 launchctl load "$PLIST"
-echo "### done - syncs every 6h while the Mac is awake. Logs: $LOG_DIR"
+echo "### done - syncs every hour while the Mac is awake. Logs: $LOG_DIR"
 echo "### remove later with:  launchctl unload $PLIST && rm $PLIST"

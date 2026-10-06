@@ -215,3 +215,46 @@ def test_a_non_json_rejection_still_shows_what_the_server_said(server):
     with pytest.raises(sync.SyncError) as excinfo:
         sync._upload(JAR, "t", base_url=srv.url, sleep=lambda s: None)
     assert "403" in str(excinfo.value) and "error code: 1010" in str(excinfo.value)
+
+
+# ---- waking from sleep: the network is not up yet (2026-10-06) ----
+#
+# The 09:55 run happened seconds after the Mac woke, before Wi-Fi was back:
+# "nodename nor servname provided, or not known" three times in ~10 s, then no
+# retry for 6 hours - so YouTube downloads on the VM went stale and 403'd.
+
+
+def test_a_network_that_is_not_up_yet_is_waited_for(server):
+    srv = server([(200, {"cookies_status": "valid", "updated_at": 1})])
+    state = {"dns_failures_left": 4}
+    real_urlopen = sync.urllib.request.urlopen
+
+    def flaky_urlopen(request, timeout=None, context=None):
+        if state["dns_failures_left"] > 0:
+            state["dns_failures_left"] -= 1
+            raise sync.urllib.error.URLError(OSError(8, "nodename nor servname provided, or not known"))
+        return real_urlopen(request, timeout=timeout)
+
+    delays = []
+    sync.urllib.request.urlopen = flaky_urlopen
+    try:
+        result = sync._upload(JAR, "t", base_url=srv.url, sleep=delays.append)
+    finally:
+        sync.urllib.request.urlopen = real_urlopen
+    assert result["cookies_status"] == "valid"
+    assert len(delays) == 4  # it waited, rather than giving up after 3 quick tries
+    assert delays == sorted(delays)  # backing off
+
+
+def test_it_eventually_gives_up_on_a_network_that_never_comes_back():
+    delays = []
+    with pytest.raises(sync.SyncError) as excinfo:
+        sync._upload(JAR, "tok", base_url="http://127.0.0.1:1", sleep=delays.append)
+    assert len(delays) >= 5
+    assert sum(delays) >= 120  # waits a couple of minutes for Wi-Fi to reconnect
+    assert "tok" not in str(excinfo.value)
+
+
+def test_the_launch_agent_runs_hourly_not_every_six_hours():
+    installer = open(os.path.join(os.path.dirname(_SCRIPT), "install-cloud-cookie-sync.sh")).read()
+    assert "<key>StartInterval</key><integer>3600</integer>" in installer

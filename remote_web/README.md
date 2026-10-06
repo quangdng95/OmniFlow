@@ -286,7 +286,7 @@ there).
    the VM **over HTTPS** (`POST /api/settings/cookies`, authenticated with
    the access token, which `remote_web/scripts/set-cloud-token.sh` saves once
    to `~/.config/omniflow/cloud_token`, mode 600), and installs a LaunchAgent
-   that repeats every 6 hours while the Mac is awake. It deliberately does
+   that repeats every hour while the Mac is awake (waiting up to ~3 minutes for the network after a wake). It deliberately does
    not use SSH: the VM's SSH is closed to the internet, and an earlier
    SSH-based version failed silently for days. A failed run now exits
    non-zero **and** raises a macOS notification; the server also refuses an
