@@ -28,7 +28,7 @@ from flask import Blueprint, jsonify, request
 
 from backend import classify
 from backend import config as backend_config
-from backend import cookies, download, extraction, instagram, jobs, linkedin, messages, paths, shortlinks, threads, tiktok
+from backend import cookies, download, extraction, instagram, jobs, linkedin, messages, paths, rednote, shortlinks, threads, tiktok
 from remote_web import config, ffmpeg_locator
 from remote_web import zipper as zipper_module
 
@@ -113,6 +113,24 @@ def check_link():
                 return jsonify(instagram.instagram_check_response(url, media))
             except Exception:
                 pass
+        # yt-dlp's RedNote extractor fails for every note since 2026-10-06 (a
+        # login is now required AND the stream keys were renamed, see
+        # backend/rednote.py), so a RedNote DownloadError falls back to the
+        # resolver, which uses the user's own RedNote login session.
+        if cls.platform == "RedNote":
+            rn_candidates = rednote.rednote_cookiefile_candidates()
+            try:
+                if rn_candidates:
+                    media = rednote.fetch_rednote_post_any(url, rn_candidates)
+                    return jsonify(instagram.instagram_check_response(url, media))
+            except rednote.RedNoteAuthError:
+                return jsonify({"error": messages.text("rednote_auth", lang)}), 400
+            except Exception:
+                pass
+            finally:
+                cookies._cleanup_temp_cookiefiles(rn_candidates)
+            if not rn_candidates:
+                return jsonify({"error": messages.text("rednote_auth", lang)}), 400
         error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
         return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, backend_config.get_cookies_path(), lang=lang)}), 400
     except Exception as e:
@@ -373,6 +391,30 @@ def start_download():
                     return
                 except Exception:
                     pass
+            if cls.platform == "RedNote":
+                rn_candidates = rednote.rednote_cookiefile_candidates()
+                try:
+                    if rn_candidates:
+                        rn_media = rednote.fetch_rednote_post_any(url, rn_candidates)
+                        rn_item = rn_media["items"][0]
+                        _save_single_cdn_file(job_id, save_dir, title, rn_item["url"], ext="mp4" if rn_item["kind"] == "video" else "jpg")
+                        return
+                except yt_dlp.utils.DownloadCancelled:
+                    jobs.jobs[job_id]["status"] = "cancelled"
+                    jobs.jobs[job_id]["text"] = "Cancelled"
+                    return
+                except rednote.RedNoteAuthError:
+                    jobs.jobs[job_id]["status"] = "error"
+                    jobs.jobs[job_id]["text"] = messages.text("rednote_auth", lang)
+                    return
+                except Exception:
+                    pass
+                finally:
+                    cookies._cleanup_temp_cookiefiles(rn_candidates)
+                if not rn_candidates:
+                    jobs.jobs[job_id]["status"] = "error"
+                    jobs.jobs[job_id]["text"] = messages.text("rednote_auth", lang)
+                    return
             print(f"[remote_web download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
             jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path, lang=lang)
@@ -430,6 +472,8 @@ def start_batch_download():
     # Likewise a LinkedIn "playlist" can only be a native document (a PDF carousel):
     # an image post is one item and a video post never reaches the batch route.
     is_linkedin_document = cls.platform == "LinkedIn"
+    # A RedNote "playlist" can only be a multi-image note from the resolver.
+    is_rednote_media = cls.platform == "RedNote"
 
     job_id = uuid.uuid4().hex
     total = len(items)
@@ -480,7 +524,7 @@ def start_batch_download():
                 recompute_overall()
 
             try:
-                if is_ig_carousel or is_tiktok_photo or is_linkedin_document:
+                if is_ig_carousel or is_tiktok_photo or is_linkedin_document or is_rednote_media:
                     idx = item.get("entry_index") or (i + 1)
                     node = media_holder["media"]["items"][idx - 1]
                     cdn_url = node.get("url")
@@ -535,6 +579,14 @@ def start_batch_download():
                 media_holder["media"] = tiktok.fetch_tiktok_post(url)
             elif is_linkedin_document:
                 media_holder["media"] = linkedin.fetch_linkedin_image_post(url)
+            elif is_rednote_media:
+                rn_candidates = rednote.rednote_cookiefile_candidates()
+                try:
+                    if not rn_candidates:
+                        raise rednote.RedNoteAuthError("RedNote requires a logged-in session")
+                    media_holder["media"] = rednote.fetch_rednote_post_any(url, rn_candidates)
+                finally:
+                    cookies._cleanup_temp_cookiefiles(rn_candidates)
 
             with ThreadPoolExecutor(max_workers=min(BATCH_CONCURRENCY, total)) as ex:
                 futures = [ex.submit(download_item, i, item) for i, item in enumerate(items)]

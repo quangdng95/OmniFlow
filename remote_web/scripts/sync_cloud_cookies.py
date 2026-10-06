@@ -66,6 +66,9 @@ _DOMAINS = {
     "instagram.com": ("sessionid",),
     "threads.net": ("sessionid",),
     "threads.com": ("sessionid",),
+    # RedNote requires a login to show any note (2026-10-06); its session cookie is web_session.
+    "rednote.com": ("web_session",),
+    "xiaohongshu.com": ("web_session",),
 }
 
 # Chromium-family browsers browser_cookie3 can read on macOS. Whichever one

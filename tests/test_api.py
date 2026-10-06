@@ -759,6 +759,110 @@ def test_start_batch_download_linkedin_document_picks_each_page(client, monkeypa
     assert len(resolved) == 1  # the document is resolved ONCE and reused for every page
 
 
+# ---- RedNote (2026-10-06): yt-dlp's extractor fails, the resolver takes over ----
+
+RN_URL = "https://www.rednote.com/discovery/item/6aae0dc50000000011036339?xsec_token=T&xsec_source=pc_share"
+RN_VIDEO = {"title": "魔法", "items": [{"kind": "video", "url": "https://cdn/v.mp4", "thumbnail": "https://cdn/c.jpg"}]}
+
+
+def _rednote_yt_dlp_fails(monkeypatch):
+    from backend import rednote as rednote_module
+
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("No video formats found!")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    return rednote_module
+
+
+def test_check_link_rednote_falls_back_to_the_resolver_with_the_users_session(client, monkeypatch):
+    rednote_module = _rednote_yt_dlp_fails(monkeypatch)
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: ["/rn-session.txt"])
+    seen = {}
+    monkeypatch.setattr(rednote_module, "fetch_rednote_post_any", lambda url, cfs: seen.update(url=url, cfs=cfs) or RN_VIDEO)
+    resp = client.post("/api/check", json={"url": RN_URL})
+    body = resp.get_json()
+    assert resp.status_code == 200 and body["type"] == "video" and body["kind"] == "video"
+    assert body["platform"] == "RedNote" and seen["cfs"] == ["/rn-session.txt"]
+
+
+def test_check_link_rednote_without_a_session_gets_a_friendly_login_message(client, monkeypatch):
+    rednote_module = _rednote_yt_dlp_fails(monkeypatch)
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: [])
+    resp = client.post("/api/check", json={"url": RN_URL})
+    assert resp.status_code == 400
+    error = resp.get_json()["error"]
+    assert "RedNote" in error and "github.com" not in error.lower()
+
+
+def test_check_link_rednote_logged_out_session_gets_the_login_message(client, monkeypatch):
+    rednote_module = _rednote_yt_dlp_fails(monkeypatch)
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: ["/stale.txt"])
+
+    def logged_out(url, cfs):
+        raise rednote_module.RedNoteAuthError("login page")
+
+    monkeypatch.setattr(rednote_module, "fetch_rednote_post_any", logged_out)
+    resp = client.post("/api/check", json={"url": RN_URL})
+    assert resp.status_code == 400 and "RedNote" in resp.get_json()["error"]
+
+
+def test_start_download_rednote_saves_the_video_via_the_resolver(client, monkeypatch, tmp_path):
+    rednote_module = _rednote_yt_dlp_fails(monkeypatch)
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+
+    def yt_fails(*args, **kwargs):
+        raise yt_dlp.utils.DownloadError("No video formats found!")
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", yt_fails)
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: ["/rn.txt"])
+    monkeypatch.setattr(rednote_module, "fetch_rednote_post_any", lambda url, cfs: RN_VIDEO)
+    fetched = []
+    monkeypatch.setattr(download_module, "download_direct_url", lambda cdn_url, output_path, job_id: fetched.append((cdn_url, output_path)))
+
+    class SyncThread:
+        def __init__(self, target=None, daemon=None):
+            self._target = target
+
+        def start(self):
+            self._target()
+
+    monkeypatch.setattr(threading, "Thread", SyncThread)
+    resp = client.post("/api/download", json={"url": RN_URL, "quality": "Best", "title": "My note"})
+    assert resp.status_code == 200
+    assert fetched == [("https://cdn/v.mp4", str(tmp_path / "My note.mp4"))]
+
+
+def test_start_batch_download_rednote_image_note_picks_each_image(client, monkeypatch, tmp_path):
+    from backend import rednote as rednote_module
+
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path)})
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: ["/rn.txt"])
+    images = [{"kind": "image", "url": f"https://cdn/{n}.jpg", "thumbnail": None} for n in (1, 2, 3)]
+    resolved = []
+    monkeypatch.setattr(rednote_module, "fetch_rednote_post_any", lambda url, cfs: resolved.append(url) or {"title": "Photos", "items": images})
+    got = []
+
+    def fake_direct(cdn_url, output_path, job_id, on_progress=None):
+        got.append(cdn_url)
+        with open(output_path, "wb") as f:
+            f.write(b"\xff\xd8\xff\xe0x")
+        if on_progress:
+            on_progress(100)
+
+    monkeypatch.setattr(download_module, "download_direct_url", fake_direct)
+    resp = client.post("/api/download-batch", json={"url": RN_URL, "quality": "Best", "items": [{"title": f"Photos ({n})", "entry_index": n} for n in (2, 3)]})
+    job_id = resp.get_json()["job_id"]
+    for _ in range(50):
+        if jobs_module.jobs[job_id]["status"] != "running":
+            break
+        time.sleep(0.05)
+    assert jobs_module.jobs[job_id]["status"] == "done"
+    assert sorted(got) == ["https://cdn/2.jpg", "https://cdn/3.jpg"] and len(resolved) == 1
+
+
 def test_check_link_linkedin_video_post_unaffected(client, monkeypatch):
     # A real LinkedIn video post never reaches the image fallback - the
     # standard yt-dlp path handles it exactly like every other platform.

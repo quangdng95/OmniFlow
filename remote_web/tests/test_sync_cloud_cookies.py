@@ -258,3 +258,10 @@ def test_it_eventually_gives_up_on_a_network_that_never_comes_back():
 def test_the_launch_agent_runs_hourly_not_every_six_hours():
     installer = open(os.path.join(os.path.dirname(_SCRIPT), "install-cloud-cookie-sync.sh")).read()
     assert "<key>StartInterval</key><integer>3600</integer>" in installer
+
+
+def test_the_rednote_login_is_synced_to_the_cloud_too():
+    # RedNote shows nothing without a login (2026-10-06); the VM has no browser,
+    # so its only source is this sync.
+    assert sync._DOMAINS["rednote.com"] == ("web_session",)
+    assert sync._DOMAINS["xiaohongshu.com"] == ("web_session",)

@@ -33,6 +33,10 @@ _CATALOG = {
         VI: "❌ Lỗi: Cần một trình duyệt đã đăng nhập Threads (threads.com) trên máy này để tải bài viết. Vui lòng đăng nhập rồi thử lại.",
         EN: "❌ Error: A browser signed in to Threads (threads.com) is required on this machine to download this post. Please sign in, then try again.",
     },
+    "rednote_auth": {
+        VI: "❌ Lỗi: RedNote yêu cầu đăng nhập để xem bài này. Hãy đăng nhập RedNote (rednote.com) trong trình duyệt trên máy chủ rồi thử lại.",
+        EN: "❌ Error: RedNote requires a signed-in session to view this post. Sign in to RedNote (rednote.com) in the browser on the server, then try again.",
+    },
     "extract_failed": {
         VI: "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung.",
         EN: "❌ Error: Couldn't extract data from this link. Please check the link, or whether the content is public.",

@@ -225,3 +225,12 @@ def test_cookiefiles_from_browsers_does_not_log_when_a_session_is_found(no_brows
     finally:
         for p in paths:
             os.remove(p)
+
+
+def test_arc_is_one_of_the_browsers_whose_logins_are_found():
+    # The owner browses in Arc; without it no session was ever found on the Mac.
+    assert "arc" in cookies_module.CHROMIUM_BROWSER_DIRS
+    assert cookies_module.CHROMIUM_BROWSER_DIRS["arc"].endswith("Arc/User Data")
+    import browser_cookie3
+
+    assert hasattr(browser_cookie3, "arc")  # the reader the loop resolves by name

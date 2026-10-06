@@ -25,6 +25,11 @@ CHROMIUM_BROWSER_DIRS = {
     "chromium": "~/Library/Application Support/Chromium",
     "vivaldi": "~/Library/Application Support/Vivaldi",
     "opera": "~/Library/Application Support/com.operasoftware.Opera",
+    # Arc (Chromium-based, own folder; its cookies decrypt via browser_cookie3.arc).
+    # Missing here, the desktop app found no Instagram/Threads/RedNote login for
+    # anyone browsing in Arc (2026-10-06) although the cloud sync script, which
+    # reads Arc directly, did.
+    "arc": "~/Library/Application Support/Arc/User Data",
 }
 
 
@@ -113,7 +118,7 @@ def _cleanup_temp_cookiefiles(paths):
                 pass
 
 
-def cookiefiles_from_browsers(domain="instagram.com"):
+def cookiefiles_from_browsers(domain="instagram.com", session_cookie="sessionid"):
     # Auto-auth: use browser_cookie3 to read `domain` cookies from EVERY installed
     # browser/profile that carries a live-looking sessionid, writing each account
     # to its own cookies.txt. To bypass SQLite locks when the browsers are running,
@@ -216,7 +221,7 @@ def cookiefiles_from_browsers(domain="instagram.com"):
             # browser_cookie3 decrypts the macOS Keychain "Chrome Safe Storage" key itself
             # - a wholly separate implementation from yt-dlp's --cookies-from-browser.
             cookie_map, total = _read_domain_cookies(fn, domain, cookie_file=temp_path)
-            session = cookie_map.get("sessionid")
+            session = cookie_map.get(session_cookie)
             if session and session not in seen_sessions:
                 seen_sessions.add(session)
                 cookiefiles.append(_write_cookies_txt(cookie_map, domain))
@@ -243,7 +248,7 @@ def cookiefiles_from_browsers(domain="instagram.com"):
             fn = getattr(browser_cookie3, name, None)
             if fn:
                 cookie_map, total = _read_domain_cookies(fn, domain)
-                session = cookie_map.get("sessionid")
+                session = cookie_map.get(session_cookie)
                 if session and session not in seen_sessions:
                     seen_sessions.add(session)
                     cookiefiles.append(_write_cookies_txt(cookie_map, domain))

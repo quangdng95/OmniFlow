@@ -318,6 +318,34 @@ def test_download_batch_linkedin_document_zips_the_selected_pages(client, monkey
         assert len(zf.namelist()) == 3 and all(n.endswith(".jpg") for n in zf.namelist())
 
 
+def test_check_rednote_uses_the_synced_session_when_yt_dlp_fails(client, monkeypatch):
+    import yt_dlp
+    from backend import rednote as rednote_module
+
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("No video formats found!")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: ["/synced.txt"])
+    monkeypatch.setattr(
+        rednote_module, "fetch_rednote_post_any",
+        lambda url, cfs: {"title": "魔法", "items": [{"kind": "video", "url": "https://cdn/v.mp4", "thumbnail": None}]},
+    )
+    resp = client.post("/api/check", json={"url": "https://www.rednote.com/discovery/item/6aae0dc50000000011036339?xsec_token=T"})
+    body = resp.get_json()
+    assert resp.status_code == 200 and body["type"] == "video" and body["platform"] == "RedNote"
+
+
+def test_check_rednote_without_a_synced_session_explains_what_to_do(client, monkeypatch):
+    import yt_dlp
+    from backend import rednote as rednote_module
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda cls: (_ for _ in ()).throw(yt_dlp.utils.DownloadError("No video formats found!")))
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: [])
+    resp = client.post("/api/check", json={"url": "https://www.rednote.com/discovery/item/6aae0dc50000000011036339?xsec_token=T"})
+    assert resp.status_code == 400 and "RedNote" in resp.get_json()["error"]
+
+
 def test_download_batch_deletes_raw_files_as_it_goes(client, monkeypatch, tmp_path):
     monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
     monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
