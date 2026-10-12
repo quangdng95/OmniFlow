@@ -11,7 +11,7 @@ interface SectionCardProps {
 const SectionCard = ({ children, style, className }: SectionCardProps) => (
   <motion.div
     className={cn(
-      "bg-white/85 backdrop-blur-[12px] border border-black/5 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.02),_0_1px_2px_rgba(0,0,0,0.01)] w-full flex flex-col gap-4 p-4",
+      "w-full flex flex-col gap-4 border-[3px] border-ink bg-card p-4 md:p-6",
       className
     )}
     initial={{ opacity: 0, y: 24 }}

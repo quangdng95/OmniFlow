@@ -60,7 +60,7 @@ const App = () => {
             </Suspense>
           )}
 
-          <Footer />
+          <Footer onNavigate={setPage} />
         </div>
       </div>
       </MotionConfig>

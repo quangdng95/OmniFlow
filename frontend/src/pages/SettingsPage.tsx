@@ -95,28 +95,28 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
     <div className="w-full">
       <div className="w-full flex flex-col gap-4">
           {isLocal() && (
-            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
-              <p className="text-base font-semibold text-slate-800 m-0">
+            <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">
+              <p className="text-base font-semibold text-ink m-0">
                 {t.settingsPage.targetPath.heading}
               </p>
 
               <div className="flex flex-col gap-2.5 w-full">
-                <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
-                  <span className="text-red-500 font-bold mr-1">*</span>
+                <p className="text-base text-ink-muted font-normal m-0 leading-relaxed">
+                  <span className="text-destructive font-bold mr-1">*</span>
                   {t.settingsPage.targetPath.description}
                 </p>
 
-                <div className="flex items-center gap-2 border border-slate-200 bg-white rounded-lg pl-3 pr-2 py-1.5 focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-slate-100 transition-all w-full">
-                  <Folder className="h-4 w-4 text-slate-400 shrink-0" />
+                <div className="flex items-center gap-2 border border-ink bg-white rounded-none pl-3 pr-2 py-1.5 focus-within:border-ink focus-within:ring-2 focus-within:ring-border transition-all w-full">
+                  <Folder className="h-4 w-4 text-ink-muted shrink-0" />
                   <input
                     value={path}
                     onChange={(e) => handlePathChange(e.target.value)}
-                    className="flex-1 bg-transparent border-0 outline-none text-sm text-slate-900 placeholder:text-muted-foreground min-w-0"
+                    className="flex-1 bg-transparent border-0 outline-none text-base text-ink placeholder:text-muted-foreground min-w-0"
                   />
                   <button
                     onClick={handleBrowse}
                     type="button"
-                    className="text-xs font-bold text-[#0d9585] hover:text-[#0b7e70] transition-colors px-2 py-1 focus:outline-none cursor-pointer shrink-0"
+                    className="text-base font-bold text-brand hover:text-ink transition-colors px-2 py-1 focus:outline-none cursor-pointer shrink-0"
                   >
                     {t.settingsPage.targetPath.browse}
                   </button>
@@ -131,7 +131,7 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
                 />
                 <label
                   htmlFor="remember-path-checkbox"
-                  className="text-xs font-semibold text-slate-700 cursor-pointer"
+                  className="text-base font-semibold text-ink cursor-pointer"
                 >
                   {t.settingsPage.targetPath.rememberPath}
                 </label>
@@ -140,11 +140,11 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
           )}
 
           {!isLocal() && (
-            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
-              <p className="text-base font-semibold text-slate-800 m-0">
+            <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">
+              <p className="text-base font-semibold text-ink m-0">
                 {t.settingsPage.cookiesUpload.heading}
               </p>
-              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
+              <p className="text-base text-ink-muted font-normal m-0 leading-relaxed">
                 {t.settingsPage.cookiesUpload.description}
               </p>
               <div className="flex flex-col sm:flex-row gap-2 w-full">
@@ -152,17 +152,17 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
                   type="file"
                   accept=".txt"
                   onChange={handleCookiesFileChange}
-                  className="flex-1 text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold"
+                  className="flex-1 text-base text-ink-muted file:mr-3 file:rounded-none file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-base file:font-semibold"
                 />
                 <Button
                   onClick={handleUploadCookies}
                   disabled={!selectedCookiesFile}
-                  className="w-fit bg-[#0d9585] text-white hover:bg-[#0d9585]/90"
+                  className="w-fit bg-ink text-on-ink hover:bg-ink-hover"
                 >
                   {t.settingsPage.cookiesUpload.upload}
                 </Button>
               </div>
-              <p className="text-xs text-slate-500 m-0">
+              <p className="text-base text-ink-muted m-0">
                 {cookiesStatus === "valid" && t.settingsPage.cookiesUpload.statusValid}
                 {cookiesStatus === "no_session" && t.settingsPage.cookiesUpload.statusNoSession}
                 {(cookiesStatus === "none" || cookiesStatus === null) && t.settingsPage.cookiesUpload.statusNone}
@@ -170,11 +170,11 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
             </SectionCard>
           )}
 
-          <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
-            <p className="text-base font-semibold text-slate-800 m-0">
+          <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">
+            <p className="text-base font-semibold text-ink m-0">
               {t.settingsPage.language.heading}
             </p>
-            <p className="text-xs text-slate-500 m-0">
+            <p className="text-base text-ink-muted m-0">
               {t.settingsPage.language.description}
             </p>
             
@@ -185,24 +185,24 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
             >
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="en" id="lang-en" />
-                <Label htmlFor="lang-en" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                <Label htmlFor="lang-en" className="text-base font-semibold text-ink cursor-pointer">
                   {t.settingsPage.language.english}
                 </Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="vi" id="lang-vi" />
-                <Label htmlFor="lang-vi" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                <Label htmlFor="lang-vi" className="text-base font-semibold text-ink cursor-pointer">
                   {t.settingsPage.language.vietnamese}
                 </Label>
               </div>
             </RadioGroup>
           </SectionCard>
 
-          <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
-            <p className="text-base font-semibold text-slate-800 m-0">
+          <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">
+            <p className="text-base font-semibold text-ink m-0">
               {t.settingsPage.playlistLimit.heading}
             </p>
-            <p className="text-xs text-slate-500 m-0">
+            <p className="text-base text-ink-muted m-0">
               {t.settingsPage.playlistLimit.description}
             </p>
             
@@ -213,37 +213,37 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
             >
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="30" id="limit-30" />
-                <Label htmlFor="limit-30" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                <Label htmlFor="limit-30" className="text-base font-semibold text-ink cursor-pointer">
                   {t.settingsPage.playlistLimit.option30}
                 </Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="50" id="limit-50" />
-                <Label htmlFor="limit-50" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                <Label htmlFor="limit-50" className="text-base font-semibold text-ink cursor-pointer">
                   {t.settingsPage.playlistLimit.option50}
                 </Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="100" id="limit-100" />
-                <Label htmlFor="limit-100" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                <Label htmlFor="limit-100" className="text-base font-semibold text-ink cursor-pointer">
                   {t.settingsPage.playlistLimit.option100}
                 </Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="200" id="limit-200" />
-                <Label htmlFor="limit-200" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                <Label htmlFor="limit-200" className="text-base font-semibold text-ink cursor-pointer">
                   {t.settingsPage.playlistLimit.option200}
                 </Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="500" id="limit-500" />
-                <Label htmlFor="limit-500" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                <Label htmlFor="limit-500" className="text-base font-semibold text-ink cursor-pointer">
                   {t.settingsPage.playlistLimit.option500}
                 </Label>
               </div>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="0" id="limit-all" />
-                <Label htmlFor="limit-all" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                <Label htmlFor="limit-all" className="text-base font-semibold text-ink cursor-pointer">
                   {t.settingsPage.playlistLimit.optionAll}
                 </Label>
               </div>
@@ -251,17 +251,17 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
           </SectionCard>
 
           {isLocal() && (
-            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
-              <p className="text-base font-semibold text-slate-800 m-0">
+            <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">
+              <p className="text-base font-semibold text-ink m-0">
                 {t.settingsPage.exportLogs.heading}
               </p>
-              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
+              <p className="text-base text-ink-muted font-normal m-0 leading-relaxed">
                 {t.settingsPage.exportLogs.description}
               </p>
               <Button
                 onClick={handleOpenLogs}
                 variant="outline"
-                className="w-fit border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 hover:text-[#0d9585]"
+                className="w-fit border-ink text-brand hover:bg-signal hover:text-ink"
               >
                 <ScrollText className="h-4 w-4" />
                 {t.settingsPage.exportLogs.button}
@@ -270,11 +270,11 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
           )}
 
           {isLocal() && (
-            <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
-              <p className="text-base font-semibold text-slate-800 m-0">
+            <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">
+              <p className="text-base font-semibold text-ink m-0">
                 {t.settingsPage.resetSettings.heading}
               </p>
-              <p className="text-xs text-slate-500 font-normal m-0 leading-relaxed">
+              <p className="text-base text-ink-muted font-normal m-0 leading-relaxed">
                 {t.settingsPage.resetSettings.description}
               </p>
               <Button onClick={handleResetSettings} variant="destructive" className="w-fit">

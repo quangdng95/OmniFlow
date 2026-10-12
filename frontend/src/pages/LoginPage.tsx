@@ -47,9 +47,9 @@ const LoginPage = () => {
   const toggleVisible = () => setVisible((v) => !v);
 
   return (
-    <div className="flex min-h-svh w-full flex-col items-center justify-center bg-[#f4f4f0] p-6 md:p-10">
+    <div className="flex min-h-svh w-full flex-col items-center justify-center bg-background p-6 md:p-10">
       <div className="w-full max-w-sm md:max-w-4xl">
-        <Card className="overflow-hidden bg-white p-0 shadow-sm">
+        <Card className="overflow-hidden bg-white p-0 ">
           <CardContent className="grid p-0 md:grid-cols-2">
             <div className="flex flex-col gap-6 p-6 md:p-8">
               <div className="flex items-center justify-between">
@@ -58,8 +58,8 @@ const LoginPage = () => {
               </div>
               <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
                 <div className="flex flex-col items-start gap-1.5 text-left">
-                  <h1 className="m-0 text-2xl font-bold text-slate-900">{t.login.title}</h1>
-                  <p className="m-0 text-sm text-slate-500">{t.login.subtitle}</p>
+                  <h1 className="m-0 text-2xl font-bold text-ink">{t.login.title}</h1>
+                  <p className="m-0 text-base text-ink-muted">{t.login.subtitle}</p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="token">{t.login.label}</Label>
@@ -83,13 +83,13 @@ const LoginPage = () => {
                       type="button"
                       onClick={toggleVisible}
                       aria-label={visible ? t.login.hide : t.login.show}
-                      className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 hover:text-slate-700"
+                      className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-ink-muted hover:text-ink"
                     >
                       {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   {error && (
-                    <p role="alert" className="m-0 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+                    <p role="alert" className="m-0 rounded-none border border-destructive bg-invalid px-3 py-2 text-base font-medium text-destructive">
                       {t.login[error]}
                     </p>
                   )}
@@ -97,7 +97,7 @@ const LoginPage = () => {
                 <Button
                   type="submit"
                   disabled={!token || submitting}
-                  className="w-full gap-1.5 rounded-lg bg-[#0d9585] text-white shadow-sm hover:bg-[#0d9585]/90"
+                  className="w-full gap-1.5 rounded-none bg-ink text-on-ink  hover:bg-ink-hover"
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {submitting ? t.login.submitting : t.login.submit}
@@ -105,12 +105,12 @@ const LoginPage = () => {
               </form>
             </div>
             {/* Visual side (login-04's cover image): a brand panel, desktop only. */}
-            <div className="relative hidden flex-col justify-end gap-3 overflow-hidden bg-gradient-to-br from-[#0d9585] to-[#0a5f56] p-8 text-white md:flex">
+            <div className="relative hidden flex-col justify-end gap-3 overflow-hidden bg-ink p-8 text-on-ink md:flex">
               <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10" />
               <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-white/5" />
-              <Lock className="relative h-10 w-10 text-white/90" />
+              <Lock className="relative h-10 w-10 text-on-ink/90" />
               <p className="relative m-0 text-xl font-semibold leading-snug">{t.login.tagline}</p>
-              <p className="relative m-0 text-xs leading-relaxed text-white/75">{t.login.platforms}</p>
+              <p className="relative m-0 text-base leading-relaxed text-on-ink/75">{t.login.platforms}</p>
             </div>
           </CardContent>
         </Card>
