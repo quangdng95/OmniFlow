@@ -37,7 +37,7 @@ cd ..
 
 # 3. Build standalone macOS app using PyInstaller
 echo -e "${BLUE}[4/6] Packaging desktop app with PyInstaller...${NC}"
-pyinstaller OmniFlow.spec --noconfirm --clean
+pyinstaller vidrop.spec --noconfirm --clean
 
 # 4. Strip extended attributes and sign ad-hoc in a temp folder to bypass iCloud FileProvider issues
 echo -e "${BLUE}[5/6] Stripping extended attributes and signing ad-hoc in a temp directory...${NC}"

@@ -19,7 +19,7 @@ install required on that device.
 > Start at [Free-tier cloud deployment](#free-tier-cloud-deployment-linux--the-primary-deployment).
 
 This is a *separate deployment* from the native `.app` — it does not touch
-`backend/`, `server.py`, `desktop_app.py`, or `OmniFlow.spec` at all. The
+`backend/`, `server.py`, `desktop_app.py`, or `vidrop.spec` at all. The
 original design ran it on a dedicated, always-on Mac (an older machine,
 **not** the one used for day-to-day development) behind a free Cloudflare
 Tunnel, because a residential IP matters for platforms (TikTok especially)

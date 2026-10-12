@@ -3,7 +3,7 @@
 # frontend + vendored ffmpeg into a standalone macOS .app that each end user
 # installs and runs 100% on their own machine (no owner server involved).
 #
-# Build:  pyinstaller OmniFlow.spec --noconfirm
+# Build:  pyinstaller vidrop.spec --noconfirm
 # Output: dist/OmniFlow.app
 import os
 import platform

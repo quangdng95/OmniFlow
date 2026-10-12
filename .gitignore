@@ -5,7 +5,7 @@ __pycache__/
 .DS_Store
 node_modules/
 
-# PyInstaller packaging artifacts (see OmniFlow.spec / rules/packaging.md)
+# PyInstaller packaging artifacts (see vidrop.spec / rules/packaging.md)
 build/
 .ffmpeg_stage/
 dist/

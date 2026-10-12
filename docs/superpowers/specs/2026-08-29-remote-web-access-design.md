@@ -17,7 +17,7 @@ native macOS app on that device.
 - Playlist/channel and carousel (multi-item) downloads must work, delivered as a single
   `.zip` to the requesting device.
 - **Zero changes to the existing native macOS app**: `backend/`, `server.py`,
-  `desktop_app.py`, `OmniFlow.spec`, and the packaged `.app` build must be byte-for-byte
+  `desktop_app.py`, `vidrop.spec`, and the packaged `.app` build must be byte-for-byte
   unaffected by this work. All new code lives in one new, clearly separate top-level
   folder.
 - Runs on a dedicated, always-on Mac (an older machine, separate from the owner's main
@@ -258,7 +258,7 @@ optional nice-to-have.
 ### 5.1 ffmpeg binary resolution (new — addresses review feedback)
 
 `backend.paths.get_ffmpeg_path()` always looks for a file literally named `ffmpeg` at the
-repo root — correct for the native app, where `OmniFlow.spec` already picked the
+repo root — correct for the native app, where `vidrop.spec` already picked the
 matching-architecture binary and staged it under that exact name at *build* time (see
 `.claude/rules/packaging.md`). `remote_web` runs unfrozen (`python3 -m remote_web.app`,
 no PyInstaller step), so nothing performs that selection — if the dedicated Mac isn't the
