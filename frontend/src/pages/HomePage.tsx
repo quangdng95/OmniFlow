@@ -396,7 +396,11 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
           {/* Hero: kept short so the URL bar sits inside the first mobile screen. */}
           <div className="flex flex-col items-start gap-3 pt-2 text-left md:pt-6">
             <h1 className="m-0 font-display text-[clamp(2.75rem,14vw,10.5rem)] leading-[0.9] [:lang(vi)_&]:leading-[1.02] font-bold tracking-[-0.06em] text-ink uppercase">
-              {t.header.home.tagline}
+              {t.header.home.taglineLines.map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
             </h1>
             <p className="m-0 max-w-[30em] text-[1.1875rem] leading-snug text-ink">{t.header.home.sub}</p>
           </div>

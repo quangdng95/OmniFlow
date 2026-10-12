@@ -4,7 +4,7 @@ export interface Translations {
   header: {
     menu: string;
     nav: { home: string; history: string; settings: string; terms: string; shortcut: string; changelog: string };
-    home: { title: string; descriptionLine1: string; descriptionLine2: string; tagline: string; sub: string };
+    home: { title: string; descriptionLine1: string; descriptionLine2: string; tagline: string; taglineLines: [string, string]; sub: string };
     settings: { title: string };
     terms: { title: string };
     shortcut: { title: string };
@@ -193,6 +193,7 @@ const en: Translations = {
       descriptionLine1: "Download videos and media instantly with Vidrop.",
       descriptionLine2: "It's fast, free, and fully compatible with all your devices!",
       tagline: "Paste a link. Get the file.",
+      taglineLines: ["Paste a link.", "Get the file."],
       sub: "Free, no sign-up. Up to 1080p, or audio only.",
     },
     settings: { title: "Settings" },
@@ -676,6 +677,7 @@ const vi: Translations = {
       descriptionLine1: "Tải video và media ngay lập tức với Vidrop.",
       descriptionLine2: "Nhanh, miễn phí và tương thích với mọi thiết bị của bạn!",
       tagline: "Dán link. Nhận file.",
+      taglineLines: ["Dán link.", "Nhận file."],
       sub: "Miễn phí, không cần đăng ký. Tối đa 1080p hoặc chỉ lấy âm thanh.",
     },
     settings: { title: "Cài đặt" },
