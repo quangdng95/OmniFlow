@@ -66,7 +66,7 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
                 <button
                   type="button"
                   aria-label={t.header.menu}
-                  className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 border-[3px] border-ink bg-transparent px-2.5 font-display text-base font-bold text-ink uppercase hover:bg-ink hover:text-on-ink aria-expanded:bg-ink aria-expanded:text-on-ink sm:px-3.5"
+                  className="box-border inline-flex h-(--control-h) min-w-11 cursor-pointer items-center justify-center gap-2 border-[3px] border-ink bg-transparent px-2.5 font-display text-base font-bold text-ink uppercase hover:bg-ink hover:text-on-ink aria-expanded:bg-ink aria-expanded:text-on-ink sm:px-3.5"
                 />
               }
             >

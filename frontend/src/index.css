@@ -168,6 +168,8 @@ li + li {
   --font-display: "Space Grotesk", "Be Vietnam Pro", "Arial Black", system-ui, sans-serif;
   --color-ink: var(--ink);
   --color-on-ink: var(--on-ink);
+  --color-ink-hover: var(--ink-hover);
+  --color-ink-muted: var(--ink-muted);
   --color-paper: var(--paper);
   --color-brand: var(--brand);
   --color-signal: var(--signal);
@@ -223,6 +225,8 @@ li + li {
   --on-ink: #ffffff;
   --paper: #fafaf7;
   --ink-muted: #4a4a4a;
+  --ink-hover: #222222;
+  --control-h: 3rem; /* header controls (language switch, menu) share one height */
   --brand: #1738ff;
   --signal: #ffd60a;
   --signal-hover: #ffe55c;
