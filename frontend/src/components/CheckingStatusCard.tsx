@@ -1,6 +1,7 @@
-import { Ban } from "lucide-react";
+import { Ban, Loader2, TriangleAlert } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import SectionCard from "./SectionCard";
+import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "../i18n/LanguageContext";
 
 interface CheckingStatusCardProps {
@@ -12,24 +13,24 @@ interface CheckingStatusCardProps {
 const CheckingStatusCard = ({ seconds, onCancel, showKeychainHint }: CheckingStatusCardProps) => {
   const { t } = useLanguage();
   return (
-    <SectionCard style={{ alignItems: "flex-start" }} className="p-4 bg-white/90 border border-neutral-200 shadow-sm rounded-xl">
-      <span className="text-[#0d9585] text-sm font-semibold select-none">
-        {t.checkingStatus.checkingLink} ({seconds}s)
-      </span>
-      {showKeychainHint && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 m-0 leading-relaxed">
-          {t.checkingStatus.keychainHint}
-        </p>
-      )}
-      <Button
-        variant="destructive"
-        className="w-full flex items-center justify-center gap-1.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none shadow-none"
-        onClick={onCancel}
-      >
-        <Ban className="h-4 w-4" />
-        {t.checkingStatus.cancel}
-      </Button>
-    </SectionCard>
+    <Card className="w-full select-none">
+      <CardContent className="flex flex-col gap-3">
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          {t.checkingStatus.checkingLink} ({seconds}s)
+        </span>
+        {showKeychainHint && (
+          <Alert>
+            <TriangleAlert />
+            <AlertDescription>{t.checkingStatus.keychainHint}</AlertDescription>
+          </Alert>
+        )}
+        <Button variant="outline" className="w-full" onClick={onCancel}>
+          <Ban />
+          {t.checkingStatus.cancel}
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 

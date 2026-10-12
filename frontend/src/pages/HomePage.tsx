@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { type Page } from "../components/Header";
 import AnimatedSection from "../components/AnimatedSection";
 import UrlInputCard, { type UrlInputStatus } from "../components/UrlInputCard";
@@ -18,26 +21,18 @@ import { useLanguage } from "../i18n/LanguageContext";
 import { isLocal, isMobileRemote } from "../isLocal";
 import { recordDownload } from "../lib/history";
 
-import youtube from "../assets/tags/Youtube.svg";
-import tiktok from "../assets/tags/Tiktok.svg";
-import instagram from "../assets/tags/Instagram.svg";
-import facebook from "../assets/tags/Facebook.svg";
-import rednote from "../assets/tags/Rednote.svg";
-import threads from "../assets/tags/Threads.svg";
-import linkedin from "../assets/tags/LinkedIn.svg";
-import x from "../assets/tags/X.svg";
 
 type DownloadState = "idle" | "downloading" | "done" | "fail";
 
 const platforms = [
-  { name: "YouTube", icon: youtube },
-  { name: "TikTok", icon: tiktok },
-  { name: "Instagram", icon: instagram },
-  { name: "Facebook", icon: facebook },
-  { name: "RedNote", icon: rednote },
-  { name: "Threads", icon: threads },
-  { name: "LinkedIn", icon: linkedin },
-  { name: "X (Twitter)", icon: x },
+  { name: "YouTube", color: "#ff0000" },
+  { name: "TikTok", color: "#25f4ee" },
+  { name: "Instagram", color: "#e1306c" },
+  { name: "Facebook", color: "#1877f2" },
+  { name: "RedNote", color: "#ff2442" },
+  { name: "Threads", color: "#111111" },
+  { name: "LinkedIn", color: "#0a66c2" },
+  { name: "X", color: "#111111" },
 ];
 
 interface HomePageProps {
@@ -397,11 +392,11 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
 
   return (
     <div className="w-full select-none">
-      <div className="w-full flex flex-col gap-4">
+      <div className="w-full flex flex-col gap-6">
           {/* Short intro (it used to be the bottom half of a ~340px-tall header). */}
           <div className="flex flex-col items-start gap-1 text-left">
-            <h1 className="m-0 text-lg font-semibold leading-snug text-[#334155]">{t.header.home.title}</h1>
-            <p className="m-0 max-w-[560px] text-[13px] font-light leading-relaxed text-neutral-500">
+            <h1 className="m-0 text-2xl font-semibold leading-tight tracking-tight">{t.header.home.title}</h1>
+            <p className="m-0 max-w-[520px] text-sm leading-relaxed text-muted-foreground">
               {t.header.home.descriptionLine1} {t.header.home.descriptionLine2}
             </p>
           </div>
@@ -429,97 +424,72 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
           )}
 
           {!checking && !checkResult && (
-            <AnimatedSection className="flex flex-col gap-8 text-[#1f2937] w-full">
-              {/* Introduction */}
-              <div className="text-left max-w-[600px] flex flex-col gap-3">
-                <p className="text-sm font-medium text-slate-600 m-0">
-                  {t.home.introLines[0]}
-                </p>
-                <p className="text-xs text-slate-600 m-0">
-                  {t.home.introLines[1]} • {t.home.introLines[2]}
-                </p>
-              </div>
-
-              {/* Supported Platforms */}
-              <div className="flex flex-col items-start gap-3 select-none">
-                <h3 className="text-base font-bold text-slate-800 text-left m-0">
-                  {t.home.supportedPlatformsHeading}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
+            <AnimatedSection className="flex flex-col gap-10 pt-4 w-full select-none">
+              <section className="flex flex-col gap-3">
+                <h2 className="m-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.home.supportedPlatformsHeading}</h2>
+                <div className="flex flex-wrap gap-2">
                   {platforms.map((p) => (
-                    <div
-                      key={p.name}
-                      className="flex items-center justify-start px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl cursor-default transition-all duration-200 hover:translate-y-[-1.5px] hover:shadow-sm hover:border-[#0d9585]"
-                    >
-                      <img src={p.icon} alt={p.name} className="h-5 w-auto object-contain" />
-                    </div>
+                    <Badge key={p.name} variant="outline" className="h-6 gap-1.5 bg-card px-2.5 text-[13px] font-medium">
+                      <span aria-hidden className="size-1.5 rounded-full" style={{ backgroundColor: p.color }} />
+                      {p.name}
+                    </Badge>
                   ))}
                 </div>
-              </div>
+              </section>
 
-              {/* Steps */}
-              <div className="flex flex-col gap-4">
-                <h3 className="text-base font-bold text-slate-800 text-left m-0">
-                  {t.home.howToHeading}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+              <section className="flex flex-col gap-3">
+                <h2 className="m-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.home.howToHeading}</h2>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {t.home.steps.map((step, index) => (
-                    <div
-                      key={step.label}
-                      className="flex flex-col gap-3 p-4 bg-white border border-slate-200/50 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.01)]"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-[#0d9585]/10 text-[#0d9585] flex items-center justify-center text-xs font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <h4 className="text-xs font-bold text-slate-800 m-0">
-                          {step.label}
-                        </h4>
-                        <p className="text-[11px] text-slate-500 leading-relaxed m-0">
-                          {step.body}
-                        </p>
-                      </div>
-                    </div>
+                    <Card key={step.label}>
+                      <CardHeader>
+                        <Badge variant="secondary" className="mb-1 w-fit tabular-nums">
+                          {String(index + 1).padStart(2, "0")}
+                        </Badge>
+                        <CardTitle className="text-sm font-semibold">{step.label}</CardTitle>
+                        <CardDescription className="leading-relaxed">{step.body}</CardDescription>
+                      </CardHeader>
+                    </Card>
                   ))}
                 </div>
-              </div>
+              </section>
 
-              {/* Features */}
-              <div className="flex flex-col gap-4">
-                <h3 className="text-base font-bold text-slate-800 text-left m-0">
-                  {t.home.featuresHeading}
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                  {t.home.features.map((feat) => (
-                    <div
-                      key={feat.title}
-                      className="flex flex-col gap-1 p-4 bg-white border border-slate-200/50 rounded-xl"
-                    >
-                      <span className="text-xs font-bold text-[#0d9585]">{feat.title}</span>
-                      <span className="text-[11px] text-slate-500 leading-relaxed">{feat.desc}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <section className="flex flex-col gap-3">
+                <h2 className="m-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.home.featuresHeading}</h2>
+                <Card>
+                  <CardContent className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+                    {t.home.features.map((feat, index) => (
+                      <div key={feat.title} className="flex flex-col">
+                        {index > 0 && <Separator className={index === 1 ? "sm:hidden" : undefined} />}
+                        <div className="flex flex-col gap-1 py-3">
+                          <h3 className="m-0 text-sm font-semibold">{feat.title}</h3>
+                          <p className="m-0 text-[13px] leading-relaxed text-muted-foreground">{feat.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </section>
 
-              {/* FAQs */}
-              <div className="flex flex-col gap-4 select-none">
-                <h3 className="text-base font-bold text-slate-800 text-left m-0">
-                  {t.home.faqHeading}
-                </h3>
-                <Accordion className="w-full bg-white border border-slate-200/60 rounded-xl p-2 px-4 shadow-sm">
-                  {t.home.faqs.map((faq, index) => (
-                    <AccordionItem key={index} value={String(index)} className="border-b border-neutral-100 last:border-0">
-                      <AccordionTrigger className="text-xs font-semibold text-slate-800 hover:no-underline py-3">
-                        {faq.q}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-xs text-slate-500 leading-relaxed pb-3">
-                        {faq.a}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </div>
+              <section className="flex flex-col gap-3">
+                <h2 className="m-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.home.faqHeading}</h2>
+                <Card>
+                  <CardContent>
+                    <Accordion className="w-full">
+                      {t.home.faqs.map((faq, index) => (
+                        <AccordionItem key={index} value={String(index)}>
+                          <AccordionTrigger className="py-3 text-sm font-medium hover:no-underline">
+                            {faq.q}
+                          </AccordionTrigger>
+                          <AccordionContent className="pb-3 text-[13px] leading-relaxed text-muted-foreground">
+                            {faq.a}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </CardContent>
+                </Card>
+              </section>
             </AnimatedSection>
           )}
 

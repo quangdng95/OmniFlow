@@ -281,22 +281,22 @@ const en: Translations = {
       "By using Vidrop, you accept our Terms of Use.",
     ],
     supportedPlatformsHeading: "Supported Platforms",
-    howToHeading: "How to download a video:",
+    howToHeading: "How it works",
     steps: [
       {
-        label: "Copy the link:",
-        body: "Go to YouTube (playlist, channel, or video), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), or LinkedIn and find the content you want. Copy the URL from the app or your browser.",
+        label: "Copy the link",
+        body: "Find the video, photo or playlist you want on any supported platform and copy its link.",
       },
       {
-        label: "Paste & Choose Format:",
-        body: 'Paste the URL into the Vidrop input box above. Choose whether you want MP4 (Video) or MP3 (Audio), and select your preferred quality.',
+        label: "Paste and choose",
+        body: "Paste it above, then pick video or audio and the quality you want.",
       },
       {
-        label: "Download:",
-        body: 'Click the "Convert" button. Once the fast processing is complete, hit "Download" to save the file straight to your device.',
+        label: "Download",
+        body: "Tap Start Download, then Save to device when it finishes.",
       },
     ],
-    featuresHeading: "Why use Vidrop Video Downloader:",
+    featuresHeading: "Why Vidrop",
     features: [
       { title: "100% Free", desc: "No subscriptions, no hidden limits, completely free forever." },
       { title: "No Registration", desc: "Start downloading immediately without sign-up or accounts." },
@@ -761,22 +761,22 @@ const vi: Translations = {
       "Bằng việc sử dụng Vidrop, bạn đồng ý với Điều khoản sử dụng của chúng tôi.",
     ],
     supportedPlatformsHeading: "Nền tảng được hỗ trợ",
-    howToHeading: "Cách tải một video:",
+    howToHeading: "Cách hoạt động",
     steps: [
       {
-        label: "Sao chép đường dẫn:",
-        body: "Vào YouTube (danh sách phát, kênh hoặc video), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) hoặc LinkedIn và tìm nội dung bạn muốn. Sao chép đường dẫn từ ứng dụng hoặc trình duyệt.",
+        label: "Sao chép liên kết",
+        body: "Tìm video, ảnh hoặc danh sách phát bạn muốn trên bất kỳ nền tảng nào được hỗ trợ và sao chép liên kết.",
       },
       {
-        label: "Dán & Chọn định dạng:",
-        body: "Dán đường dẫn vào ô nhập của Vidrop ở trên. Chọn MP4 (Video) hoặc MP3 (Âm thanh), và chọn chất lượng bạn muốn.",
+        label: "Dán và chọn",
+        body: "Dán vào ô phía trên, rồi chọn video hoặc âm thanh và chất lượng bạn muốn.",
       },
       {
-        label: "Tải xuống:",
-        body: 'Nhấn nút "Bắt đầu tải xuống". Sau khi xử lý xong, tệp sẽ được lưu thẳng vào thiết bị của bạn.',
+        label: "Tải xuống",
+        body: "Bấm Bắt đầu tải xuống, rồi Lưu về máy khi xong.",
       },
     ],
-    featuresHeading: "Tại sao nên dùng Vidrop Downloader:",
+    featuresHeading: "Tại sao chọn Vidrop",
     features: [
       { title: "100% Miễn phí", desc: "Không yêu cầu phí dịch vụ, không giới hạn tải xuống, miễn phí trọn đời." },
       { title: "Không cần đăng ký", desc: "Tải ngay lập tức mà không cần tạo tài khoản hay đăng nhập." },

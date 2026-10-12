@@ -11,10 +11,7 @@ const Footer = () => {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="flex gap-2 items-end justify-center w-full pt-6 pb-2"
     >
-      <p
-        className="text-xs text-slate-900 whitespace-nowrap m-0"
-        style={{ textShadow: "0px 2px 4px rgba(0,0,0,0.02), 0px 1px 6px rgba(0,0,0,0.02), 0px 1px 2px rgba(0,0,0,0.03)" }}
-      >
+      <p className="m-0 whitespace-nowrap text-xs text-muted-foreground">
         {t.footer.by}
       </p>
       <Logo size="small" />
