@@ -188,7 +188,7 @@ const en: Translations = {
     nav: { home: "Home", history: "History", settings: "Settings", terms: "Terms of Use", shortcut: "Shortcut Setup", changelog: "Changelog" },
     home: {
       taglineLines: ["Paste a link.", "Get the file."],
-      sub: "Free, no sign-up. Up to 1080p, or audio only.",
+      sub: "Free, no sign-up. Up to 4K, or audio only.",
     },
     settings: { title: "Settings" },
     terms: { title: "Terms of Use" },
@@ -282,7 +282,7 @@ const en: Translations = {
       "Select Start Download, then Save to device when it finishes.",
     ],
     whyHeading: "Why Vidrop",
-    whyBody: "Free, no account, up to 1080p, and whole playlists in one go.",
+    whyBody: "Free, no account. Single videos up to 4K, and whole playlists in one go.",
     faqHeading: "Questions",
     faqs: [
       {
@@ -640,7 +640,7 @@ const vi: Translations = {
     nav: { home: "Trang chủ", history: "Lịch sử", settings: "Cài đặt", terms: "Điều khoản sử dụng", shortcut: "Cài Shortcut", changelog: "Nhật ký cập nhật" },
     home: {
       taglineLines: ["Dán link.", "Nhận file."],
-      sub: "Miễn phí, không cần đăng ký. Tối đa 1080p hoặc chỉ lấy âm thanh.",
+      sub: "Miễn phí, không cần đăng ký. Tối đa 4K hoặc chỉ lấy âm thanh.",
     },
     settings: { title: "Cài đặt" },
     terms: { title: "Điều khoản sử dụng" },
@@ -734,7 +734,7 @@ const vi: Translations = {
       "Bấm Bắt đầu tải xuống, sau đó Lưu về máy khi tải xong.",
     ],
     whyHeading: "Vì sao chọn Vidrop",
-    whyBody: "Miễn phí, không cần tài khoản, tối đa 1080p, tải cả danh sách phát một lần.",
+    whyBody: "Miễn phí, không cần tài khoản. Video lẻ tối đa 4K, tải cả danh sách phát một lần.",
     faqHeading: "Câu hỏi thường gặp",
     faqs: [
       {
