@@ -111,6 +111,7 @@
 body {
   margin: 0;
   overflow-y: scroll;
+  overflow-x: clip; /* full-bleed blocks use 100vw, which includes the scrollbar */
   font-size: 1.0625rem; /* 17px - body copy is never below 16px */
   line-height: 1.5;
 }
@@ -140,8 +141,22 @@ li + li {
 .focus-inset:focus-visible {
   outline-offset: -4px;
 }
-.focus-on-ink:focus-visible {
+.focus-on-ink:focus-visible,
+.on-block :focus-visible {
   outline-color: var(--on-ink);
+}
+.on-block-light :focus-visible {
+  outline-color: var(--ink);
+}
+
+/* Dialog: a stronger scrim (the generated primitive ships 10%) and a 44px close target. */
+[data-slot="dialog-overlay"] {
+  background: color-mix(in srgb, var(--ink) 60%, transparent);
+  backdrop-filter: none;
+}
+[data-slot="dialog-close"] {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
 }
 
 /* Placeholders stay fully opaque so they keep >= 4.5:1 on white. */
@@ -175,6 +190,15 @@ li + li {
   --color-signal: var(--signal);
   --color-signal-hover: var(--signal-hover);
   --color-lime: var(--lime);
+  --color-platform-youtube: var(--platform-youtube);
+  --color-platform-instagram: var(--platform-instagram);
+  --color-platform-facebook: var(--platform-facebook);
+  --color-platform-rednote: var(--platform-rednote);
+  --color-platform-linkedin: var(--platform-linkedin);
+  --color-platform-tiktok: var(--platform-tiktok);
+  --color-platform-x: var(--platform-x);
+  --color-platform-threads: var(--platform-threads);
+  --color-platform-link: var(--platform-link);
   --color-invalid: var(--invalid);
   --shadow-hard: 6px 6px 0 var(--brand);
   --shadow-hard-sm: 3px 3px 0 var(--brand);
@@ -232,6 +256,21 @@ li + li {
   --signal-hover: #ffe55c;
   --lime: #c6ff3d;
   --invalid: #fff1b8;
+
+  /* Platform blocks. Brand colour where it already gives >= 4.5:1 with white
+     text (LinkedIn blue, brand black for TikTok/X/Threads); where the brand
+     colour fails (YouTube, Instagram, Facebook, RedNote) the nearest darker
+     shade of the same hue. Platforms with no brand colour of their own use the
+     neutral ink-hover token. */
+  --platform-youtube: #c80000;
+  --platform-instagram: #b1226f;
+  --platform-facebook: #1558d6;
+  --platform-rednote: #d6112a;
+  --platform-linkedin: #0a66c2;
+  --platform-tiktok: var(--ink);
+  --platform-x: var(--ink);
+  --platform-threads: var(--ink);
+  --platform-link: var(--ink-hover);
 
   --background: var(--paper);
   --foreground: var(--ink);

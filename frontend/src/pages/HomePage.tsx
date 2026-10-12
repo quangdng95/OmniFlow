@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { AlertCircle } from "lucide-react";
+import PlatformBlock from "../components/PlatformBlock";
+import { bigStatus, ctaSignal } from "../lib/blockStyles";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -48,6 +51,8 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   const [checking, setChecking] = useState(false);
   const [checkSeconds, setCheckSeconds] = useState(0);
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
+  // The friendly message of the last failed check, shown as an error block under the URL bar.
+  const [checkError, setCheckError] = useState<string | null>(null);
   const [selectedQuality, setSelectedQuality] = useState<string>("Best");
   
   // Single-video flow
@@ -89,6 +94,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     }
 
     setCheckResult(null);
+    setCheckError(null);
     resetDownloadState();
     const token = ++checkTokenRef.current;
     const handle = setTimeout(() => {
@@ -184,7 +190,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
       }
     } catch (e) {
       if (checkTokenRef.current !== token) return;
-      toast.error(`${(e as Error).message} ${t.urlInput.checkFailedRetryHint}`);
+      setCheckError((e as Error).message);
       setDownloadState("fail");
     } finally {
       if (checkTokenRef.current === token) setChecking(false);
@@ -209,8 +215,15 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     }
   };
 
+  const handleRetryCheck = () => {
+    const token = ++checkTokenRef.current;
+    setCheckError(null);
+    void runCheck(url.trim(), token);
+  };
+
   const handleClear = () => {
     checkTokenRef.current += 1;
+    setCheckError(null);
     setUrl("");
     setCheckResult(null);
     resetDownloadState();
@@ -418,6 +431,20 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
             onQualityChange={setSelectedQuality}
             qualityDisabled={checking || downloadState === "downloading" || busy}
           />
+
+          {checkError && !checking && (
+            <PlatformBlock tone="ink" role="alert" className="select-none">
+              <AlertCircle className="h-11 w-11 text-signal" aria-hidden />
+              <p className={`${bigStatus} text-[clamp(2rem,9vw,5.5rem)] text-signal`}>{t.urlInput.checkFailedTitle}</p>
+              <p className="m-0 max-w-[32em] text-xl leading-snug">{checkError}</p>
+              <p className="m-0 max-w-[32em] text-lg leading-snug">{t.urlInput.checkFailedRetryHint}</p>
+              <div>
+                <button type="button" onClick={handleRetryCheck} className={ctaSignal}>
+                  {t.playlist.retry}
+                </button>
+              </div>
+            </PlatformBlock>
+          )}
 
           {checking && (
             <CheckingStatusCard

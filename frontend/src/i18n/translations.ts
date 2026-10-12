@@ -28,6 +28,7 @@ export interface Translations {
   urlInput: {
     label: string;
     fieldLabel: string;
+    checkFailedTitle: string;
     placeholder: string;
     paste: string;
     pasting: string;
@@ -219,6 +220,7 @@ const en: Translations = {
   urlInput: {
     label: "Insert URL (All in One)",
     fieldLabel: "Video link",
+    checkFailedTitle: "Couldn't check this link",
     placeholder: "Copy and Paste your url",
     paste: "Paste",
     pasting: "Pasting…",
@@ -703,6 +705,7 @@ const vi: Translations = {
   urlInput: {
     label: "Nhập đường dẫn (Tất cả trong một)",
     fieldLabel: "Link video",
+    checkFailedTitle: "Không kiểm tra được link này",
     placeholder: "Sao chép và dán đường dẫn của bạn",
     paste: "Dán",
     pasting: "Đang dán…",
