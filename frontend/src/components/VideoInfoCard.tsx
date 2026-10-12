@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { Download, Save, Loader2, RefreshCw, FolderOpen, XCircle, AlertCircle, Check } from "lucide-react";
 import PlatformTag from "./PlatformTag";
 import PlatformBlock from "./PlatformBlock";
+import ElapsedTimer from "./ElapsedTimer";
 import { Progress } from "@/components/ui/progress";
 import { bigStatus, ctaGhost, ctaLight, ctaSignal, progressSlab } from "../lib/blockStyles";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -103,6 +104,12 @@ const VideoInfoCard = ({
               <Progress value={percent} aria-label={t.qualityAction.downloading} className={progressSlab} />
               <p className="m-0 font-display text-xl font-bold">
                 {shownPercent >= 100 ? t.qualityAction.finalizing : `${shownPercent}% ${t.qualityAction.downloading}…`}
+                {shownPercent >= 100 && (
+                  <>
+                    {" "}
+                    <ElapsedTimer label={t.qualityAction.elapsedLabel} />
+                  </>
+                )}
               </p>
               <div>
                 <button type="button" onClick={onCancel} className={ctaGhost}>

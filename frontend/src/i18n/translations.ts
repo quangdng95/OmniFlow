@@ -77,6 +77,7 @@ export interface Translations {
     startDownload: string;
     downloading: string;
     finalizing: string; // shown once the transfer hits 100% but the job is still merging/converting
+    elapsedLabel: string; // accessible name of the counter next to the processing line
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
@@ -265,6 +266,7 @@ const en: Translations = {
     startDownload: "Start Download",
     downloading: "Downloading",
     finalizing: "Processing video…",
+    elapsedLabel: "Time elapsed",
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
@@ -715,6 +717,7 @@ const vi: Translations = {
     startDownload: "Bắt đầu tải xuống",
     downloading: "Đang tải xuống",
     finalizing: "Đang xử lý video…",
+    elapsedLabel: "Thời gian đã trôi qua",
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
