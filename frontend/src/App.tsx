@@ -36,32 +36,34 @@ const App = () => {
   return (
     <LanguageProvider>
       <MotionConfig reducedMotion="user">
-      <div className="w-full min-h-screen bg-background flex flex-col items-center">
+      <div className="w-full min-h-screen bg-background flex flex-col">
         {/* Full-width Header */}
         <Header active={page} onNavigate={setPage} />
 
         {/* Content area */}
-        <div className="w-full max-w-[1200px] flex flex-col gap-4 py-6 px-5 md:px-10 flex-grow">
+        <main className="flex w-full flex-grow flex-col gap-4 py-6">
           {/* Home stays mounted across navigation so an in-progress check/download
               survives a trip to Settings or Terms and back. */}
           <div style={{ display: page === "home" ? "contents" : "none" }}>
             <HomePage onNavigate={setPage} pendingUrl={pendingUrl} onPendingUrlConsumed={() => setPendingUrl(null)} />
           </div>
-          {page !== "home" && <PageTitle page={page} />}
           {page !== "home" && (
-            <Suspense fallback={null}>
-              <div className="w-full max-w-3xl">
+            <div className="page-container flex flex-col gap-4">
+              <PageTitle page={page} />
+              <Suspense fallback={null}>
+                <div className="w-full max-w-3xl">
               {page === "history" && <HistoryPage onNavigate={setPage} onOpenUrl={handleOpenHistoryUrl} />}
               {page === "settings" && <SettingsPage onNavigate={setPage} />}
               {page === "terms" && <TermsPage onNavigate={setPage} />}
               {page === "shortcut" && <ShortcutSetupPage onNavigate={setPage} />}
               {page === "changelog" && <ChangelogPage onNavigate={setPage} />}
-              </div>
-            </Suspense>
+                </div>
+              </Suspense>
+            </div>
           )}
+        </main>
 
-          <Footer onNavigate={setPage} />
-        </div>
+        <Footer onNavigate={setPage} />
       </div>
       </MotionConfig>
     </LanguageProvider>

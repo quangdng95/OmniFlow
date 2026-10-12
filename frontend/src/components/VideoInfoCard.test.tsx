@@ -35,6 +35,13 @@ const setup = (props: Partial<React.ComponentProps<typeof VideoInfoCard>> = {}) 
 const section = () => screen.getByText("Paper boat").closest("section") as HTMLElement;
 
 describe("VideoInfoCard", () => {
+  it("rounds a fractional percent once, so the big number and the status line agree", () => {
+    setup({ actionState: "downloading", percent: 0.7814356263219739 });
+    expect(screen.getByText("1%")).toBeInTheDocument();
+    expect(screen.getByText("1% Downloading…")).toBeInTheDocument();
+    expect(screen.queryByText(/0\.78/)).not.toBeInTheDocument();
+  });
+
   it("shows title, uploader · duration, the platform tag and the thumbnail", () => {
     setup();
     expect(screen.getByRole("heading", { name: "Paper boat" })).toBeInTheDocument();

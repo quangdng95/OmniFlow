@@ -115,15 +115,15 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
             <Tabs
               value={qualityValue}
               onValueChange={(val) => onQualityChange?.(val)}
-              className={cn("w-full sm:w-auto", qualityDisabled && "ant-segmented-disabled")}
+              className={cn("w-full min-w-0 sm:w-auto", qualityDisabled && "ant-segmented-disabled")}
             >
-              <TabsList className="h-auto gap-0 rounded-none border-[3px] border-ink bg-transparent p-0 group-data-horizontal/tabs:h-auto">
+              <TabsList className="h-auto max-w-full gap-0 overflow-x-auto rounded-none border-[3px] border-ink bg-transparent p-0 group-data-horizontal/tabs:h-auto">
                 {qualities.map((quality) => (
                   <TabsTrigger
                     key={quality}
                     value={quality}
                     disabled={qualityDisabled}
-                    className="min-h-11 select-none rounded-none border-0 px-4 font-display text-base font-bold text-ink uppercase after:hidden data-active:bg-ink data-active:text-on-ink data-active:shadow-none hover:bg-signal data-active:hover:bg-ink"
+                    className="min-h-11 shrink-0 select-none rounded-none border-0 px-4 font-display text-base font-bold text-ink uppercase after:hidden data-active:bg-ink data-active:text-on-ink data-active:shadow-none hover:bg-signal data-active:hover:bg-ink"
                   >
                     {quality}
                   </TabsTrigger>

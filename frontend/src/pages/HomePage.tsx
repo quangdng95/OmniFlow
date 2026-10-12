@@ -403,7 +403,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     <div className="w-full">
       <div className="w-full flex flex-col gap-6">
           {/* Hero: kept short so the URL bar sits inside the first mobile screen. */}
-          <div className="flex flex-col items-start gap-3 pt-2 text-left md:pt-6">
+          <div className="page-container flex flex-col items-start gap-3 pt-2 text-left md:pt-6">
             <h1 className="m-0 font-display text-[clamp(2.75rem,14vw,10.5rem)] leading-[0.9] [:lang(vi)_&]:leading-[1.02] font-bold tracking-[-0.06em] text-ink uppercase">
               {t.header.home.taglineLines.map((line) => (
                 <span key={line} className="block">
@@ -413,20 +413,22 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
             </h1>
             <p className="m-0 max-w-[40em] text-[1.1875rem] leading-snug text-balance text-ink">{t.header.home.sub}</p>
           </div>
-          <UrlInputCard
-            ref={inputRef}
-            value={url}
-            onChange={setUrl}
-            status={inputStatus}
-            onPaste={handlePaste}
-            onClear={handleClear}
-            clearDisabled={downloadState === "downloading" || busy}
-            pasting={pasting}
-            qualities={currentQualities}
-            qualityValue={selectedQuality}
-            onQualityChange={setSelectedQuality}
-            qualityDisabled={checking || downloadState === "downloading" || busy}
-          />
+          <div className="page-container">
+            <UrlInputCard
+              ref={inputRef}
+              value={url}
+              onChange={setUrl}
+              status={inputStatus}
+              onPaste={handlePaste}
+              onClear={handleClear}
+              clearDisabled={downloadState === "downloading" || busy}
+              pasting={pasting}
+              qualities={currentQualities}
+              qualityValue={selectedQuality}
+              onQualityChange={setSelectedQuality}
+              qualityDisabled={checking || downloadState === "downloading" || busy}
+            />
+          </div>
 
           {checkError && !checking && (
             <PlatformBlock tone="ink" role="alert">
@@ -451,7 +453,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
           )}
 
           {!checking && !checkResult && !checkError && (
-            <AnimatedSection className="flex w-full flex-col gap-8">
+            <AnimatedSection className="page-container flex flex-col gap-8">
               <section aria-labelledby="platforms-heading">
                 <h2 id="platforms-heading" className="sr-only">
                   {t.home.supportedPlatformsHeading}

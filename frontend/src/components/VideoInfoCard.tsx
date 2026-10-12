@@ -48,6 +48,8 @@ const VideoInfoCard = ({
     prepareSingleFile
   );
 
+  // One rounded value feeds the big number AND the status line, so they never disagree.
+  const shownPercent = Math.min(100, Math.round(percent));
   const isDownloading = actionState === "downloading" || (autoSave && actionState === "idle");
   // The block changes colour with the state: platform colour while choosing and
   // downloading, lime once saved, ink when it failed.
@@ -96,11 +98,11 @@ const VideoInfoCard = ({
                 aria-hidden
                 className="m-0 font-display text-[clamp(5rem,22vw,11rem)] leading-[0.85] font-bold tracking-[-0.07em] tabular-nums"
               >
-                {Math.min(100, Math.round(percent))}%
+                {shownPercent}%
               </p>
               <Progress value={percent} aria-label={t.qualityAction.downloading} className={progressSlab} />
               <p className="m-0 font-display text-xl font-bold">
-                {percent >= 100 ? t.qualityAction.finalizing : `${percent}% ${t.qualityAction.downloading}…`}
+                {shownPercent >= 100 ? t.qualityAction.finalizing : `${shownPercent}% ${t.qualityAction.downloading}…`}
               </p>
               <div>
                 <button type="button" onClick={onCancel} className={ctaGhost}>

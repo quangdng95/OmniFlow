@@ -47,7 +47,7 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-background">
-      <div className="mx-auto w-full max-w-[1200px] px-5 md:px-10">
+      <div className="page-container">
       <div className="flex min-h-16 items-center justify-between gap-3 border-b-[3px] border-ink">
         <button
           type="button"
