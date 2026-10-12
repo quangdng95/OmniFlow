@@ -22,7 +22,7 @@ const LanguageSwitcher = () => {
     <div
       role="group"
       aria-label={t.languageSwitcher.label}
-      className="inline-flex items-center rounded-full border border-neutral-200 bg-[#f5f5f5] p-0.5"
+      className="box-border inline-flex select-none h-(--control-h) items-stretch border-[3px] border-ink"
     >
       {OPTIONS.map(({ value, short }) => {
         const isActive = language === value;
@@ -36,8 +36,8 @@ const LanguageSwitcher = () => {
             title={fullNames[value]}
             onClick={() => handleSelect(value)}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold leading-none transition-colors",
-              isActive ? "bg-[#171717] text-[#fafafa] shadow-sm" : "text-[#171717] hover:bg-neutral-200"
+              "min-w-11 cursor-pointer px-2.5 font-display text-base leading-none font-bold uppercase transition-colors",
+              isActive ? "bg-ink text-on-ink" : "bg-transparent text-ink hover:bg-signal"
             )}
           >
             {short}

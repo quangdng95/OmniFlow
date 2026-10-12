@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { AlertCircle } from "lucide-react";
+import PlatformBlock from "../components/PlatformBlock";
+import { bigStatus, ctaSignal } from "../lib/blockStyles";
+import { blockToneClass } from "../lib/platform";
 import { type Page } from "../components/Header";
 import AnimatedSection from "../components/AnimatedSection";
 import UrlInputCard, { type UrlInputStatus } from "../components/UrlInputCard";
@@ -16,24 +17,22 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { api } from "../api";
-import type { CheckResult, PlaylistItem, RowProgress, VideoInfo } from "../types";
+import type { CheckResult, Platform, PlaylistItem, RowProgress, VideoInfo } from "../types";
 import { useLanguage } from "../i18n/LanguageContext";
 import { isLocal, isMobileRemote } from "../isLocal";
 import { recordDownload } from "../lib/history";
 
 
+// V3 accordion rows: hard rules between items, big display-type triggers.
+const ACCORDION_ITEM = "border-b-[3px] border-ink not-last:border-b-[3px]";
+const ACCORDION_TRIGGER =
+  "min-h-16 items-center rounded-none border-0 px-0 py-3 font-display text-[1.375rem] font-bold tracking-[-0.02em] hover:no-underline";
+const ACCORDION_CONTENT = "text-lg pb-5";
+
 type DownloadState = "idle" | "downloading" | "done" | "fail";
 
-const platforms = [
-  { name: "YouTube", color: "#ff0000" },
-  { name: "TikTok", color: "#25f4ee" },
-  { name: "Instagram", color: "#e1306c" },
-  { name: "Facebook", color: "#1877f2" },
-  { name: "RedNote", color: "#ff2442" },
-  { name: "Threads", color: "#111111" },
-  { name: "LinkedIn", color: "#0a66c2" },
-  { name: "X", color: "#111111" },
-];
+// Order of the tile grid (4 x 2 on desktop).
+const PLATFORM_TILES: Platform[] = ["YouTube", "TikTok", "Instagram", "Facebook", "Threads", "X", "LinkedIn", "RedNote"];
 
 interface HomePageProps {
   onNavigate: (page: Page) => void;
@@ -48,6 +47,8 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   const [checking, setChecking] = useState(false);
   const [checkSeconds, setCheckSeconds] = useState(0);
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null);
+  // The friendly message of the last failed check, shown as an error block under the URL bar.
+  const [checkError, setCheckError] = useState<string | null>(null);
   const [selectedQuality, setSelectedQuality] = useState<string>("Best");
   
   // Single-video flow
@@ -89,6 +90,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     }
 
     setCheckResult(null);
+    setCheckError(null);
     resetDownloadState();
     const token = ++checkTokenRef.current;
     const handle = setTimeout(() => {
@@ -184,7 +186,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
       }
     } catch (e) {
       if (checkTokenRef.current !== token) return;
-      toast.error(`${(e as Error).message} ${t.urlInput.checkFailedRetryHint}`);
+      setCheckError((e as Error).message);
       setDownloadState("fail");
     } finally {
       if (checkTokenRef.current === token) setChecking(false);
@@ -209,8 +211,15 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     }
   };
 
+  const handleRetryCheck = () => {
+    const token = ++checkTokenRef.current;
+    setCheckError(null);
+    void runCheck(url.trim(), token);
+  };
+
   const handleClear = () => {
     checkTokenRef.current += 1;
+    setCheckError(null);
     setUrl("");
     setCheckResult(null);
     resetDownloadState();
@@ -391,14 +400,18 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   }
 
   return (
-    <div className="w-full select-none">
+    <div className="w-full">
       <div className="w-full flex flex-col gap-6">
-          {/* Short intro (it used to be the bottom half of a ~340px-tall header). */}
-          <div className="flex flex-col items-start gap-1 text-left">
-            <h1 className="m-0 text-2xl font-semibold leading-tight tracking-tight">{t.header.home.title}</h1>
-            <p className="m-0 max-w-[520px] text-sm leading-relaxed text-muted-foreground">
-              {t.header.home.descriptionLine1} {t.header.home.descriptionLine2}
-            </p>
+          {/* Hero: kept short so the URL bar sits inside the first mobile screen. */}
+          <div className="flex flex-col items-start gap-3 pt-2 text-left md:pt-6">
+            <h1 className="m-0 font-display text-[clamp(2.75rem,14vw,10.5rem)] leading-[0.9] [:lang(vi)_&]:leading-[1.02] font-bold tracking-[-0.06em] text-ink uppercase">
+              {t.header.home.taglineLines.map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            </h1>
+            <p className="m-0 max-w-[40em] text-[1.1875rem] leading-snug text-balance text-ink">{t.header.home.sub}</p>
           </div>
           <UrlInputCard
             ref={inputRef}
@@ -415,6 +428,20 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
             qualityDisabled={checking || downloadState === "downloading" || busy}
           />
 
+          {checkError && !checking && (
+            <PlatformBlock tone="ink" role="alert">
+              <AlertCircle className="h-11 w-11 text-signal" aria-hidden />
+              <p className={`${bigStatus} text-[clamp(2rem,9vw,5.5rem)] text-signal`}>{t.urlInput.checkFailedTitle}</p>
+              <p className="m-0 max-w-[32em] text-xl leading-snug">{checkError}</p>
+              <p className="m-0 max-w-[32em] text-lg leading-snug">{t.urlInput.checkFailedRetryHint}</p>
+              <div>
+                <button type="button" onClick={handleRetryCheck} className={ctaSignal}>
+                  {t.playlist.retry}
+                </button>
+              </div>
+            </PlatformBlock>
+          )}
+
           {checking && (
             <CheckingStatusCard
               seconds={checkSeconds}
@@ -423,72 +450,60 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
             />
           )}
 
-          {!checking && !checkResult && (
-            <AnimatedSection className="flex flex-col gap-10 pt-4 w-full select-none">
-              <section className="flex flex-col gap-3">
-                <h2 className="m-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.home.supportedPlatformsHeading}</h2>
-                <div className="flex flex-wrap gap-2">
-                  {platforms.map((p) => (
-                    <Badge key={p.name} variant="outline" className="h-6 gap-1.5 bg-card px-2.5 text-[13px] font-medium">
-                      <span aria-hidden className="size-1.5 rounded-full" style={{ backgroundColor: p.color }} />
-                      {p.name}
-                    </Badge>
+          {!checking && !checkResult && !checkError && (
+            <AnimatedSection className="flex w-full flex-col gap-8">
+              <section aria-labelledby="platforms-heading">
+                <h2 id="platforms-heading" className="sr-only">
+                  {t.home.supportedPlatformsHeading}
+                </h2>
+                <ul className="m-0 grid list-none grid-cols-2 border-t-[3px] border-ink p-0 md:grid-cols-4">
+                  {PLATFORM_TILES.map((name, index) => (
+                    <li
+                      key={name}
+                      className={`m-0 flex min-h-24 items-end border-b-[3px] border-ink p-4 font-display text-[clamp(1.5rem,6vw,2.5rem)] leading-none font-bold tracking-[-0.04em] md:min-h-44 md:p-5 ${blockToneClass(name)} ${
+                        index % 2 === 0 ? "border-r-[3px]" : ""
+                      } ${index % 4 !== 3 ? "md:border-r-[3px]" : "md:border-r-0"}`}
+                    >
+                      {name}
+                    </li>
                   ))}
-                </div>
+                </ul>
               </section>
 
-              <section className="flex flex-col gap-3">
-                <h2 className="m-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.home.howToHeading}</h2>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {t.home.steps.map((step, index) => (
-                    <Card key={step.label}>
-                      <CardHeader>
-                        <Badge variant="secondary" className="mb-1 w-fit tabular-nums">
-                          {String(index + 1).padStart(2, "0")}
-                        </Badge>
-                        <CardTitle className="text-sm font-semibold">{step.label}</CardTitle>
-                        <CardDescription className="leading-relaxed">{step.body}</CardDescription>
-                      </CardHeader>
-                    </Card>
-                  ))}
-                </div>
-              </section>
-
-              <section className="flex flex-col gap-3">
-                <h2 className="m-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.home.featuresHeading}</h2>
-                <Card>
-                  <CardContent className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
-                    {t.home.features.map((feat, index) => (
-                      <div key={feat.title} className="flex flex-col">
-                        {index > 0 && <Separator className={index === 1 ? "sm:hidden" : undefined} />}
-                        <div className="flex flex-col gap-1 py-3">
-                          <h3 className="m-0 text-sm font-semibold">{feat.title}</h3>
-                          <p className="m-0 text-[13px] leading-relaxed text-muted-foreground">{feat.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </section>
-
-              <section className="flex flex-col gap-3">
-                <h2 className="m-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.home.faqHeading}</h2>
-                <Card>
-                  <CardContent>
-                    <Accordion className="w-full">
-                      {t.home.faqs.map((faq, index) => (
-                        <AccordionItem key={index} value={String(index)}>
-                          <AccordionTrigger className="py-3 text-sm font-medium hover:no-underline">
-                            {faq.q}
-                          </AccordionTrigger>
-                          <AccordionContent className="pb-3 text-[13px] leading-relaxed text-muted-foreground">
-                            {faq.a}
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
-                  </CardContent>
-                </Card>
+              <section className="border-t-[3px] border-ink">
+                <Accordion className="w-full">
+                  <AccordionItem value="how" className={ACCORDION_ITEM}>
+                    <AccordionTrigger className={ACCORDION_TRIGGER}>{t.home.howToHeading}</AccordionTrigger>
+                    <AccordionContent className={ACCORDION_CONTENT}>
+                      <ol className="m-0 flex max-w-[42em] list-decimal flex-col gap-2 pl-6">
+                        {t.home.steps.map((step) => (
+                          <li key={step} className="m-0 text-lg">
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="why" className={ACCORDION_ITEM}>
+                    <AccordionTrigger className={ACCORDION_TRIGGER}>{t.home.whyHeading}</AccordionTrigger>
+                    <AccordionContent className={ACCORDION_CONTENT}>
+                      <p className="m-0 max-w-[42em] text-lg">{t.home.whyBody}</p>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="faq" className={ACCORDION_ITEM}>
+                    <AccordionTrigger className={ACCORDION_TRIGGER}>{t.home.faqHeading}</AccordionTrigger>
+                    <AccordionContent className={ACCORDION_CONTENT}>
+                      <dl className="m-0 flex max-w-[42em] flex-col gap-4">
+                        {t.home.faqs.map((faq) => (
+                          <div key={faq.q}>
+                            <dt className="font-bold text-lg">{faq.q}</dt>
+                            <dd className="m-0 text-lg">{faq.a}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </section>
             </AnimatedSection>
           )}

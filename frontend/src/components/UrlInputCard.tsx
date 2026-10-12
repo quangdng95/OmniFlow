@@ -1,10 +1,9 @@
 import { forwardRef } from "react";
-import { Link, Clipboard, Trash2, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Clipboard, Trash2, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { useLanguage } from "../i18n/LanguageContext";
 
 export type UrlInputStatus = "idle" | "checking" | "result" | "error";
@@ -22,6 +21,13 @@ interface UrlInputCardProps {
   onQualityChange?: (value: string) => void;
   qualityDisabled?: boolean;
 }
+
+// The V3 "command bar": a hard-edged ink frame with a blue offset shadow, the
+// field on top and one big action below (mobile) / beside it (>= md). The link
+// is checked automatically a moment after it changes, so the action is Paste
+// (empty), Clear (filled) or a "Checking" status - never a separate Check button.
+const barButton =
+  "inline-flex min-h-[60px] flex-1 basis-1/2 cursor-pointer select-none items-center justify-center gap-2.5 border-0 px-8 font-display text-lg font-bold uppercase focus-on-ink focus-inset md:min-h-[84px] md:flex-none md:basis-auto md:text-xl";
 
 const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
   (
@@ -45,15 +51,13 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
     const isError = status === "error";
 
     return (
-      <Card className="w-full select-none">
-        <CardContent className="flex flex-col gap-3">
-        <Label htmlFor="url-input" className="text-xs font-medium text-muted-foreground">
-          {t.urlInput.label}
-        </Label>
+      <div className="flex w-full flex-col gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="url-input" className="font-display text-lg leading-tight font-bold text-ink">
+            {t.urlInput.fieldLabel}
+          </Label>
 
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Link className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="flex flex-wrap bg-ink shadow-hard md:flex-nowrap">
             <Input
               id="url-input"
               ref={ref}
@@ -62,42 +66,64 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
               placeholder={t.urlInput.placeholder}
               disabled={status === "checking"}
               aria-invalid={isError || undefined}
-              className="h-9 pl-8"
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              className={cn(
+                "focus-inset h-[68px] min-w-0 flex-[1_1_100%] rounded-none border-[3px] border-ink bg-white px-[18px] text-xl font-medium text-ink md:h-[84px] md:flex-1 md:px-7 md:text-[1.625rem]",
+                "aria-invalid:bg-invalid aria-invalid:ring-0 disabled:opacity-100 disabled:bg-muted"
+              )}
             />
+            {status === "checking" ? (
+              <span
+                role="status"
+                className="inline-flex min-h-[60px] flex-1 basis-1/2 select-none items-center justify-center gap-2.5 px-8 font-display text-lg font-bold text-on-ink uppercase md:min-h-[84px] md:flex-none md:basis-auto md:text-xl"
+              >
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                {t.urlInput.checking}
+              </span>
+            ) : value !== "" ? (
+              <button
+                type="button"
+                onClick={onClear}
+                disabled={clearDisabled}
+                className={cn(barButton, "bg-ink text-on-ink hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-60")}
+              >
+                <Trash2 className="h-5 w-5" aria-hidden />
+                {isError ? t.urlInput.clearUrl : (navigator.userAgent.includes("jsdom") ? t.urlInput.clearUrl : t.urlInput.removeUrl)}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onPaste}
+                disabled={pasting}
+                className={cn(barButton, "bg-signal text-ink hover:bg-signal-hover disabled:cursor-not-allowed disabled:opacity-60")}
+              >
+                {pasting ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Clipboard className="h-5 w-5" aria-hidden />}
+                {pasting ? t.urlInput.pasting : t.urlInput.paste}
+              </button>
+            )}
           </div>
-          {status === "checking" ? (
-            <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              {t.urlInput.checking}
-            </span>
-          ) : value !== "" ? (
-            <Button type="button" variant="ghost" size="sm" onClick={onClear} disabled={clearDisabled} className="text-destructive hover:text-destructive">
-              <Trash2 />
-              {isError ? t.urlInput.clearUrl : (navigator.userAgent.includes("jsdom") ? t.urlInput.clearUrl : t.urlInput.removeUrl)}
-            </Button>
-          ) : (
-            <Button type="button" variant="secondary" size="sm" onClick={onPaste} disabled={pasting}>
-              {pasting ? <Loader2 className="animate-spin" /> : <Clipboard />}
-              {pasting ? t.urlInput.pasting : t.urlInput.paste}
-            </Button>
-          )}
         </div>
 
         {/* Quality Selector */}
         {qualities.length > 1 && (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 w-full">
-            <span className="text-xs text-muted-foreground">{t.qualityAction.selectQuality}</span>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <span className="text-base font-medium text-ink">{t.qualityAction.selectQuality}</span>
             <Tabs
               value={qualityValue}
               onValueChange={(val) => onQualityChange?.(val)}
-              className={`w-full sm:w-auto ${qualityDisabled ? "ant-segmented-disabled" : ""}`}
+              className={cn("w-full sm:w-auto", qualityDisabled && "ant-segmented-disabled")}
             >
-              <TabsList>
+              <TabsList className="h-auto gap-0 rounded-none border-[3px] border-ink bg-transparent p-0 group-data-horizontal/tabs:h-auto">
                 {qualities.map((quality) => (
                   <TabsTrigger
                     key={quality}
                     value={quality}
                     disabled={qualityDisabled}
+                    className="min-h-11 select-none rounded-none border-0 px-4 font-display text-base font-bold text-ink uppercase after:hidden data-active:bg-ink data-active:text-on-ink data-active:shadow-none hover:bg-signal data-active:hover:bg-ink"
                   >
                     {quality}
                   </TabsTrigger>
@@ -106,8 +132,7 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
             </Tabs>
           </div>
         )}
-        </CardContent>
-      </Card>
+      </div>
     );
   }
 );

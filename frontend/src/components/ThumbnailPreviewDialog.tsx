@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useLanguage } from "../i18n/LanguageContext";
 
@@ -50,42 +49,38 @@ const ThumbnailPreviewDialog = ({ entries, index, onIndexChange, onClose }: Thum
 
   return (
     <Dialog open onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-xl gap-3 p-3">
-        <DialogTitle className="pr-8 truncate leading-snug">
+      <DialogContent className="gap-3 rounded-none border-[3px] border-ink bg-background p-4 shadow-hard ring-0 sm:max-w-xl">
+        <DialogTitle className="pr-12 truncate font-display text-xl leading-snug font-bold">
           {entry.label}. {entry.title}
         </DialogTitle>
         <DialogDescription className="sr-only">{t.playlist.previewHint}</DialogDescription>
-        <div className="relative flex items-center justify-center rounded-lg bg-neutral-100 overflow-hidden">
+        <div className="relative flex items-center justify-center border-[3px] border-ink bg-black overflow-hidden">
           <img
             src={entry.thumbnail}
             referrerPolicy="no-referrer"
             alt={entry.title}
             className="max-h-[70vh] w-full object-contain"
           />
-          <Button
+          <button
             type="button"
-            variant="secondary"
-            size="icon"
             aria-label={t.playlist.previousItem}
             disabled={!hasPrev}
             onClick={handlePrev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full"
+            className="absolute left-2 top-1/2 flex h-12 w-12 -translate-y-1/2 cursor-pointer select-none items-center justify-center border-[3px] border-ink bg-white text-ink hover:bg-signal disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
+            <ChevronLeft className="h-6 w-6" aria-hidden />
+          </button>
+          <button
             type="button"
-            variant="secondary"
-            size="icon"
             aria-label={t.playlist.nextItem}
             disabled={!hasNext}
             onClick={handleNext}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full"
+            className="absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center border-[3px] border-ink bg-white text-ink hover:bg-signal disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+            <ChevronRight className="h-6 w-6" aria-hidden />
+          </button>
         </div>
-        <p className="m-0 text-center text-xs text-slate-500">
+        <p className="m-0 text-center text-base font-medium tabular-nums">
           {index + 1} / {entries.length}
         </p>
       </DialogContent>

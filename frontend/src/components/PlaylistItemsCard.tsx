@@ -1,14 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { Download, Save, FolderOpen, Loader2, XCircle, FolderCheck, FolderX, RefreshCw } from "lucide-react";
-import SectionCard from "./SectionCard";
+import PlatformBlock from "./PlatformBlock";
 import PlatformTag from "./PlatformTag";
 import File from "./File";
 import ThumbnailPreviewDialog, { type PreviewEntry } from "./ThumbnailPreviewDialog";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { blockCheckbox, blockSwitch, bigStatus, ctaGhost, ctaLight, progressSlab } from "../lib/blockStyles";
 import { useLanguage } from "../i18n/LanguageContext";
 import { prepareZipFiles } from "../lib/saveFile";
 import { usePreparedSave } from "../hooks/usePreparedSave";
@@ -148,118 +147,105 @@ const PlaylistItemsCard = ({
   // Shown both next to "Download All" and in the footer, so after tapping the
   // top button the user can save without scrolling to the end of a long list.
   const canSave = !busy && anyDone && (Boolean(downloadUrl) || Boolean(onOpenFolder));
-  const renderSaveButton = (className: string) =>
+  const renderSaveButton = () =>
     downloadUrl ? (
-      <Button
-        onClick={handleSaveZip}
-        disabled={savingZip}
-        className={cn("bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold", className)}
-      >
+      <button type="button" onClick={handleSaveZip} disabled={savingZip} className={ctaLight}>
         {savingZip ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
         ) : zipFailed ? (
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className="h-6 w-6" aria-hidden />
         ) : (
-          <Save className="h-4 w-4" />
+          <Save className="h-6 w-6" aria-hidden />
         )}
         {zipFailed ? t.downloadSuccess.tryAgain : t.downloadSuccess.save}
-      </Button>
+      </button>
     ) : onOpenFolder ? (
-      <Button
-        onClick={onOpenFolder}
-        className={cn("bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold", className)}
-      >
-        <FolderOpen className="h-4 w-4" />
+      <button type="button" onClick={onOpenFolder} className={ctaLight}>
+        <FolderOpen className="h-6 w-6" aria-hidden />
         {t.downloadSuccess.openFolder}
-      </Button>
+      </button>
     ) : null;
 
   if (items.length === 0) {
     return (
-      <SectionCard>
-        <p className="text-lg font-semibold text-slate-900 m-0">{title}</p>
-        <p className="text-sm text-slate-500 m-0">{t.playlist.empty}</p>
-      </SectionCard>
+      <PlatformBlock tone="ink">
+        <p className="m-0 font-display text-2xl font-bold">{title}</p>
+        <p className="m-0 text-lg">{t.playlist.empty}</p>
+      </PlatformBlock>
     );
   }
 
   return (
     <>
-      <SectionCard>
-        {/* Header Tag */}
+      <PlatformBlock tone={platform}>
         <PlatformTag platform={platform} />
 
-        {/* Playlist Title */}
-        <p className="text-lg font-semibold text-slate-900 m-0 select-none">{title}</p>
-
-        {/* Total Items & Download All button */}
-        <div className="flex justify-between items-center gap-3 flex-wrap select-none">
-          <span className="text-sm text-slate-600">
-            {t.playlist.totalItems} <strong className="text-slate-900 font-semibold">{items.length}</strong>
-          </span>
-          <div
-            className={cn("flex items-center gap-2", canSave && "w-full sm:w-auto")}
-          >
-            {canSave && renderSaveButton("w-full sm:w-auto")}
-            {!canSave && (
-            <Button
+        {/* Playlist title + the main action */}
+        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="flex min-w-0 flex-col gap-2">
+            <h2 className={`${bigStatus} text-[clamp(1.75rem,4.5vw,3rem)] break-words`}>{title}</h2>
+            <p className="m-0 text-lg">
+              {t.playlist.totalItems} <strong className="font-bold tabular-nums">{items.length}</strong>
+            </p>
+          </div>
+          {canSave ? (
+            renderSaveButton()
+          ) : (
+            <button
+              type="button"
               onClick={handleDownloadAll}
               disabled={busy || downloadAllIndices.length === 0}
-              className={cn(
-                "gap-1.5 rounded-lg",
-                canSave
-                  ? "bg-white hover:bg-neutral-50 text-[#0d9585] border border-[#0d9585] shadow-none"
-                  : "bg-[#0d9585] text-white hover:bg-[#0d9585]/90 shadow-sm"
-              )}
+              className={ctaLight}
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-6 w-6" aria-hidden />
               {t.playlist.downloadAll}
-            </Button>
-            )}
-          </div>
+            </button>
+          )}
         </div>
 
         {/* Select section */}
-        <div className="flex justify-between items-center gap-2 flex-wrap border-t border-neutral-100 pt-3 select-none">
-          <span className="text-xs text-slate-400 font-medium">{t.playlist.orSelect}</span>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="text-lg font-medium text-balance">{t.playlist.orSelect}</span>
           {hasUnavailable && (
-            <div className="inline-flex items-center gap-2 text-xs text-slate-600 font-medium">
+            <label className="inline-flex min-h-11 cursor-pointer items-center gap-3 text-base font-medium">
               <span>{t.playlist.showUnavailable}</span>
-              <Switch checked={showUnavailable} onCheckedChange={setShowUnavailable} disabled={busy} />
-            </div>
+              <Switch
+                checked={showUnavailable}
+                onCheckedChange={setShowUnavailable}
+                disabled={busy}
+                className={blockSwitch}
+              />
+            </label>
           )}
         </div>
 
         {/* Select All */}
-        <div className="flex items-center gap-2 p-1 select-none">
+        <div className="flex min-h-11 items-center gap-3">
           <Checkbox
             checked={allSelected}
             disabled={busy || selectableIndices.length === 0}
             onCheckedChange={handleSelectAllChange}
             id="select-all-checkbox"
+            className={blockCheckbox}
           />
-          <label 
-            htmlFor="select-all-checkbox" 
-            className="text-xs font-semibold text-slate-700 cursor-pointer disabled:opacity-50"
-          >
+          <label htmlFor="select-all-checkbox" className="cursor-pointer font-display text-lg font-bold">
             {t.playlist.selectAll}
           </label>
         </div>
 
-        {/* Truncated notice */}
         {truncated && (
-          <p className="text-xs text-amber-600 font-medium m-0">
+          <p className="m-0 text-lg font-bold text-signal">
             {t.playlist.truncated.replace("{n}", String(items.length))}
           </p>
         )}
 
         {/* Item Rows */}
-        <div className="flex flex-col gap-1 w-full border-t border-neutral-100/50 pt-2">
+        <ul className="m-0 flex w-full list-none flex-col p-0">
           {items.map((item, index) => {
             const available = isAvailable(item);
             if (!available && !showUnavailable) return null;
             const status = statusOf(rowStatus, index);
-            
+
             // Map row status string to FileState variant
             let fileState: "Default" | "Downloading" | "Completed" | "Fail" = "Default";
             if (status === "downloading" || status === "pending") {
@@ -292,80 +278,62 @@ const PlaylistItemsCard = ({
               />
             );
           })}
-        </div>
+        </ul>
 
         {/* Selected download bulk button */}
         {!busy && effectiveSelected.length > 0 && (
-          <Button 
-            onClick={() => downloadRows(effectiveSelected)} 
-            className="w-full bg-white hover:bg-neutral-50 text-[#0d9585] border border-[#0d9585] gap-1.5 shadow-none rounded-lg font-semibold mt-2"
-          >
-            <Download className="h-4 w-4" />
-            {t.playlist.downloadItemsSelected}
-          </Button>
+          <div>
+            <button type="button" onClick={() => downloadRows(effectiveSelected)} className={ctaGhost}>
+              <Download className="h-6 w-6" aria-hidden />
+              {t.playlist.downloadItemsSelected}
+            </button>
+          </div>
         )}
+
         {/* Status and Action Buttons (Retry / Open Folder) */}
         {!busy && anyDone && (
-          <div className="flex flex-col gap-3 w-full border-t border-neutral-100/50 pt-3 mt-2 select-none">
-            {/* Status Row */}
-            <div className="flex justify-between items-center w-full">
-              {/* Failed Count */}
-              <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${failedCount > 0 ? "text-red-500" : "text-slate-400"}`}>
-                <FolderX className="h-4 w-4 shrink-0" />
+          <div className="flex w-full flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 font-display text-lg font-bold">
+              <span className="inline-flex items-center gap-2">
+                <FolderX className="h-5 w-5 shrink-0" aria-hidden />
                 {t.playlist.failedItems.replace("{n}", String(failedCount))}
               </span>
-              
-              {/* Saved Count */}
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0d9585]">
-                <FolderCheck className="h-4 w-4 shrink-0" />
+              <span className="inline-flex items-center gap-2">
+                <FolderCheck className="h-5 w-5 shrink-0" aria-hidden />
                 {t.playlist.savedItems.replace("{n}", String(doneCount))}
               </span>
             </div>
 
-            {/* Action Buttons */}
-            <div
-              className={
-                downloadUrl
-                  ? "flex flex-col sm:flex-row gap-3 w-full"
-                  : `w-full ${failedCount > 0 && onOpenFolder ? "grid grid-cols-2 gap-3" : "flex"}`
-              }
-            >
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
               {failedCount > 0 && (
-                <Button
-                  onClick={() => downloadRows(failedIndices)}
-                  className="w-full sm:flex-1 bg-red-50 hover:bg-red-100 text-red-600 border-none shadow-none gap-1.5 rounded-lg font-semibold"
-                >
-                  <RefreshCw className="h-4 w-4" />
+                <button type="button" onClick={() => downloadRows(failedIndices)} className={ctaGhost}>
+                  <RefreshCw className="h-5 w-5" aria-hidden />
                   {t.playlist.retry}
-                </Button>
+                </button>
               )}
-              {renderSaveButton("w-full sm:flex-1")}
+              {renderSaveButton()}
             </div>
           </div>
         )}
 
         {/* Global running batch progress + Cancel */}
         {busy && batchSummary && (
-          <div className="flex flex-col gap-3 w-full border-t border-neutral-100/50 pt-3 mt-2 select-none">
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-slate-800">
-                {t.playlist.downloadedProgress
-                  .replace("{done}", String(batchSummary.done))
-                  .replace("{total}", String(batchSummary.total))}
-              </span>
-              <Progress value={batchSummary.percent} className="h-1.5 w-full bg-neutral-100 [&>[data-slot=progress-indicator]]:bg-[#0d9585]" />
+          <div role="status" className="flex w-full flex-col gap-4">
+            <p className="m-0 font-display text-xl font-bold">
+              {t.playlist.downloadedProgress
+                .replace("{done}", String(batchSummary.done))
+                .replace("{total}", String(batchSummary.total))}
+            </p>
+            <Progress value={batchSummary.percent} aria-label={t.playlist.downloading} className={progressSlab} />
+            <div>
+              <button type="button" onClick={onCancel} className={ctaGhost}>
+                <XCircle className="h-5 w-5" aria-hidden />
+                {t.downloadProgress.cancelDownload}
+              </button>
             </div>
-            <Button 
-              onClick={onCancel}
-              variant="destructive"
-              className="w-full bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none shadow-none gap-1.5 rounded-lg"
-            >
-              <XCircle className="h-4 w-4" />
-              {t.downloadProgress.cancelDownload}
-            </Button>
           </div>
         )}
-      </SectionCard>
+      </PlatformBlock>
       <ThumbnailPreviewDialog
         entries={previewEntries}
         index={previewIndex === -1 ? null : previewIndex}

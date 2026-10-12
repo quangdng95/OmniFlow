@@ -4,7 +4,7 @@ export interface Translations {
   header: {
     menu: string;
     nav: { home: string; history: string; settings: string; terms: string; shortcut: string; changelog: string };
-    home: { title: string; descriptionLine1: string; descriptionLine2: string };
+    home: { taglineLines: [string, string]; sub: string };
     settings: { title: string };
     terms: { title: string };
     shortcut: { title: string };
@@ -26,7 +26,8 @@ export interface Translations {
   footer: { by: string };
   login: { tagline: string; platforms: string; title: string; subtitle: string; label: string; placeholder: string; submit: string; submitting: string; wrong: string; locked: string; network: string; show: string; hide: string };
   urlInput: {
-    label: string;
+    fieldLabel: string;
+    checkFailedTitle: string;
     placeholder: string;
     paste: string;
     pasting: string;
@@ -81,12 +82,11 @@ export interface Translations {
   downloadProgress: { cancelDownload: string };
   downloadSuccess: { saved: string; openFolder: string; save: string; tryAgain: string; tapAgain: string; savedToDevice: string; downloadStarted: string };
   home: {
-    introLines: string[];
     supportedPlatformsHeading: string;
     howToHeading: string;
-    steps: { label: string; body: string }[];
-    featuresHeading: string;
-    features: { title: string; desc: string }[];
+    steps: string[];
+    whyHeading: string;
+    whyBody: string;
     faqHeading: string;
     faqs: { q: string; a: string }[];
   };
@@ -188,9 +188,8 @@ const en: Translations = {
     menu: "Menu",
     nav: { home: "Home", history: "History", settings: "Settings", terms: "Terms of Use", shortcut: "Shortcut Setup", changelog: "Changelog" },
     home: {
-      title: "Vidrop – All-in-One Video Downloader",
-      descriptionLine1: "Download videos and media instantly with Vidrop.",
-      descriptionLine2: "It's fast, free, and fully compatible with all your devices!",
+      taglineLines: ["Paste a link.", "Get the file."],
+      sub: "Free, no sign-up. Up to 1080p, or audio only.",
     },
     settings: { title: "Settings" },
     terms: { title: "Terms of Use" },
@@ -213,7 +212,8 @@ const en: Translations = {
   login: { tagline: "Save videos, music and photos in one tap.", platforms: "YouTube · TikTok · Instagram · Facebook · X · Threads · LinkedIn · RedNote", title: "Welcome to OmniFlow", subtitle: "Enter your access token to continue.", label: "Access token", placeholder: "Paste your token", submit: "Unlock", submitting: "Unlocking…", wrong: "Incorrect token. Please try again.", locked: "Too many attempts. Try again in a few minutes.", network: "Could not reach the server. Check your connection.", show: "Show token", hide: "Hide token" },
   footer: { by: "By" },
   urlInput: {
-    label: "Insert URL (All in One)",
+    fieldLabel: "Video link",
+    checkFailedTitle: "Couldn't check this link",
     placeholder: "Copy and Paste your url",
     paste: "Paste",
     pasting: "Pasting…",
@@ -273,55 +273,29 @@ const en: Translations = {
   downloadProgress: { cancelDownload: "Cancel Download" },
   downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tryAgain: "Try download again", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your Downloads" },
   home: {
-    introLines: [
-      "Vidrop allows you to easily download videos from YouTube (including entire playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), or LinkedIn.",
-      "The service is completely free and requires no sign-up or additional software.",
-      "It's optimized to work seamlessly across all modern devices, from your computer to your phone.",
-      "Built entirely on our self-developed technology without third-party reliance, Vidrop ensures lightning-fast processing and safe, verified downloads.",
-      "By using Vidrop, you accept our Terms of Use.",
-    ],
-    supportedPlatformsHeading: "Supported Platforms",
+    supportedPlatformsHeading: "Supported platforms",
     howToHeading: "How it works",
     steps: [
-      {
-        label: "Copy the link",
-        body: "Find the video, photo or playlist you want on any supported platform and copy its link.",
-      },
-      {
-        label: "Paste and choose",
-        body: "Paste it above, then pick video or audio and the quality you want.",
-      },
-      {
-        label: "Download",
-        body: "Tap Start Download, then Save to device when it finishes.",
-      },
+      "Copy the link of a video, photo or playlist.",
+      "Paste it above, then pick video or audio and a quality.",
+      "Select Start Download, then Save to device when it finishes.",
     ],
-    featuresHeading: "Why Vidrop",
-    features: [
-      { title: "100% Free", desc: "No subscriptions, no hidden limits, completely free forever." },
-      { title: "No Registration", desc: "Start downloading immediately without sign-up or accounts." },
-      { title: "Lightning Fast", desc: "Optimized processing engine for high-speed downloads." },
-      { title: "Playlists & Channels", desc: "Download full playlists and channels from YouTube in one click." },
-      { title: "High Quality", desc: "Download videos in full HD, 1080p, and high-fidelity audio." },
-      { title: "Multi-Platform", desc: "Works seamlessly on macOS, Windows, iOS, and Android." },
-    ],
-    faqHeading: "Frequently Asked Questions",
+    whyHeading: "Why Vidrop",
+    whyBody: "Free, no account, up to 1080p, and whole playlists in one go.",
+    faqHeading: "Questions",
     faqs: [
       {
-        q: "Where are downloaded files saved?",
-        a: "By default, files are saved to your Downloads folder. You can customize the destination path inside the App Settings page.",
+        q: "Where are my files saved?",
+        a: "In your Downloads folder on the desktop app. On a phone, tap Save to device when the download finishes.",
+      },
+      { q: "Is it really free?", a: "Yes. No account and no limits." },
+      {
+        q: "Can I download a whole playlist?",
+        a: "Yes. Paste a YouTube playlist or channel link, then pick the videos.",
       },
       {
-        q: "How do I download playlist or channel videos?",
-        a: "Just paste the link of a YouTube playlist or channel. Vidrop will automatically scan it and display a list where you can select and download all items.",
-      },
-      {
-        q: "Does Vidrop support audio conversion?",
-        a: "Yes! You can choose to extract audio (MP3) or keep video (MP4) in various resolutions before clicking download.",
-      },
-      {
-        q: "Is it safe to use Vidrop?",
-        a: "Yes. Vidrop is fully local, processes everything directly, contains no malware or third-party ads, and requires no registration.",
+        q: "Why did my link fail?",
+        a: "Private or deleted posts can't be downloaded. Check that the post is public, then try again.",
       },
     ],
   },
@@ -668,9 +642,8 @@ const vi: Translations = {
     menu: "Menu",
     nav: { home: "Trang chủ", history: "Lịch sử", settings: "Cài đặt", terms: "Điều khoản sử dụng", shortcut: "Cài Shortcut", changelog: "Nhật ký cập nhật" },
     home: {
-      title: "Vidrop – Tải video từ mọi nền tảng",
-      descriptionLine1: "Tải video và media ngay lập tức với Vidrop.",
-      descriptionLine2: "Nhanh, miễn phí và tương thích với mọi thiết bị của bạn!",
+      taglineLines: ["Dán link.", "Nhận file."],
+      sub: "Miễn phí, không cần đăng ký. Tối đa 1080p hoặc chỉ lấy âm thanh.",
     },
     settings: { title: "Cài đặt" },
     terms: { title: "Điều khoản sử dụng" },
@@ -693,7 +666,8 @@ const vi: Translations = {
   login: { tagline: "Lưu video, nhạc và ảnh chỉ với một chạm.", platforms: "YouTube · TikTok · Instagram · Facebook · X · Threads · LinkedIn · RedNote", title: "Chào mừng đến OmniFlow", subtitle: "Nhập mã truy cập để tiếp tục.", label: "Mã truy cập", placeholder: "Dán mã của bạn", submit: "Mở khoá", submitting: "Đang mở khoá…", wrong: "Mã không đúng. Vui lòng thử lại.", locked: "Thử quá nhiều lần. Vui lòng thử lại sau vài phút.", network: "Không kết nối được máy chủ. Kiểm tra mạng của bạn.", show: "Hiện mã", hide: "Ẩn mã" },
   footer: { by: "Bởi" },
   urlInput: {
-    label: "Nhập đường dẫn (Tất cả trong một)",
+    fieldLabel: "Link video",
+    checkFailedTitle: "Không kiểm tra được link này",
     placeholder: "Sao chép và dán đường dẫn của bạn",
     paste: "Dán",
     pasting: "Đang dán…",
@@ -753,55 +727,29 @@ const vi: Translations = {
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
   downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tryAgain: "Thử tải lại", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - hãy xem mục Tải xuống" },
   home: {
-    introLines: [
-      "Vidrop giúp bạn dễ dàng tải video từ YouTube (bao gồm cả danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) hoặc LinkedIn.",
-      "Dịch vụ hoàn toàn miễn phí và không yêu cầu đăng ký hay cài thêm phần mềm nào khác.",
-      "Được tối ưu để hoạt động mượt mà trên mọi thiết bị hiện đại, từ máy tính đến điện thoại.",
-      "Được xây dựng hoàn toàn trên công nghệ tự phát triển, không phụ thuộc bên thứ ba, Vidrop đảm bảo xử lý cực nhanh và tải xuống an toàn, đã được xác minh.",
-      "Bằng việc sử dụng Vidrop, bạn đồng ý với Điều khoản sử dụng của chúng tôi.",
-    ],
     supportedPlatformsHeading: "Nền tảng được hỗ trợ",
-    howToHeading: "Cách hoạt động",
+    howToHeading: "Cách dùng",
     steps: [
-      {
-        label: "Sao chép liên kết",
-        body: "Tìm video, ảnh hoặc danh sách phát bạn muốn trên bất kỳ nền tảng nào được hỗ trợ và sao chép liên kết.",
-      },
-      {
-        label: "Dán và chọn",
-        body: "Dán vào ô phía trên, rồi chọn video hoặc âm thanh và chất lượng bạn muốn.",
-      },
-      {
-        label: "Tải xuống",
-        body: "Bấm Bắt đầu tải xuống, rồi Lưu về máy khi xong.",
-      },
+      "Sao chép link của video, ảnh hoặc danh sách phát.",
+      "Dán vào ô phía trên, rồi chọn video hay âm thanh và chất lượng.",
+      "Bấm Bắt đầu tải xuống, sau đó Lưu về máy khi tải xong.",
     ],
-    featuresHeading: "Tại sao chọn Vidrop",
-    features: [
-      { title: "100% Miễn phí", desc: "Không yêu cầu phí dịch vụ, không giới hạn tải xuống, miễn phí trọn đời." },
-      { title: "Không cần đăng ký", desc: "Tải ngay lập tức mà không cần tạo tài khoản hay đăng nhập." },
-      { title: "Tốc độ cực nhanh", desc: "Công cụ tối ưu hóa xử lý giúp tải video về thiết bị nhanh chóng." },
-      { title: "Tải Playlist & Kênh", desc: "Hỗ trợ tải toàn bộ danh sách phát và kênh YouTube chỉ với một click." },
-      { title: "Chất lượng cao", desc: "Tải video Full HD, 1080p và trích xuất nhạc chất lượng cao." },
-      { title: "Đa nền tảng", desc: "Tương thích mượt mà trên macOS, Windows, iOS và Android." },
-    ],
-    faqHeading: "Câu hỏi thường gặp (FAQ)",
+    whyHeading: "Vì sao chọn Vidrop",
+    whyBody: "Miễn phí, không cần tài khoản, tối đa 1080p, tải cả danh sách phát một lần.",
+    faqHeading: "Câu hỏi thường gặp",
     faqs: [
       {
-        q: "Video sau khi tải xuống được lưu ở đâu?",
-        a: "Theo mặc định, tệp sẽ được lưu vào thư mục Downloads của thiết bị. Bạn có thể thay đổi thư mục lưu trong mục Cài đặt của ứng dụng.",
+        q: "File được lưu ở đâu?",
+        a: "Trong thư mục Tải xuống nếu dùng ứng dụng máy tính. Trên điện thoại, bấm Lưu về máy khi tải xong.",
+      },
+      { q: "Có thật sự miễn phí không?", a: "Có. Không cần tài khoản, không giới hạn." },
+      {
+        q: "Có tải được cả danh sách phát không?",
+        a: "Có. Dán link danh sách phát hoặc kênh YouTube, rồi chọn các video cần tải.",
       },
       {
-        q: "Làm thế nào để tải toàn bộ danh sách phát hoặc kênh?",
-        a: "Bạn chỉ cần dán liên kết danh sách phát hoặc kênh YouTube vào ô nhập liệu. Vidrop sẽ quét và hiển thị danh sách để bạn chọn tải về hàng loạt.",
-      },
-      {
-        q: "Vidrop có hỗ trợ chuyển đổi sang MP3 không?",
-        a: "Có! Bạn có thể chọn tải về định dạng Âm thanh (MP3) hoặc Video (MP4) với các mức chất lượng khác nhau.",
-      },
-      {
-        q: "Sử dụng Vidrop có an toàn không?",
-        a: "Có. Vidrop chạy hoàn toàn cục bộ, không chứa quảng cáo bên thứ ba độc hại và không yêu cầu cung cấp thông tin cá nhân.",
+        q: "Vì sao link của tôi lỗi?",
+        a: "Bài riêng tư hoặc đã xoá thì không tải được. Hãy kiểm tra bài đăng ở chế độ công khai rồi thử lại.",
       },
     ],
   },

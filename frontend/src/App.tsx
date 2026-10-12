@@ -4,6 +4,7 @@ import PageTitle from "./components/PageTitle";
 import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
+import { MotionConfig } from "framer-motion";
 import { LanguageProvider } from "./i18n/LanguageContext";
 
 const HistoryPage = lazy(() => import("./pages/HistoryPage"));
@@ -34,12 +35,13 @@ const App = () => {
 
   return (
     <LanguageProvider>
-      <div className="w-full min-h-screen bg-[#f4f4f0] flex flex-col items-center">
+      <MotionConfig reducedMotion="user">
+      <div className="w-full min-h-screen bg-background flex flex-col items-center">
         {/* Full-width Header */}
         <Header active={page} onNavigate={setPage} />
 
         {/* Content area */}
-        <div className="w-full max-w-[680px] flex flex-col gap-4 py-4 px-4 flex-grow">
+        <div className="w-full max-w-[1200px] flex flex-col gap-4 py-6 px-5 md:px-10 flex-grow">
           {/* Home stays mounted across navigation so an in-progress check/download
               survives a trip to Settings or Terms and back. */}
           <div style={{ display: page === "home" ? "contents" : "none" }}>
@@ -48,17 +50,20 @@ const App = () => {
           {page !== "home" && <PageTitle page={page} />}
           {page !== "home" && (
             <Suspense fallback={null}>
+              <div className="w-full max-w-3xl">
               {page === "history" && <HistoryPage onNavigate={setPage} onOpenUrl={handleOpenHistoryUrl} />}
               {page === "settings" && <SettingsPage onNavigate={setPage} />}
               {page === "terms" && <TermsPage onNavigate={setPage} />}
               {page === "shortcut" && <ShortcutSetupPage onNavigate={setPage} />}
               {page === "changelog" && <ChangelogPage onNavigate={setPage} />}
+              </div>
             </Suspense>
           )}
 
-          <Footer />
+          <Footer onNavigate={setPage} />
         </div>
       </div>
+      </MotionConfig>
     </LanguageProvider>
   );
 };

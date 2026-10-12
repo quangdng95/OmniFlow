@@ -1,9 +1,9 @@
 import { useCallback } from "react";
-import { CheckCircle2, Download, Save, Loader2, RefreshCw, FolderOpen, XCircle, AlertCircle } from "lucide-react";
+import { Download, Save, Loader2, RefreshCw, FolderOpen, XCircle, AlertCircle, Check } from "lucide-react";
 import PlatformTag from "./PlatformTag";
-import SectionCard from "./SectionCard";
-import { Button } from "@/components/ui/button";
+import PlatformBlock from "./PlatformBlock";
 import { Progress } from "@/components/ui/progress";
+import { bigStatus, ctaGhost, ctaLight, ctaSignal, progressSlab } from "../lib/blockStyles";
 import { useLanguage } from "../i18n/LanguageContext";
 import { preparePlainFile } from "../lib/saveFile";
 import { usePreparedSave } from "../hooks/usePreparedSave";
@@ -48,145 +48,123 @@ const VideoInfoCard = ({
     prepareSingleFile
   );
 
+  const isDownloading = actionState === "downloading" || (autoSave && actionState === "idle");
+  // The block changes colour with the state: platform colour while choosing and
+  // downloading, lime once saved, ink when it failed.
+  const tone = actionState === "done" ? "done" : actionState === "fail" ? "ink" : info.platform;
+  const saveLabel = saveFailed ? t.downloadSuccess.tryAgain : t.downloadSuccess.save;
+  const saveIcon = saving ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden /> : <Save className="h-6 w-6" aria-hidden />;
+
   return (
-    <SectionCard className="p-4 bg-white/90 border border-neutral-200 shadow-sm rounded-xl select-none">
-      {/* Information Row */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start w-full">
+    <PlatformBlock tone={tone}>
+      <div className={`grid items-start gap-6 md:gap-12 ${info.thumbnail ? "md:grid-cols-[5fr_7fr]" : ""}`}>
         {info.thumbnail && (
-          <img
-            className="w-full sm:w-[120px] aspect-video sm:aspect-square rounded-lg object-cover bg-neutral-100 shrink-0 border border-neutral-200/50"
-            src={info.thumbnail}
-            referrerPolicy="no-referrer"
-            alt={info.title}
-          />
+          <div className="flex flex-col gap-4">
+            <PlatformTag platform={info.platform} />
+            <img
+              className="aspect-video w-full border-[3px] border-current bg-black object-cover"
+              src={info.thumbnail}
+              referrerPolicy="no-referrer"
+              alt={info.title}
+            />
+          </div>
         )}
-        <div className="flex flex-col gap-2 min-w-0 items-start flex-1">
-          <PlatformTag platform={info.platform} />
-          <h3 className="text-sm font-semibold text-slate-900 leading-snug break-words">
-            {info.title}
-          </h3>
-          {info.uploader && (
-            <p className="text-xs text-slate-500 truncate w-full">
-              {info.uploader}
-            </p>
+
+        <div className="flex min-w-0 flex-col gap-5">
+          {!info.thumbnail && <PlatformTag platform={info.platform} />}
+          <div className="flex flex-col gap-1.5">
+            <h3 className="m-0 font-display text-[clamp(1.75rem,5vw,3.25rem)] leading-[1.05] font-bold tracking-[-0.04em] break-words [:lang(vi)_&]:leading-[1.15]">
+              {info.title}
+            </h3>
+            {(info.uploader || info.duration) && (
+              <p className="m-0 text-lg">
+                {[info.uploader, info.duration].filter(Boolean).join(" · ")}
+              </p>
+            )}
+          </div>
+
+          {actionState === "idle" && !autoSave && (
+            <button type="button" onClick={onDownload} className={ctaLight}>
+              <Download className="h-6 w-6" aria-hidden />
+              {t.qualityAction.startDownload}
+            </button>
           )}
-          {info.duration && (
-            <p className="text-xs text-slate-400 font-normal">
-              {info.duration}
-            </p>
+
+          {isDownloading && (
+            <div role="status" className="flex flex-col gap-4">
+              <p
+                aria-hidden
+                className="m-0 font-display text-[clamp(5rem,22vw,11rem)] leading-[0.85] font-bold tracking-[-0.07em] tabular-nums"
+              >
+                {Math.min(100, Math.round(percent))}%
+              </p>
+              <Progress value={percent} aria-label={t.qualityAction.downloading} className={progressSlab} />
+              <p className="m-0 font-display text-xl font-bold">
+                {percent >= 100 ? t.qualityAction.finalizing : `${percent}% ${t.qualityAction.downloading}…`}
+              </p>
+              <div>
+                <button type="button" onClick={onCancel} className={ctaGhost}>
+                  <XCircle className="h-5 w-5" aria-hidden />
+                  {t.downloadProgress.cancelDownload}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {actionState === "done" && autoSave && downloadUrl && (
+            <div>
+              <button type="button" onClick={handleSave} disabled={saving} className={ctaLight}>
+                {saveIcon}
+                {saveLabel}
+              </button>
+            </div>
+          )}
+
+          {actionState === "done" && !autoSave && (
+            <div role="status" className="flex flex-col gap-5">
+              <p className={`${bigStatus} text-[clamp(2rem,8vw,4.5rem)]`}>
+                <Check className="mr-2 inline h-[0.8em] w-[0.8em] align-baseline" strokeWidth={3} aria-hidden />
+                {t.downloadSuccess.saved}
+              </p>
+              <p className="m-0 text-lg font-medium break-all">{filename || info.title}</p>
+              <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+                {onOpenFolder && (
+                  <button type="button" onClick={onOpenFolder} className={ctaLight}>
+                    <FolderOpen className="h-6 w-6" aria-hidden />
+                    {t.downloadSuccess.openFolder}
+                  </button>
+                )}
+                {downloadUrl && (
+                  <button type="button" onClick={handleSave} disabled={saving} className={ctaLight}>
+                    {saveIcon}
+                    {saveLabel}
+                  </button>
+                )}
+                <button type="button" onClick={onDownload} className={ctaGhost}>
+                  <RefreshCw className="h-5 w-5" aria-hidden />
+                  {t.qualityAction.downloadAgain}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {actionState === "fail" && (
+            <div role="alert" className="flex flex-col gap-5">
+              <p className={`${bigStatus} text-[clamp(2rem,8vw,4.5rem)] text-signal`}>
+                <AlertCircle className="mr-2 inline h-[0.8em] w-[0.8em] align-baseline" strokeWidth={3} aria-hidden />
+                {t.playlist.failed}
+              </p>
+              <div>
+                <button type="button" onClick={onDownload} className={ctaSignal}>
+                  <RefreshCw className="h-5 w-5" aria-hidden />
+                  {t.playlist.retry}
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
-
-      {/* Action States inside the card */}
-      <div className="w-full border-t border-neutral-100 pt-4 flex flex-col gap-3">
-        {actionState === "idle" && !autoSave && (
-          <Button
-            onClick={onDownload}
-            className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
-          >
-            <Download className="h-4 w-4" />
-            {t.qualityAction.startDownload}
-          </Button>
-        )}
-
-        {(actionState === "downloading" || (autoSave && actionState === "idle")) && (
-          <div className="flex flex-col gap-3 w-full">
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-[#0d9585] leading-none">
-                {percent >= 100
-                  ? t.qualityAction.finalizing
-                  : `${percent}% ${t.qualityAction.downloading}…`}
-              </span>
-              <Progress value={percent} className="h-1.5 w-full bg-neutral-100 [&>[data-slot=progress-indicator]]:bg-[#0d9585]" />
-            </div>
-            <Button
-              onClick={onCancel}
-              variant="destructive"
-              className="w-full bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none shadow-none gap-1.5 rounded-lg"
-            >
-              <XCircle className="h-4 w-4" />
-              {t.downloadProgress.cancelDownload}
-            </Button>
-          </div>
-        )}
-
-        {actionState === "done" && autoSave && downloadUrl && (
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {saveFailed ? t.downloadSuccess.tryAgain : t.downloadSuccess.save}
-          </Button>
-        )}
-
-        {actionState === "done" && !autoSave && (
-          <div className="flex flex-col gap-3 w-full">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0d9585]">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span className="truncate max-w-full">
-                {t.downloadSuccess.saved} {filename || info.title}
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2 w-full">
-              <Button
-                variant="outline"
-                onClick={onDownload}
-                className="w-full sm:flex-1 border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 gap-1.5 shadow-none rounded-lg font-semibold"
-              >
-                <RefreshCw className="h-4 w-4" />
-                {t.qualityAction.downloadAgain}
-              </Button>
-
-              {onOpenFolder && (
-                <Button
-                  onClick={onOpenFolder}
-                  className="w-full sm:flex-1 bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
-                >
-                  <FolderOpen className="h-4 w-4" />
-                  {t.downloadSuccess.openFolder}
-                </Button>
-              )}
-
-              {downloadUrl && (
-                <Button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="w-full sm:flex-1 bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
-                >
-                  {saving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  {saveFailed ? t.downloadSuccess.tryAgain : t.downloadSuccess.save}
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {actionState === "fail" && (
-          <div className="flex flex-col gap-3 w-full">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-red-500">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{t.playlist.failed}</span>
-            </div>
-            <Button
-              onClick={onDownload}
-              variant="destructive"
-              className="w-full bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border-none shadow-none gap-1.5 rounded-lg"
-            >
-              <RefreshCw className="h-4 w-4" />
-              {t.playlist.retry}
-            </Button>
-          </div>
-        )}
-      </div>
-    </SectionCard>
+    </PlatformBlock>
   );
 };
 
