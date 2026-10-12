@@ -7,12 +7,9 @@ interface LogoProps {
 const Logo = ({ size = "compact" }: LogoProps) => {
   if (size === "small") {
     return (
-      <div className="flex items-center gap-[4.17px] shrink-0">
+      <div className="flex items-center gap-2 shrink-0">
         <img src={logoIcon} alt="Logo" width={32} height={32} className="h-8 w-8 shrink-0" />
-        <div className="text-ink leading-none shrink-0 flex flex-col items-start">
-          <div className="text-[16.7px] font-medium font-sans">Vidrop</div>
-          <div className="text-[8.35px] font-normal font-sans">Video Downloader</div>
-        </div>
+        <span className="font-display text-xl leading-none font-bold tracking-[-0.04em] text-ink uppercase">Vidrop</span>
       </div>
     );
   }

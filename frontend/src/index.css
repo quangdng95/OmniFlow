@@ -120,16 +120,6 @@ body {
   min-height: 100vh;
 }
 
-ol,
-ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-li + li {
-  margin-top: 4px;
-}
-
 /* Keyboard focus: one loud, consistent indicator (>= 3:1 against both the
    paper and the ink surfaces). Deliberately NOT inside a cascade layer, so it
    also wins over the `outline-none` that the generated shadcn components carry. */
@@ -280,7 +270,7 @@ li + li {
   --platform-rednote: #d6112a;
   --platform-linkedin: #0a66c2;
   --platform-tiktok: var(--ink);
-  --platform-x: var(--ink);
+  --platform-x: var(--ink-hover);
   --platform-threads: var(--ink);
   --platform-link: var(--ink-hover);
 
