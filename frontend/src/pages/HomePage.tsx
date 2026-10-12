@@ -286,6 +286,38 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finishedBatchJobId]);
 
+  // Best-effort auto-paste: when the app opens (or the tab regains focus) and
+  // the clipboard holds a link we haven't pasted yet, fill the empty input.
+  // Browsers may refuse the read without a user gesture (iOS Safari asks first);
+  // that is silent - the Paste button stays the fallback.
+  const lastAutoPastedRef = useRef<string>("");
+  const urlRef = useRef(url);
+  urlRef.current = url;
+  useEffect(() => {
+    const tryAutoPaste = async () => {
+      if (urlRef.current.trim() || document.visibilityState !== "visible") return;
+      try {
+        const text = isLocal()
+          ? (await api.getClipboard()).text
+          : await navigator.clipboard.readText();
+        const candidate = text.trim();
+        if (!/^https?:\/\/\S+$/i.test(candidate) || candidate === lastAutoPastedRef.current) return;
+        if (urlRef.current.trim()) return;
+        lastAutoPastedRef.current = candidate;
+        setUrl(candidate);
+      } catch {
+        // Permission denied / no gesture / empty clipboard: leave the input alone.
+      }
+    };
+    void tryAutoPaste();
+    window.addEventListener("focus", tryAutoPaste);
+    document.addEventListener("visibilitychange", tryAutoPaste);
+    return () => {
+      window.removeEventListener("focus", tryAutoPaste);
+      document.removeEventListener("visibilitychange", tryAutoPaste);
+    };
+  }, []);
+
   // Phone: skip the "Start Download" tap - the user's only job is "Save to device".
   const autoStartedRef = useRef<string | null>(null);
   useEffect(() => {
@@ -367,9 +399,9 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     <div className="w-full select-none">
       <div className="w-full flex flex-col gap-4">
           {/* Short intro (it used to be the bottom half of a ~340px-tall header). */}
-          <div className="flex flex-col items-center gap-1 text-center">
+          <div className="flex flex-col items-start gap-1 text-left">
             <h1 className="m-0 text-lg font-semibold leading-snug text-[#334155]">{t.header.home.title}</h1>
-            <p className="m-0 max-w-[480px] text-[13px] font-light leading-relaxed text-neutral-500">
+            <p className="m-0 max-w-[560px] text-[13px] font-light leading-relaxed text-neutral-500">
               {t.header.home.descriptionLine1} {t.header.home.descriptionLine2}
             </p>
           </div>
@@ -399,7 +431,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
           {!checking && !checkResult && (
             <AnimatedSection className="flex flex-col gap-8 text-[#1f2937] w-full">
               {/* Introduction */}
-              <div className="text-center max-w-[600px] mx-auto flex flex-col gap-3">
+              <div className="text-left max-w-[600px] flex flex-col gap-3">
                 <p className="text-sm font-medium text-slate-600 m-0">
                   {t.home.introLines[0]}
                 </p>
@@ -409,15 +441,15 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
               </div>
 
               {/* Supported Platforms */}
-              <div className="flex flex-col items-center gap-3 select-none">
-                <h3 className="text-base font-bold text-slate-800 text-center m-0">
+              <div className="flex flex-col items-start gap-3 select-none">
+                <h3 className="text-base font-bold text-slate-800 text-left m-0">
                   {t.home.supportedPlatformsHeading}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
                   {platforms.map((p) => (
                     <div
                       key={p.name}
-                      className="flex items-center justify-center p-3 bg-slate-50 border border-slate-300 rounded-xl cursor-default transition-all duration-200 hover:translate-y-[-1.5px] hover:shadow-sm hover:border-[#0d9585]"
+                      className="flex items-center justify-start px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl cursor-default transition-all duration-200 hover:translate-y-[-1.5px] hover:shadow-sm hover:border-[#0d9585]"
                     >
                       <img src={p.icon} alt={p.name} className="h-5 w-auto object-contain" />
                     </div>
@@ -427,7 +459,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
 
               {/* Steps */}
               <div className="flex flex-col gap-4">
-                <h3 className="text-base font-bold text-slate-800 text-center m-0">
+                <h3 className="text-base font-bold text-slate-800 text-left m-0">
                   {t.home.howToHeading}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
@@ -454,7 +486,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
 
               {/* Features */}
               <div className="flex flex-col gap-4">
-                <h3 className="text-base font-bold text-slate-800 text-center m-0">
+                <h3 className="text-base font-bold text-slate-800 text-left m-0">
                   {t.home.featuresHeading}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
@@ -472,7 +504,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
 
               {/* FAQs */}
               <div className="flex flex-col gap-4 select-none">
-                <h3 className="text-base font-bold text-slate-800 text-center m-0">
+                <h3 className="text-base font-bold text-slate-800 text-left m-0">
                   {t.home.faqHeading}
                 </h3>
                 <Accordion className="w-full bg-white border border-slate-200/60 rounded-xl p-2 px-4 shadow-sm">

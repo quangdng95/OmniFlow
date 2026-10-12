@@ -43,7 +43,7 @@ const VideoInfoCard = ({
   );
   // downloadUrl exists from the moment the job starts - only prefetch once
   // the file is actually finished on the server.
-  const { saving, save: handleSave } = usePreparedSave(
+  const { saving, failed: saveFailed, save: handleSave } = usePreparedSave(
     actionState === "done" ? downloadUrl : undefined,
     prepareSingleFile
   );
@@ -118,7 +118,7 @@ const VideoInfoCard = ({
             className="w-full bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {t.downloadSuccess.save}
+            {saveFailed ? t.downloadSuccess.tryAgain : t.downloadSuccess.save}
           </Button>
         )}
 
@@ -162,7 +162,7 @@ const VideoInfoCard = ({
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  {t.downloadSuccess.save}
+                  {saveFailed ? t.downloadSuccess.tryAgain : t.downloadSuccess.save}
                 </Button>
               )}
             </div>

@@ -64,7 +64,7 @@ const PlaylistItemsCard = ({
     (url: string) => prepareZipFiles(url, `${title || "Vidrop"}.zip`),
     [title]
   );
-  const { saving: savingZip, save: handleSaveZip } = usePreparedSave(downloadUrl, prepareBatchZip);
+  const { saving: savingZip, failed: zipFailed, save: handleSaveZip } = usePreparedSave(downloadUrl, prepareBatchZip);
 
   // Every available row stays selectable - including already-downloaded ones,
   // so a user can tick several finished rows and grab them again in one go
@@ -155,8 +155,14 @@ const PlaylistItemsCard = ({
         disabled={savingZip}
         className={cn("bg-[#0d9585] text-white hover:bg-[#0d9585]/90 gap-1.5 shadow-sm rounded-lg font-semibold", className)}
       >
-        {savingZip ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-        {t.downloadSuccess.save}
+        {savingZip ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : zipFailed ? (
+          <RefreshCw className="h-4 w-4" />
+        ) : (
+          <Save className="h-4 w-4" />
+        )}
+        {zipFailed ? t.downloadSuccess.tryAgain : t.downloadSuccess.save}
       </Button>
     ) : onOpenFolder ? (
       <Button
@@ -192,12 +198,10 @@ const PlaylistItemsCard = ({
             {t.playlist.totalItems} <strong className="text-slate-900 font-semibold">{items.length}</strong>
           </span>
           <div
-            className={cn(
-              "flex items-center gap-2",
-              canSave && "w-full grid grid-cols-2 sm:w-auto sm:flex"
-            )}
+            className={cn("flex items-center gap-2", canSave && "w-full sm:w-auto")}
           >
-            {canSave && renderSaveButton("")}
+            {canSave && renderSaveButton("w-full sm:w-auto")}
+            {!canSave && (
             <Button
               onClick={handleDownloadAll}
               disabled={busy || downloadAllIndices.length === 0}
@@ -211,6 +215,7 @@ const PlaylistItemsCard = ({
               <Download className="h-4 w-4" />
               {t.playlist.downloadAll}
             </Button>
+            )}
           </div>
         </div>
 
@@ -283,6 +288,7 @@ const PlaylistItemsCard = ({
                 onPreview={() => setPreviewRow(index)}
                 busy={busy}
                 available={available}
+                hideRedownload
               />
             );
           })}

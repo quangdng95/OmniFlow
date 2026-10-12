@@ -19,9 +19,9 @@ describe("language detection", () => {
     vi.restoreAllMocks();
   });
 
-  it("starts in Vietnamese on a Vietnamese browser when nothing was chosen before", () => {
+  it("starts in English even on a Vietnamese browser when nothing was chosen before", () => {
     setBrowserLanguage("vi-VN");
-    expect(detectLanguage()).toBe("vi");
+    expect(detectLanguage()).toBe("en");
   });
 
   it("starts in English on any other browser language", () => {
@@ -55,7 +55,7 @@ describe("language detection", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("blocked");
     });
-    expect(detectLanguage()).toBe("vi");
+    expect(detectLanguage()).toBe("en");
   });
 });
 

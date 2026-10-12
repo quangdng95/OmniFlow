@@ -4,9 +4,12 @@ brute-force lockout (spec §4)."""
 import hmac
 import time
 
-from flask import Blueprint, Response, redirect, request
+import os
+
+from flask import Blueprint, Response, jsonify, redirect, request, send_from_directory
 from itsdangerous import BadData, URLSafeTimedSerializer
 
+from backend import paths
 from remote_web import config
 
 unlock_bp = Blueprint("unlock", __name__)
@@ -138,6 +141,10 @@ def unlock_form():
     # No token ever appears in a URL (spec §4.1) - this is a plain HTML form,
     # no React/JS required, so it renders even before the frontend bundle's
     # own JS has a chance to load.
+    # The React login page (shadcn) is the normal screen; the plain HTML form
+    # below stays as the fallback for a missing frontend build or ?plain=1.
+    if request.args.get("plain") != "1" and os.path.isfile(os.path.join(paths.WEB_DIR, "index.html")):
+        return send_from_directory(paths.WEB_DIR, "index.html")
     override = request.args.get("lang")
     lang = _unlock_language(override)
     resp = Response(_render_unlock_form(lang), mimetype="text/html")
@@ -150,15 +157,20 @@ def unlock_form():
 def unlock_submit():
     ip = _client_ip()
     lang = _unlock_language()
+    wants_json = request.accept_mimetypes.best == "application/json"
     if _is_locked_out(ip):
+        if wants_json:
+            return jsonify({"error": "locked"}), 429
         return Response(_render_unlock_form(lang, "locked"), mimetype="text/html", status=429)
     token = request.form.get("token", "")
     # Constant-time compare (§4.1) - a plain == leaks how many leading
     # characters matched via response-time differences.
     if not hmac.compare_digest(token, config.get_or_create_token()):
         _record_failed_attempt(ip)
+        if wants_json:
+            return jsonify({"error": "wrong"}), 401
         return Response(_render_unlock_form(lang, "wrong"), mimetype="text/html", status=401)
-    resp = redirect("/")
+    resp = jsonify({"ok": True}) if wants_json else redirect("/")
     resp.set_cookie(
         config.TRUST_COOKIE_NAME,
         sign_trust_cookie(),

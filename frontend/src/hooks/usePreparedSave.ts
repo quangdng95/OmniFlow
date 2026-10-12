@@ -7,6 +7,7 @@ type Preparer = (url: string) => Promise<PreparedSave>;
 
 interface UsePreparedSaveResult {
   saving: boolean;
+  failed: boolean;
   save: () => Promise<void>;
 }
 
@@ -19,6 +20,7 @@ interface UsePreparedSaveResult {
 export const usePreparedSave = (url: string | undefined, prepare: Preparer): UsePreparedSaveResult => {
   const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
   const prepareRef = useRef(prepare);
   const preparedRef = useRef<PreparedSave | null>(null);
   const pendingRef = useRef<Promise<PreparedSave> | null>(null);
@@ -30,6 +32,7 @@ export const usePreparedSave = (url: string | undefined, prepare: Preparer): Use
   useEffect(() => {
     preparedRef.current = null;
     pendingRef.current = null;
+    setFailed(false);
     if (!url) return;
     let stale = false;
     const pending = prepareRef.current(url);
@@ -40,7 +43,10 @@ export const usePreparedSave = (url: string | undefined, prepare: Preparer): Use
       })
       .catch(() => {
         // Surfaced on tap instead - the tap retries the fetch.
-        if (!stale) pendingRef.current = null;
+        if (!stale) {
+          pendingRef.current = null;
+          setFailed(true);
+        }
       });
     return () => {
       stale = true;
@@ -52,6 +58,7 @@ export const usePreparedSave = (url: string | undefined, prepare: Preparer): Use
       toast.info(t.downloadSuccess.tapAgain);
     } else if (!(error instanceof Error && error.name === "AbortError")) {
       // AbortError = the user backed out of the share sheet: a cancel, not a failure.
+      setFailed(true);
       toast.error(error instanceof Error ? error.message : String(error));
     }
   };
@@ -60,6 +67,7 @@ export const usePreparedSave = (url: string | undefined, prepare: Preparer): Use
   // the download link was clicked); backing out rejects with AbortError and
   // gets no message at all.
   const notifySaved = (result: "shared" | "downloaded") => {
+    setFailed(false);
     toast.success(result === "shared" ? t.downloadSuccess.savedToDevice : t.downloadSuccess.downloadStarted);
   };
 
@@ -89,5 +97,5 @@ export const usePreparedSave = (url: string | undefined, prepare: Preparer): Use
     }
   };
 
-  return { saving, save };
+  return { saving, failed, save };
 };

@@ -3,6 +3,7 @@ import Header, { type Page } from "./components/Header";
 import PageTitle from "./components/PageTitle";
 import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
 import { LanguageProvider } from "./i18n/LanguageContext";
 
 const HistoryPage = lazy(() => import("./pages/HistoryPage"));
@@ -21,6 +22,15 @@ const App = () => {
     setPendingUrl(url);
     setPage("home");
   };
+
+  // /unlock is the token screen the server redirects unauthenticated visitors to.
+  if (window.location.pathname === "/unlock") {
+    return (
+      <LanguageProvider>
+        <LoginPage />
+      </LanguageProvider>
+    );
+  }
 
   return (
     <LanguageProvider>

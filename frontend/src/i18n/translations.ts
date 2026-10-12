@@ -24,6 +24,7 @@ export interface Translations {
     untitled: string;
   };
   footer: { by: string };
+  login: { tagline: string; platforms: string; title: string; subtitle: string; label: string; placeholder: string; submit: string; submitting: string; wrong: string; locked: string; network: string; show: string; hide: string };
   urlInput: {
     label: string;
     placeholder: string;
@@ -78,7 +79,7 @@ export interface Translations {
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
-  downloadSuccess: { saved: string; openFolder: string; save: string; tapAgain: string; savedToDevice: string; downloadStarted: string };
+  downloadSuccess: { saved: string; openFolder: string; save: string; tryAgain: string; tapAgain: string; savedToDevice: string; downloadStarted: string };
   home: {
     introLines: string[];
     supportedPlatformsHeading: string;
@@ -209,6 +210,7 @@ const en: Translations = {
     clearAll: "Clear history",
     untitled: "Untitled",
   },
+  login: { tagline: "Save videos, music and photos in one tap.", platforms: "YouTube · TikTok · Instagram · Facebook · X · Threads · LinkedIn · RedNote", title: "Welcome to OmniFlow", subtitle: "Enter your access token to continue.", label: "Access token", placeholder: "Paste your token", submit: "Unlock", submitting: "Unlocking…", wrong: "Incorrect token. Please try again.", locked: "Too many attempts. Try again in a few minutes.", network: "Could not reach the server. Check your connection.", show: "Show token", hide: "Hide token" },
   footer: { by: "By" },
   urlInput: {
     label: "Insert URL (All in One)",
@@ -269,7 +271,7 @@ const en: Translations = {
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
-  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your Downloads" },
+  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tryAgain: "Try download again", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your Downloads" },
   home: {
     introLines: [
       "Vidrop allows you to easily download videos from YouTube (including entire playlists and channels), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter), or LinkedIn.",
@@ -688,6 +690,7 @@ const vi: Translations = {
     clearAll: "Xoá lịch sử",
     untitled: "Chưa có tiêu đề",
   },
+  login: { tagline: "Lưu video, nhạc và ảnh chỉ với một chạm.", platforms: "YouTube · TikTok · Instagram · Facebook · X · Threads · LinkedIn · RedNote", title: "Chào mừng đến OmniFlow", subtitle: "Nhập mã truy cập để tiếp tục.", label: "Mã truy cập", placeholder: "Dán mã của bạn", submit: "Mở khoá", submitting: "Đang mở khoá…", wrong: "Mã không đúng. Vui lòng thử lại.", locked: "Thử quá nhiều lần. Vui lòng thử lại sau vài phút.", network: "Không kết nối được máy chủ. Kiểm tra mạng của bạn.", show: "Hiện mã", hide: "Ẩn mã" },
   footer: { by: "Bởi" },
   urlInput: {
     label: "Nhập đường dẫn (Tất cả trong một)",
@@ -748,7 +751,7 @@ const vi: Translations = {
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
-  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - hãy xem mục Tải xuống" },
+  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tryAgain: "Thử tải lại", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - hãy xem mục Tải xuống" },
   home: {
     introLines: [
       "Vidrop giúp bạn dễ dàng tải video từ YouTube (bao gồm cả danh sách phát và kênh), TikTok, Instagram, Facebook, RedNote, Threads, X (Twitter) hoặc LinkedIn.",

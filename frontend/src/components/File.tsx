@@ -22,6 +22,7 @@ interface FileProps {
   onPreview?: () => void;
   busy: boolean;
   available: boolean;
+  hideRedownload?: boolean;
 }
 
 export default function File({
@@ -40,6 +41,7 @@ export default function File({
   onPreview,
   busy,
   available,
+  hideRedownload = false,
 }: FileProps) {
   const { t } = useLanguage();
 
@@ -173,15 +175,17 @@ export default function File({
                 <FolderCheck className="h-3.5 w-3.5" />
                 {t.playlist.downloaded}
               </span>
-              <Button
-                variant="outline"
-                className="border-neutral-200 text-slate-700 hover:bg-neutral-100 hover:text-slate-900 rounded-lg shadow-none"
-                onClick={handleActionClick}
-                disabled={busy}
-              >
-                <RefreshCw className="h-4 w-4" />
-                {t.playlist.downloadAgain}
-              </Button>
+              {!hideRedownload && (
+                <Button
+                  variant="outline"
+                  className="border-neutral-200 text-slate-700 hover:bg-neutral-100 hover:text-slate-900 rounded-lg shadow-none"
+                  onClick={handleActionClick}
+                  disabled={busy}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  {t.playlist.downloadAgain}
+                </Button>
+              )}
             </div>
           )}
 

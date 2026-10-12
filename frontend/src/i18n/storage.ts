@@ -18,7 +18,7 @@ const readCookie = (): string | null => {
 };
 
 // An explicit earlier choice wins (localStorage, then the shared cookie);
-// otherwise follow the browser - a Vietnamese device starts in Vietnamese.
+// otherwise English (the default for everyone, whatever the device language).
 export const detectLanguage = (): Language => {
   try {
     const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -28,8 +28,7 @@ export const detectLanguage = (): Language => {
   }
   const fromCookie = readCookie();
   if (isLanguage(fromCookie)) return fromCookie;
-  const browser = typeof navigator === "undefined" ? "" : navigator.language ?? "";
-  return browser.toLowerCase().startsWith("vi") ? "vi" : "en";
+  return "en";
 };
 
 export const persistLanguage = (language: Language): void => {

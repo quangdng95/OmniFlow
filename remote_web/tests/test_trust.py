@@ -69,7 +69,7 @@ def test_verify_trust_cookie_rejects_a_validly_signed_but_corrupt_payload(isolat
 
 
 def test_unlock_get_renders_a_form_with_no_token_in_the_page(isolated_state_file, client):
-    resp = client.get("/unlock")
+    resp = client.get("/unlock?plain=1")
     assert resp.status_code == 200
     assert b"<form" in resp.data
     assert config.get_or_create_token().encode() not in resp.data
@@ -157,17 +157,17 @@ def test_unlock_lockout_expires_after_the_window(isolated_state_file, client, mo
 
 
 def test_unlock_is_english_when_nothing_says_otherwise(isolated_state_file, client):
-    body = client.get("/unlock").get_data(as_text=True)
+    body = client.get("/unlock?plain=1").get_data(as_text=True)
     assert 'lang="en"' in body and "Access token" in body and "Unlock" in body
 
 
 def test_unlock_follows_the_browsers_accept_language(isolated_state_file, client):
-    body = client.get("/unlock", headers={"Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5"}).get_data(as_text=True)
+    body = client.get("/unlock?plain=1", headers={"Accept-Language": "vi-VN,vi;q=0.9,en;q=0.5"}).get_data(as_text=True)
     assert 'lang="vi"' in body and "Mở khoá" in body
 
 
 def test_unlock_lang_query_switches_and_remembers_the_choice(isolated_state_file, client):
-    resp = client.get("/unlock?lang=vi")
+    resp = client.get("/unlock?plain=1&lang=vi")
     assert 'lang="vi"' in resp.get_data(as_text=True)
     assert f"{trust.LANGUAGE_COOKIE}=vi" in resp.headers["Set-Cookie"]
     # The remembered choice also localizes the error page after a wrong token.
@@ -178,12 +178,12 @@ def test_unlock_lang_query_switches_and_remembers_the_choice(isolated_state_file
 
 def test_unlock_lang_query_beats_the_cookie_and_the_header(isolated_state_file, client):
     client.set_cookie(trust.LANGUAGE_COOKIE, "vi")
-    body = client.get("/unlock?lang=en", headers={"Accept-Language": "vi"}).get_data(as_text=True)
+    body = client.get("/unlock?plain=1&lang=en", headers={"Accept-Language": "vi"}).get_data(as_text=True)
     assert 'lang="en"' in body
 
 
 def test_unlock_ignores_an_unknown_lang_value_and_sets_no_cookie(isolated_state_file, client):
-    resp = client.get("/unlock?lang=<script>")
+    resp = client.get("/unlock?plain=1&lang=<script>")
     assert 'lang="en"' in resp.get_data(as_text=True)
     assert "<script>" not in resp.get_data(as_text=True)
     assert "Set-Cookie" not in resp.headers
@@ -196,3 +196,31 @@ def test_unlock_lockout_message_is_localized(isolated_state_file, client, monkey
     locked = client.post("/unlock", data={"token": "wrong"})
     assert locked.status_code == 429
     assert "Thử quá nhiều lần" in locked.get_data(as_text=True)
+
+
+# ---- JSON unlock (used by the React login page) ----
+
+
+def test_unlock_json_wrong_token_is_401_json(isolated_state_file, client):
+    resp = client.post("/unlock", data={"token": "nope"}, headers={"Accept": "application/json"})
+    assert resp.status_code == 401
+    assert resp.get_json() == {"error": "wrong"}
+    assert config.TRUST_COOKIE_NAME not in resp.headers.get("Set-Cookie", "")
+
+
+def test_unlock_json_correct_token_sets_cookie_and_returns_ok(isolated_state_file, client):
+    token = config.get_or_create_token()
+    resp = client.post("/unlock", data={"token": token}, headers={"Accept": "application/json"})
+    assert resp.status_code == 200
+    assert resp.get_json() == {"ok": True}
+    assert config.TRUST_COOKIE_NAME in resp.headers.get("Set-Cookie", "")
+
+
+def test_unlock_json_reports_lockout_as_429(isolated_state_file, client, monkeypatch):
+    monkeypatch.setattr(config, "LOCKOUT_THRESHOLD", 2)
+    ip = {"CF-Connecting-IP": "5.5.5.5", "Accept": "application/json"}
+    for _ in range(2):
+        client.post("/unlock", data={"token": "wrong"}, headers=ip)
+    resp = client.post("/unlock", data={"token": "wrong"}, headers=ip)
+    assert resp.status_code == 429
+    assert resp.get_json() == {"error": "locked"}
