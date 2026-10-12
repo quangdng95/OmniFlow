@@ -257,6 +257,7 @@ body {
      puts its content in .page-container so all left/right edges line up. */
   --page-max: 1200px;
   --page-gutter: 1.25rem;
+  --toast-close-size: 2.75rem; /* toast close button: 44px touch target */
   --brand: #1738ff;
   --signal: #ffd60a;
   --signal-hover: #ffe55c;

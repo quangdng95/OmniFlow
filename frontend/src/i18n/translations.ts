@@ -170,6 +170,7 @@ export interface Translations {
     footerNote: string;
   };
   languageSwitcher: { label: string; english: string; vietnamese: string };
+  toast: { close: string }; // accessible name of every toast's X button
   apiErrors: {
     unreachable: string;
     requestFailed: string;
@@ -535,6 +536,7 @@ const en: Translations = {
       "Server: remote_web, authenticated via the Authorization: Bearer header (added specifically for a headless client like this — the browser's own cookie login still works the same, side by side). The job's temp file on the server is deleted automatically once Phase 5 pulls it down.",
   },
   languageSwitcher: { label: "Language", english: "English", vietnamese: "Tiếng Việt" },
+  toast: { close: "Close notification" },
   apiErrors: {
     unreachable: "Can't reach the Vidrop server. Make sure it's running, then reload this page.",
     requestFailed: "Request failed.",
@@ -984,6 +986,7 @@ const vi: Translations = {
       "Server: remote_web, xác thực qua header Authorization: Bearer (thêm riêng cho client kiểu này — cookie trình duyệt vẫn hoạt động bình thường song song). Job tải xong tự xoá file tạm trên server sau khi Phase 5 lấy về máy.",
   },
   languageSwitcher: { label: "Ngôn ngữ", english: "English", vietnamese: "Tiếng Việt" },
+  toast: { close: "Đóng thông báo" },
   apiErrors: {
     unreachable: "Không kết nối được tới máy chủ Vidrop. Hãy đảm bảo máy chủ đang chạy rồi tải lại trang.",
     requestFailed: "Yêu cầu thất bại.",
