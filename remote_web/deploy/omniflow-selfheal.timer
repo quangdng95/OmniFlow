@@ -1,5 +1,5 @@
 [Unit]
-Description=Run OmniFlow self-heal every 6 hours
+Description=Run Vidrop self-heal every 6 hours
 
 [Timer]
 OnCalendar=*-*-* 00,06,12,18:25:00

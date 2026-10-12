@@ -1,6 +1,6 @@
 # Code of Conduct & Acceptable Use Policy
 
-## OmniFlow is for Personal/Educational Use Only
+## Vidrop is for Personal/Educational Use Only
 
 ### ✅ Acceptable Uses
 
@@ -41,4 +41,4 @@ Each platform has specific ToS restrictions:
 
 ---
 
-If you disagree with these terms, don't use OmniFlow.
+If you disagree with these terms, don't use Vidrop.

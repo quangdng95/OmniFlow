@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# dev.sh  —  Start OmniFlow in development mode (hot-reload)
+# dev.sh  —  Start Vidrop in development mode (hot-reload)
 #
 # Usage: ./scripts/dev.sh (from the repo root, or from anywhere - it
 # self-locates the repo root either way)
@@ -59,7 +59,7 @@ FRONTEND_PID=$!
 
 echo ""
 echo "════════════════════════════════════════════════════════"
-echo "  OmniFlow dev mode ready!"
+echo "  Vidrop dev mode ready!"
 echo ""
 echo "  Testing (localhost):  http://localhost:5173"
 echo "  Backend API:          http://127.0.0.1:5001"

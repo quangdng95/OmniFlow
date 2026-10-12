@@ -153,6 +153,6 @@ def ffmpeg_unavailable_message(lang=None):
     err = _ffmpeg_exec_error(local_ffmpeg)
     if isinstance(err, OSError) and err.errno == _BAD_CPU_TYPE_ERRNO:
         machine = platform.machine()
-        wanted_dmg = "OmniFlow-AppleSilicon.dmg" if machine == "arm64" else "OmniFlow-Intel.dmg"
+        wanted_dmg = "Vidrop-AppleSilicon.dmg" if machine == "arm64" else "Vidrop-Intel.dmg"
         return messages.text("ffmpeg_wrong_chip", lang, machine=machine, dmg=wanted_dmg)
     return messages.text("ffmpeg_missing", lang)

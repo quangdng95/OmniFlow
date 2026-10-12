@@ -1,6 +1,6 @@
-# remote_web — Personal Remote Access for OmniFlow
+# remote_web — Personal Remote Access for Vidrop
 
-Serves OmniFlow's check/download flow (including Instagram/Threads and
+Serves Vidrop's check/download flow (including Instagram/Threads and
 playlist/carousel batch downloads) over a personal, token-gated public URL,
 so it's reachable from a phone anywhere with internet — no native macOS app
 install required on that device.
@@ -34,8 +34,8 @@ deployment gets pushed up from a Mac (see below).
 1. Clone the repo (a full checkout — `remote_web/` imports `backend/*` as a
    normal Python package):
    ```bash
-   git clone https://github.com/<owner>/OmniFlow.git
-   cd OmniFlow
+   git clone https://github.com/<owner>/Vidrop.git
+   cd Vidrop
    ```
 2. Set up the Python environment (same as the root project):
    ```bash
@@ -92,17 +92,17 @@ deployment gets pushed up from a Mac (see below).
      <key>Label</key><string>com.omniflow.remoteweb</string>
      <key>ProgramArguments</key>
      <array>
-       <string>/path/to/OmniFlow/.venv/bin/python3</string>
+       <string>/path/to/Vidrop/.venv/bin/python3</string>
        <string>-m</string>
        <string>remote_web.app</string>
      </array>
-     <key>WorkingDirectory</key><string>/path/to/OmniFlow</string>
+     <key>WorkingDirectory</key><string>/path/to/Vidrop</string>
      <key>RunAtLoad</key><true/>
      <key>KeepAlive</key><true/>
    </dict>
    </plist>
    ```
-   Replace `/path/to/OmniFlow` with the real absolute path on this Mac in
+   Replace `/path/to/Vidrop` with the real absolute path on this Mac in
    **both** places (`ProgramArguments` and `WorkingDirectory`) — `launchd`
    does not go through a shell, so there is no working directory to inherit
    otherwise, and the `-m remote_web.app` form matters here for the exact

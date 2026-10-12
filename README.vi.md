@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="Assets/Logo/Logo.png" alt="OmniFlow logo" width="120" />
+  <img src="Assets/Logo/Logo.png" alt="Vidrop logo" width="120" />
 
-  # OmniFlow
+  # Vidrop
 
   **Ứng dụng tải video, âm thanh & ảnh đa nền tảng cho macOS.**
 
@@ -9,7 +9,7 @@
 
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#cài-đặt)
-  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/OmniFlow)](../../releases/latest)
+  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/Vidrop)](../../releases/latest)
 
   **[🇬🇧 English](README.md)&nbsp;&nbsp;|&nbsp;&nbsp;🇻🇳 Tiếng Việt**
 </div>
@@ -33,7 +33,7 @@ cần làm sau khi tải — bao gồm các cảnh báo bảo mật macOS xuất
 
 ## Ứng dụng làm được gì
 
-OmniFlow trích xuất và tải video, âm thanh, ảnh chất lượng cao, không watermark từ những nền tảng
+Vidrop trích xuất và tải video, âm thanh, ảnh chất lượng cao, không watermark từ những nền tảng
 mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy tư liệu tham khảo:
 
 <p align="center">
@@ -64,7 +64,7 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
 
 - **Tải đơn hoặc hàng loạt** — một video, hay cả playlist/kênh YouTube, carousel Instagram, hoặc
   Story Instagram, chỉ trong một lần dán link.
-- **Tự động nhận diện link** — OmniFlow tự xác định link là một item đơn hay nguồn nhiều item;
+- **Tự động nhận diện link** — Vidrop tự xác định link là một item đơn hay nguồn nhiều item;
   bạn không cần khai báo gì cả.
 - **Điều khiển từng item** — trong playlist hay carousel, tải hết một lượt, chọn riêng từng cái,
   hoặc thử lại một item bị lỗi.
@@ -82,7 +82,7 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
    từ [Releases](../../releases/latest):
    - **OmniFlow-AppleSilicon.dmg** — cho Mac M1/M2/M3/M4
    - **OmniFlow-Intel.dmg** — cho Mac dùng chip Intel
-2. Mở file `.dmg` và kéo **OmniFlow** vào thư mục `Applications`.
+2. Mở file `.dmg` và kéo **Vidrop** vào thư mục `Applications`.
 3. Lần đầu mở app, macOS sẽ hiện một hoặc hai cảnh báo bảo mật (cảnh báo "nhà phát triển không
    xác định", và — chỉ khi bạn định tải nội dung riêng tư từ Instagram/Threads — yêu cầu quyền
    truy cập Keychain). Cả hai đều bình thường, chỉ xuất hiện một lần, và được giải thích từng bước
@@ -92,15 +92,15 @@ Muốn tự build app? Xem [Build từ mã nguồn](#build-từ-mã-nguồn) bê
 
 ## Cách dùng
 
-1. Dán link vào OmniFlow (từ clipboard, hoặc gõ/dán thủ công).
-2. OmniFlow tự nhận diện nền tảng và xác định đây là một item đơn hay một danh sách.
+1. Dán link vào Vidrop (từ clipboard, hoặc gõ/dán thủ công).
+2. Vidrop tự nhận diện nền tảng và xác định đây là một item đơn hay một danh sách.
 3. Chọn chất lượng (Best, 1080p, 720p, 480p, Chỉ âm thanh, …) — hoặc, nếu là danh sách, chọn
    những item bạn muốn.
 4. Bấm **Download** và theo dõi tiến trình theo thời gian thực.
 5. File hoàn tất sẽ nằm trong thư mục tải đã cấu hình (mặc định là `~/Downloads`).
 
 Một số nền tảng (Instagram, Threads) cần một phiên đăng nhập trên trình duyệt để lấy được nội
-dung riêng tư/bị giới hạn — OmniFlow tự đọc thông tin này từ cookie trình duyệt trên máy bạn;
+dung riêng tư/bị giới hạn — Vidrop tự đọc thông tin này từ cookie trình duyệt trên máy bạn;
 không cần export thủ công.
 
 **Ví dụ:**
@@ -121,7 +121,7 @@ dán-là-chạy cho mỗi nền tảng được hỗ trợ.
 ```bash
 # clone và vào thư mục repo
 git clone https://github.com/quangdng95/OmniFlow.git
-cd OmniFlow
+cd Vidrop
 
 # cài đặt một lần
 python3 -m venv .venv && source .venv/bin/activate
@@ -135,7 +135,7 @@ cd frontend && npm install && cd ..
 ./scripts/dev.sh
 ```
 
-**Build app macOS độc lập** (tạo ra `dist/OmniFlow.app` và `dist/OmniFlow.dmg`):
+**Build app macOS độc lập** (tạo ra `dist/Vidrop.app` và `dist/Vidrop.dmg`):
 
 ```bash
 ./scripts/build.sh
@@ -150,7 +150,7 @@ cd frontend && npm install && cd ..
 
 ## Quyền riêng tư
 
-OmniFlow chạy hoàn toàn trên máy Mac của bạn. Ứng dụng **không**:
+Vidrop chạy hoàn toàn trên máy Mac của bạn. Ứng dụng **không**:
 
 - Lưu trữ hay chuyển tiếp file tải qua bất kỳ server bên ngoài nào
 - Theo dõi hay ghi log lịch sử tải của bạn
@@ -177,8 +177,8 @@ Những gap còn tồn đọng, được ghi nhận trung thực thay vì giấu
 **Mở rộng nền tảng**
 
 - [ ] Chrome extension — bấm một nút ngay trên trình duyệt để gửi video đang xem thẳng vào
-  OmniFlow, không cần copy-paste link
-- [ ] Một cách tiện lợi để gửi link vào OmniFlow từ điện thoại trong khi app đang chạy trên máy
+  Vidrop, không cần copy-paste link
+- [ ] Một cách tiện lợi để gửi link vào Vidrop từ điện thoại trong khi app đang chạy trên máy
   Mac (ví dụ: một iOS Shortcut, hoặc một trang web tối ưu cho di động)
 - [ ] App Android native
 - [ ] App iOS native
@@ -228,7 +228,7 @@ Có ý tưởng tính năng mới? Cũng mở issue để đề xuất nhé.
 
 ## Disclaimer
 
-OmniFlow được xây dựng cho **mục đích cá nhân, phi thương mại** — nghiên cứu, học tập, và lưu trữ
+Vidrop được xây dựng cho **mục đích cá nhân, phi thương mại** — nghiên cứu, học tập, và lưu trữ
 tư liệu tham khảo của riêng bạn. Bạn tự chịu trách nhiệm về vấn đề bản quyền của bất kỳ nội dung
 nào bạn tải xuống, và về việc tuân thủ Điều khoản Dịch vụ của từng nền tảng. Nhóm phát triển cung
 cấp công cụ này "NGUYÊN TRẠNG" (AS IS), không chịu trách nhiệm pháp lý cho cách nó được sử dụng —

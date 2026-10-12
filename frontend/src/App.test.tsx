@@ -80,6 +80,6 @@ describe("App", () => {
     window.history.pushState({}, "", "/unlock");
     render(<App />);
     expect(screen.queryByRole("banner")).not.toBeInTheDocument();
-    expect(screen.getByText("Welcome to OmniFlow")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to Vidrop")).toBeInTheDocument();
   });
 });

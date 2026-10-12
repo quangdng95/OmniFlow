@@ -1,10 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec for OmniFlow — packages the local Flask server + built React
+# PyInstaller spec for Vidrop — packages the local Flask server + built React
 # frontend + vendored ffmpeg into a standalone macOS .app that each end user
 # installs and runs 100% on their own machine (no owner server involved).
 #
 # Build:  pyinstaller vidrop.spec --noconfirm
-# Output: dist/OmniFlow.app
+# Output: dist/Vidrop.app
 import os
 import platform
 import shutil
@@ -83,7 +83,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="OmniFlow",
+    name="Vidrop",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -104,12 +104,12 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="OmniFlow",
+    name="Vidrop",
 )
 
 app = BUNDLE(
     coll,
-    name="OmniFlow.app",
+    name="Vidrop.app",
     icon=APP_ICON,
     bundle_identifier="com.omniflow.app",
     info_plist={

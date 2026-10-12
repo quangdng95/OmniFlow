@@ -5,12 +5,12 @@
 
 ## 1. Problem & Goals
 
-The owner wants to reach OmniFlow's check/download functionality from a phone (or any
+The owner wants to reach Vidrop's check/download functionality from a phone (or any
 device with a browser), anywhere with internet, via a real URL — without installing the
 native macOS app on that device.
 
 **Goals:**
-- A public HTTPS URL that serves OmniFlow's check/download flow.
+- A public HTTPS URL that serves Vidrop's check/download flow.
 - Personal use only — one trusted user (the owner), not a public multi-tenant service.
 - Instagram and Threads must work (using the deployment machine's own logged-in browser
   session — the same mechanism the native app already uses).
@@ -214,7 +214,7 @@ v2 put every diagnostic behind one unauthenticated `/health` route — including
 Instagram session is currently live. That's real reconnaissance value for anyone who
 merely finds the tunnel's hostname (a public HTTPS URL is discoverable by internet-wide
 scanners regardless of whether anyone was ever told it), even before Cloudflare Access
-(§4.7) gets a chance to block them: it confirms "this is a live OmniFlow instance with an
+(§4.7) gets a chance to block them: it confirms "this is a live Vidrop instance with an
 active Instagram session" is worth attacking, before they've authenticated at all. Split
 into two routes instead:
 

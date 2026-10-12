@@ -65,12 +65,12 @@ def test_ffmpeg_unavailable_message_names_the_matching_dmg_for_a_cpu_mismatch(tm
     monkeypatch.setattr(paths.platform, "machine", lambda: "arm64")
 
     message = paths.ffmpeg_unavailable_message()
-    assert "OmniFlow-AppleSilicon.dmg" in message
-    assert "OmniFlow-Intel.dmg" not in message
+    assert "Vidrop-AppleSilicon.dmg" in message
+    assert "Vidrop-Intel.dmg" not in message
 
 
 def test_ffmpeg_unavailable_message_is_generic_when_ffmpeg_is_just_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, "resource_path", lambda name: str(tmp_path / "no-such-file"))
     message = paths.ffmpeg_unavailable_message()
-    assert "OmniFlow-AppleSilicon.dmg" not in message
-    assert "OmniFlow-Intel.dmg" not in message
+    assert "Vidrop-AppleSilicon.dmg" not in message
+    assert "Vidrop-Intel.dmg" not in message

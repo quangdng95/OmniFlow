@@ -1,5 +1,5 @@
 #!/bin/bash
-# Saves the OmniFlow cloud access token where sync_cloud_cookies.py reads it
+# Saves the Vidrop cloud access token where sync_cloud_cookies.py reads it
 # (~/.config/omniflow/cloud_token, chmod 600). Run once.
 #
 #   bash remote_web/scripts/set-cloud-token.sh            # prompts, input hidden

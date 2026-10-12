@@ -1,4 +1,4 @@
-"""OmniFlow backend package.
+"""Vidrop backend package.
 
 Import convention (enforced by tests/test_import_convention.py): modules
 reference each other ONLY module-attribute style —

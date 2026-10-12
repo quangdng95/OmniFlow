@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}=== Starting OmniFlow Build Process ===${NC}"
+echo -e "${BLUE}=== Starting Vidrop Build Process ===${NC}"
 
 # 1. Setup/Activate Python virtual environment
 if [ ! -d ".venv" ]; then
@@ -41,36 +41,36 @@ pyinstaller vidrop.spec --noconfirm --clean
 
 # 4. Strip extended attributes and sign ad-hoc in a temp folder to bypass iCloud FileProvider issues
 echo -e "${BLUE}[5/6] Stripping extended attributes and signing ad-hoc in a temp directory...${NC}"
-if [ -d "dist/OmniFlow.app" ]; then
+if [ -d "dist/Vidrop.app" ]; then
     TEMP_DIR="$HOME/OnmiFlow_temp"
     rm -rf "$TEMP_DIR"
     mkdir -p "$TEMP_DIR"
     
     # Copy to temp directory outside iCloud
-    cp -R dist/OmniFlow.app "$TEMP_DIR/OmniFlow.app"
+    cp -R dist/Vidrop.app "$TEMP_DIR/Vidrop.app"
     
     # Strip attributes and sign
-    xattr -cr "$TEMP_DIR/OmniFlow.app"
-    codesign --force --deep --sign - "$TEMP_DIR/OmniFlow.app"
+    xattr -cr "$TEMP_DIR/Vidrop.app"
+    codesign --force --deep --sign - "$TEMP_DIR/Vidrop.app"
     
     # 5. Create DMG installer with an Applications shortcut for drag-and-drop install
     echo -e "${BLUE}[6/6] Creating DMG installer with Applications shortcut...${NC}"
     STAGING_DIR="$TEMP_DIR/dmg_staging"
     rm -rf "$STAGING_DIR"
     mkdir -p "$STAGING_DIR"
-    cp -R "$TEMP_DIR/OmniFlow.app" "$STAGING_DIR/OmniFlow.app"
+    cp -R "$TEMP_DIR/Vidrop.app" "$STAGING_DIR/Vidrop.app"
     ln -s /Applications "$STAGING_DIR/Applications"
 
-    # Detach a stale "OmniFlow" volume left mounted from a previous run, if any
-    if [ -d "/Volumes/OmniFlow" ]; then
-        hdiutil detach "/Volumes/OmniFlow" -force >/dev/null 2>&1 || true
+    # Detach a stale "Vidrop" volume left mounted from a previous run, if any
+    if [ -d "/Volumes/Vidrop" ]; then
+        hdiutil detach "/Volumes/Vidrop" -force >/dev/null 2>&1 || true
     fi
 
-    RW_DMG="$TEMP_DIR/OmniFlow-rw.dmg"
+    RW_DMG="$TEMP_DIR/Vidrop-rw.dmg"
     rm -f "$RW_DMG"
-    hdiutil create -volname OmniFlow -srcfolder "$STAGING_DIR" -ov -format UDRW -fs HFS+ "$RW_DMG"
+    hdiutil create -volname Vidrop -srcfolder "$STAGING_DIR" -ov -format UDRW -fs HFS+ "$RW_DMG"
     MOUNT_OUTPUT=$(hdiutil attach "$RW_DMG" -readwrite -noverify -noautoopen)
-    MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep -o '/Volumes/OmniFlow.*')
+    MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep -o '/Volumes/Vidrop.*')
 
     # Best-effort Finder styling (icon layout) — arranges the app + Applications
     # shortcut side by side. Backgrounded with a hard 15s cutoff so a missing
@@ -79,7 +79,7 @@ if [ -d "dist/OmniFlow.app" ]; then
     # just with default icon placement.
     osascript <<APPLESCRIPT &
 tell application "Finder"
-    tell disk "OmniFlow"
+    tell disk "Vidrop"
         open
         set current view of container window to icon view
         set toolbar visible of container window to false
@@ -88,7 +88,7 @@ tell application "Finder"
         set viewOptions to the icon view options of container window
         set arrangement of viewOptions to not arranged
         set icon size of viewOptions to 100
-        set position of item "OmniFlow.app" of container window to {125, 150}
+        set position of item "Vidrop.app" of container window to {125, 150}
         set position of item "Applications" of container window to {375, 150}
         close
         open
@@ -105,24 +105,24 @@ APPLESCRIPT
     kill $OSA_PID 2>/dev/null || true
 
     sync
-    hdiutil detach "$MOUNT_DIR" -force >/dev/null 2>&1 || hdiutil detach "/Volumes/OmniFlow" -force >/dev/null 2>&1 || true
+    hdiutil detach "$MOUNT_DIR" -force >/dev/null 2>&1 || hdiutil detach "/Volumes/Vidrop" -force >/dev/null 2>&1 || true
 
-    rm -f "$TEMP_DIR/OmniFlow.dmg"
-    hdiutil convert "$RW_DMG" -format UDZO -ov -o "$TEMP_DIR/OmniFlow.dmg"
+    rm -f "$TEMP_DIR/Vidrop.dmg"
+    hdiutil convert "$RW_DMG" -format UDZO -ov -o "$TEMP_DIR/Vidrop.dmg"
     rm -f "$RW_DMG"
 
     # Copy signed app and DMG back to dist/
     echo -e "${BLUE}Copying signed app and DMG back to dist/...${NC}"
-    rm -rf dist/OmniFlow.app
-    cp -R "$TEMP_DIR/OmniFlow.app" dist/OmniFlow.app
-    cp "$TEMP_DIR/OmniFlow.dmg" dist/OmniFlow.dmg
+    rm -rf dist/Vidrop.app
+    cp -R "$TEMP_DIR/Vidrop.app" dist/Vidrop.app
+    cp "$TEMP_DIR/Vidrop.dmg" dist/Vidrop.dmg
     
     # Clean up temp dir
     rm -rf "$TEMP_DIR"
     
     echo -e "${GREEN}App successfully signed ad-hoc and DMG created with an Applications shortcut!${NC}"
 else
-    echo -e "${RED}Error: dist/OmniFlow.app was not created!${NC}"
+    echo -e "${RED}Error: dist/Vidrop.app was not created!${NC}"
     exit 1
 fi
 
@@ -133,6 +133,6 @@ echo -e "${GREEN}Temporary build/ and .ffmpeg_stage/ folders removed.${NC}"
 
 echo -e "\n${GREEN}=== Build Completed Successfully! ===${NC}"
 echo -e "You can find and run your app here:"
-echo -e "  - Standalone App: ${BLUE}dist/OmniFlow.app${NC}"
-echo -e "  - DMG Installer:  ${BLUE}dist/OmniFlow.dmg${NC}"
-echo -e "Double-click ${BLUE}dist/OmniFlow.app${NC} to start and test it!\n"
+echo -e "  - Standalone App: ${BLUE}dist/Vidrop.app${NC}"
+echo -e "  - DMG Installer:  ${BLUE}dist/Vidrop.dmg${NC}"
+echo -e "Double-click ${BLUE}dist/Vidrop.app${NC} to start and test it!\n"

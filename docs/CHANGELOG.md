@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to OmniFlow are documented here. Dates are in `YYYY-MM-DD` format. This file
+All notable changes to Vidrop are documented here. Dates are in `YYYY-MM-DD` format. This file
 is the raw, engineering-facing history; the app itself also has an in-app **Changelog** page
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
@@ -83,7 +83,7 @@ keep both updated together when shipping a user-visible change.
 - [x] **Bearer-token API auth**: `/api/*` now also accepts `Authorization: Bearer <token>`, so a
   headless client (the new iOS Shortcut) can call the API without a browser cookie session.
 - [x] **iOS Shortcut Setup guide** (new page, `ShortcutSetupPage`): share a link from any app →
-  OmniFlow downloads it and hands the file back, no browser needed. Linked from the header nav,
+  Vidrop downloads it and hands the file back, no browser needed. Linked from the header nav,
   remote-deployment only (hidden for the local desktop app).
 - [x] Mobile Share Sheet saves (including bulk saves) now complete end-to-end on iOS.
 - [x] Restricted remote SSH/server-management access behind the app's own IAP gate.
@@ -97,13 +97,13 @@ keep both updated together when shipping a user-visible change.
 
 ### Added — Remote Web Access (new capability)
 
-- [x] **Remote Web Access**: OmniFlow can run on a personal cloud server and be reached securely
+- [x] **Remote Web Access**: Vidrop can run on a personal cloud server and be reached securely
   from a phone or any other device via a private URL, gated by a signed trust-cookie login +
   lockout (see `.claude/rules/web-app.md` and the `remote_web` package).
 - [x] Batch (playlist/carousel) downloads over remote access assemble into a single incremental
   ZIP (`ZIP_STORED`) instead of requiring one file at a time.
 - [x] Mac → cloud-VM Instagram/Threads cookie sync, so authenticated downloads keep working when
-  OmniFlow isn't running on the machine that owns the browser session.
+  Vidrop isn't running on the machine that owns the browser session.
 - [x] Manual `cookies.txt` upload path for headless/cloud deployments with no browser to
   auto-extract cookies from.
 - [x] Linux ffmpeg resolution via `PATH` for cloud portability (previously macOS-only lookup).
@@ -139,8 +139,8 @@ A full round of live bug fixes driven by real user reports and diagnostic logs f
 
 ### Added — Self-serve diagnostics (Settings page)
 
-- [x] **Diagnostic Logs**: a button to open the folder containing OmniFlow's error log, so a failure can be diagnosed and reported without digging through `~/Library/Logs` manually.
-- [x] **Reset App Data**: a button to clear OmniFlow's saved settings (download path, saved cookies, etc.) and start fresh — the in-app equivalent of the old "quit the app and delete a hidden config file by hand" troubleshooting step. Does not touch any downloaded files.
+- [x] **Diagnostic Logs**: a button to open the folder containing Vidrop's error log, so a failure can be diagnosed and reported without digging through `~/Library/Logs` manually.
+- [x] **Reset App Data**: a button to clear Vidrop's saved settings (download path, saved cookies, etc.) and start fresh — the in-app equivalent of the old "quit the app and delete a hidden config file by hand" troubleshooting step. Does not touch any downloaded files.
 
 ### Added — Smarter link handling
 

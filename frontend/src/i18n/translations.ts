@@ -209,7 +209,7 @@ const en: Translations = {
     clearAll: "Clear history",
     untitled: "Untitled",
   },
-  login: { tagline: "Save videos, music and photos in one tap.", platforms: "YouTube · TikTok · Instagram · Facebook · X · Threads · LinkedIn · RedNote", title: "Welcome to OmniFlow", subtitle: "Enter your access token to continue.", label: "Access token", placeholder: "Paste your token", submit: "Unlock", submitting: "Unlocking…", wrong: "Incorrect token. Please try again.", locked: "Too many attempts. Try again in a few minutes.", network: "Could not reach the server. Check your connection.", show: "Show token", hide: "Hide token" },
+  login: { tagline: "Save videos, music and photos in one tap.", platforms: "YouTube · TikTok · Instagram · Facebook · X · Threads · LinkedIn · RedNote", title: "Welcome to Vidrop", subtitle: "Enter your access token to continue.", label: "Access token", placeholder: "Paste your token", submit: "Unlock", submitting: "Unlocking…", wrong: "Incorrect token. Please try again.", locked: "Too many attempts. Try again in a few minutes.", network: "Could not reach the server. Check your connection.", show: "Show token", hide: "Hide token" },
   footer: { by: "By" },
   urlInput: {
     fieldLabel: "Video link",
@@ -663,7 +663,7 @@ const vi: Translations = {
     clearAll: "Xoá lịch sử",
     untitled: "Chưa có tiêu đề",
   },
-  login: { tagline: "Lưu video, nhạc và ảnh chỉ với một chạm.", platforms: "YouTube · TikTok · Instagram · Facebook · X · Threads · LinkedIn · RedNote", title: "Chào mừng đến OmniFlow", subtitle: "Nhập mã truy cập để tiếp tục.", label: "Mã truy cập", placeholder: "Dán mã của bạn", submit: "Mở khoá", submitting: "Đang mở khoá…", wrong: "Mã không đúng. Vui lòng thử lại.", locked: "Thử quá nhiều lần. Vui lòng thử lại sau vài phút.", network: "Không kết nối được máy chủ. Kiểm tra mạng của bạn.", show: "Hiện mã", hide: "Ẩn mã" },
+  login: { tagline: "Lưu video, nhạc và ảnh chỉ với một chạm.", platforms: "YouTube · TikTok · Instagram · Facebook · X · Threads · LinkedIn · RedNote", title: "Chào mừng đến Vidrop", subtitle: "Nhập mã truy cập để tiếp tục.", label: "Mã truy cập", placeholder: "Dán mã của bạn", submit: "Mở khoá", submitting: "Đang mở khoá…", wrong: "Mã không đúng. Vui lòng thử lại.", locked: "Thử quá nhiều lần. Vui lòng thử lại sau vài phút.", network: "Không kết nối được máy chủ. Kiểm tra mạng của bạn.", show: "Hiện mã", hide: "Ẩn mã" },
   footer: { by: "Bởi" },
   urlInput: {
     fieldLabel: "Link video",
