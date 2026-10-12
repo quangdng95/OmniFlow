@@ -56,7 +56,7 @@ const VideoInfoCard = ({
   const saveIcon = saving ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden /> : <Save className="h-6 w-6" aria-hidden />;
 
   return (
-    <PlatformBlock tone={tone} className="select-none">
+    <PlatformBlock tone={tone}>
       <div className={`grid items-start gap-6 md:gap-12 ${info.thumbnail ? "md:grid-cols-[5fr_7fr]" : ""}`}>
         {info.thumbnail && (
           <div className="flex flex-col gap-4">

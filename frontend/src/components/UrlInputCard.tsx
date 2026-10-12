@@ -27,7 +27,7 @@ interface UrlInputCardProps {
 // is checked automatically a moment after it changes, so the action is Paste
 // (empty), Clear (filled) or a "Checking" status - never a separate Check button.
 const barButton =
-  "inline-flex min-h-[60px] flex-1 basis-1/2 cursor-pointer items-center justify-center gap-2.5 border-0 px-8 font-display text-lg font-bold uppercase focus-on-ink focus-inset md:min-h-[84px] md:flex-none md:basis-auto md:text-xl";
+  "inline-flex min-h-[60px] flex-1 basis-1/2 cursor-pointer select-none items-center justify-center gap-2.5 border-0 px-8 font-display text-lg font-bold uppercase focus-on-ink focus-inset md:min-h-[84px] md:flex-none md:basis-auto md:text-xl";
 
 const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
   (
@@ -51,7 +51,7 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
     const isError = status === "error";
 
     return (
-      <div className="flex w-full flex-col gap-4 select-none">
+      <div className="flex w-full flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="url-input" className="font-display text-lg leading-tight font-bold text-ink">
             {t.urlInput.fieldLabel}
@@ -79,7 +79,7 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
             {status === "checking" ? (
               <span
                 role="status"
-                className="inline-flex min-h-[60px] flex-1 basis-1/2 items-center justify-center gap-2.5 px-8 font-display text-lg font-bold text-on-ink uppercase md:min-h-[84px] md:flex-none md:basis-auto md:text-xl"
+                className="inline-flex min-h-[60px] flex-1 basis-1/2 select-none items-center justify-center gap-2.5 px-8 font-display text-lg font-bold text-on-ink uppercase md:min-h-[84px] md:flex-none md:basis-auto md:text-xl"
               >
                 <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
                 {t.urlInput.checking}
@@ -123,7 +123,7 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
                     key={quality}
                     value={quality}
                     disabled={qualityDisabled}
-                    className="min-h-11 rounded-none border-0 px-4 font-display text-base font-bold text-ink uppercase after:hidden data-active:bg-ink data-active:text-on-ink data-active:shadow-none hover:bg-signal data-active:hover:bg-ink"
+                    className="min-h-11 select-none rounded-none border-0 px-4 font-display text-base font-bold text-ink uppercase after:hidden data-active:bg-ink data-active:text-on-ink data-active:shadow-none hover:bg-signal data-active:hover:bg-ink"
                   >
                     {quality}
                   </TabsTrigger>

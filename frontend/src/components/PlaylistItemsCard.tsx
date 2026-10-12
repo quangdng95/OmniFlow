@@ -177,7 +177,7 @@ const PlaylistItemsCard = ({
 
   return (
     <>
-      <PlatformBlock tone={platform} className="select-none">
+      <PlatformBlock tone={platform}>
         <PlatformTag platform={platform} />
 
         {/* Playlist title + the main action */}

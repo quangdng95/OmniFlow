@@ -10,7 +10,7 @@ const ChangelogPage = ({ onNavigate: _onNavigate }: ChangelogPageProps) => {
   const { t } = useLanguage();
 
   return (
-    <div className="w-full select-none flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-4">
       <SectionCard className="p-6 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-2">
         <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0d9585]">
           {t.changelog.eyebrow}

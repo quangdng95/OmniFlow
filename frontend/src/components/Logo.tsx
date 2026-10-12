@@ -7,7 +7,7 @@ interface LogoProps {
 const Logo = ({ size = "compact" }: LogoProps) => {
   if (size === "small") {
     return (
-      <div className="flex items-center gap-[4.17px] shrink-0 select-none">
+      <div className="flex items-center gap-[4.17px] shrink-0">
         <img src={logoIcon} alt="Logo" width={32} height={32} className="h-8 w-8 shrink-0" />
         <div className="text-ink leading-none shrink-0 flex flex-col items-start">
           <div className="text-[16.7px] font-medium font-sans">Vidrop</div>
@@ -21,7 +21,7 @@ const Logo = ({ size = "compact" }: LogoProps) => {
   // "Video Downloader" tagline would be 6px at half size - unreadable - so it
   // is dropped here (the page's own heading already says what the app is).
   return (
-    <div className="flex items-center gap-2 select-none">
+    <div className="flex items-center gap-2">
       <img src={logoIcon} alt="Logo" width={23} height={23} className="h-[23px] w-[23px] shrink-0" />
       <span className="font-display text-[1.625rem] leading-none font-bold tracking-[-0.04em] text-ink uppercase">
         Vi

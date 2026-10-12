@@ -92,7 +92,7 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
   };
 
   return (
-    <div className="w-full select-none">
+    <div className="w-full">
       <div className="w-full flex flex-col gap-4">
           {isLocal() && (
             <SectionCard className="p-5 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-4">
@@ -123,7 +123,7 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-1 select-none">
+              <div className="flex items-center gap-2 p-1">
                 <Checkbox
                   checked={rememberPath}
                   onCheckedChange={(checked) => setRememberPath(!!checked)}

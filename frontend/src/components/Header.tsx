@@ -46,14 +46,14 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-background select-none">
+    <header className="sticky top-0 z-40 w-full bg-background">
       <div className="mx-auto w-full max-w-[1200px] px-5 md:px-10">
       <div className="flex min-h-16 items-center justify-between gap-3 border-b-[3px] border-ink">
         <button
           type="button"
           onClick={() => onNavigate("home")}
           aria-label={t.header.nav.home}
-          className="flex min-h-11 items-center"
+          className="flex min-h-11 select-none items-center"
         >
           <Logo size="compact" />
         </button>
@@ -66,7 +66,7 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
                 <button
                   type="button"
                   aria-label={t.header.menu}
-                  className="box-border inline-flex h-(--control-h) min-w-11 cursor-pointer items-center justify-center gap-2 border-[3px] border-ink bg-transparent px-2.5 font-display text-base font-bold text-ink uppercase hover:bg-ink hover:text-on-ink aria-expanded:bg-ink aria-expanded:text-on-ink sm:px-3.5"
+                  className="box-border inline-flex select-none h-(--control-h) min-w-11 cursor-pointer items-center justify-center gap-2 border-[3px] border-ink bg-transparent px-2.5 font-display text-base font-bold text-ink uppercase hover:bg-ink hover:text-on-ink aria-expanded:bg-ink aria-expanded:text-on-ink sm:px-3.5"
                 />
               }
             >

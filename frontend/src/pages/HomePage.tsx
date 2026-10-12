@@ -404,7 +404,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   }
 
   return (
-    <div className="w-full select-none">
+    <div className="w-full">
       <div className="w-full flex flex-col gap-6">
           {/* Hero: kept short so the URL bar sits inside the first mobile screen. */}
           <div className="flex flex-col items-start gap-3 pt-2 text-left md:pt-6">
@@ -433,7 +433,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
           />
 
           {checkError && !checking && (
-            <PlatformBlock tone="ink" role="alert" className="select-none">
+            <PlatformBlock tone="ink" role="alert">
               <AlertCircle className="h-11 w-11 text-signal" aria-hidden />
               <p className={`${bigStatus} text-[clamp(2rem,9vw,5.5rem)] text-signal`}>{t.urlInput.checkFailedTitle}</p>
               <p className="m-0 max-w-[32em] text-xl leading-snug">{checkError}</p>
@@ -455,7 +455,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
           )}
 
           {!checking && !checkResult && (
-            <AnimatedSection className="flex flex-col gap-10 pt-4 w-full select-none">
+            <AnimatedSection className="flex flex-col gap-10 pt-4 w-full">
               <section className="flex flex-col gap-3">
                 <h2 className="m-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t.home.supportedPlatformsHeading}</h2>
                 <div className="flex flex-wrap gap-2">

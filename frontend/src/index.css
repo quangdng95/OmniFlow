@@ -159,6 +159,18 @@ li + li {
   min-height: 2.75rem;
 }
 
+/* Text is selectable everywhere; only control labels opt out (select-none on buttons,
+   the language switch, the menu and the progress bars - a drag that starts on a
+   button label would just select noise). Form labels stay selectable too. */
+::selection {
+  background: var(--signal);
+  color: var(--ink);
+}
+[data-slot="label"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* Placeholders stay fully opaque so they keep >= 4.5:1 on white. */
 ::placeholder {
   color: var(--ink-muted);

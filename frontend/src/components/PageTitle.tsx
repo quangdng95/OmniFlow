@@ -17,7 +17,7 @@ const PageTitle = ({ page }: PageTitleProps) => {
     shortcut: t.header.shortcut.title,
     changelog: t.header.changelog.title,
   };
-  return <h2 className="m-0 mb-2 font-display text-[clamp(1.875rem,7vw,4rem)] leading-[1.05] font-bold tracking-[-0.05em] text-ink uppercase select-none">{titles[page]}</h2>;
+  return <h2 className="m-0 mb-2 font-display text-[clamp(1.875rem,7vw,4rem)] leading-[1.05] font-bold tracking-[-0.05em] text-ink uppercase">{titles[page]}</h2>;
 };
 
 export default PageTitle;
