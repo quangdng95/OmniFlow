@@ -402,7 +402,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
                 </span>
               ))}
             </h1>
-            <p className="m-0 max-w-[30em] text-[1.1875rem] leading-snug text-ink">{t.header.home.sub}</p>
+            <p className="m-0 max-w-[40em] text-[1.1875rem] leading-snug text-balance text-ink">{t.header.home.sub}</p>
           </div>
           <UrlInputCard
             ref={inputRef}
