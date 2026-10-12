@@ -29,6 +29,15 @@ interface UrlInputCardProps {
 const barButton =
   "inline-flex min-h-[60px] flex-1 basis-1/2 cursor-pointer select-none items-center justify-center gap-2.5 border-0 px-8 font-display text-lg font-bold uppercase focus-on-ink focus-inset md:min-h-[84px] md:flex-none md:basis-auto md:text-xl";
 
+// Measured 2026-10-12: YouTube serves 1440p/2160p as VP9/AV1 only, which has to be
+// re-encoded to H.264 after the download (about 6 s for a 12 s 4K clip, vs about 0.03 s
+// for 1080p and below). The label is the server's own, e.g. "2160p".
+const HIGH_RESOLUTION_FROM = 1440;
+const isHighResolution = (quality: string | undefined): boolean => {
+  const match = quality?.match(/^(\d+)p$/i);
+  return match !== null && match !== undefined && Number(match[1]) >= HIGH_RESOLUTION_FROM;
+};
+
 const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
   (
     {
@@ -131,6 +140,9 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
               </TabsList>
             </Tabs>
           </div>
+        )}
+        {qualities.length > 1 && isHighResolution(qualityValue) && (
+          <p className="m-0 text-base text-ink-muted">{t.qualityAction.slowHint}</p>
         )}
       </div>
     );

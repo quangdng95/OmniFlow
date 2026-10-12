@@ -78,6 +78,7 @@ export interface Translations {
     downloading: string;
     finalizing: string; // shown once the transfer hits 100% but the job is still merging/converting
     elapsedLabel: string; // accessible name of the counter next to the processing line
+    slowHint: string; // under the quality picker when a 1440p+ option is selected
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
@@ -267,6 +268,7 @@ const en: Translations = {
     downloading: "Downloading",
     finalizing: "Processing video…",
     elapsedLabel: "Time elapsed",
+    slowHint: "High resolutions can take longer to process after the download.",
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
@@ -718,6 +720,7 @@ const vi: Translations = {
     downloading: "Đang tải xuống",
     finalizing: "Đang xử lý video…",
     elapsedLabel: "Thời gian đã trôi qua",
+    slowHint: "Độ phân giải cao có thể mất nhiều thời gian xử lý hơn sau khi tải.",
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
