@@ -41,7 +41,7 @@ const App = () => {
         <Header active={page} onNavigate={setPage} />
 
         {/* Content area */}
-        <main className="flex w-full flex-grow flex-col gap-4 py-6">
+        <main className="flex w-full flex-grow flex-col gap-4 pt-6 pb-4">
           {/* Home stays mounted across navigation so an in-progress check/download
               survives a trip to Settings or Terms and back. */}
           <div style={{ display: page === "home" ? "contents" : "none" }}>
