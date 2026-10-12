@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vidrop · v1 Command bar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F3EFE6;--ink:#0A2624;--muted:#40605C;--teal:#0F766E;--teal-d:#0B5A54;--tint:#DCEBE6;--line:#BDB6A5;--err:#8F1B33;--errbg:#F9E3E3;--r:16px;
+--f:Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.55 var(--f);padding-bottom:env(safe-area-inset-bottom)}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px;border-radius:6px}
+.skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:#fff;padding:12px 16px;border-radius:8px;z-index:10}.skip:focus{left:8px}
+.wrap{max-width:880px;margin:0 auto;padding:0 20px}
+header.top{display:flex;align-items:center;justify-content:space-between;min-height:64px}
+.brand{font-weight:800;font-size:22px;letter-spacing:-.02em;color:var(--teal-d);text-decoration:none;display:flex;align-items:center;gap:8px;min-height:44px}
+.brand i{width:12px;height:12px;border-radius:50%;background:var(--teal);display:block}
+nav{display:flex;gap:4px}
+.nb{min-height:44px;min-width:44px;padding:0 14px;border:0;background:transparent;border-radius:12px;font-weight:700;display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink)}
+.nb:hover{background:var(--tint)}
+.hero{padding:28px 0 8px}
+h1{font-size:clamp(34px,8.6vw,64px);line-height:1.02;letter-spacing:-.035em;margin:0 0 12px;font-weight:800;max-width:11em}
+.sub{margin:0 0 28px;color:var(--muted);font-size:18px;max-width:34em}
+.lab{display:block;font-weight:700;margin-bottom:8px}
+.bar{display:flex;flex-wrap:wrap;gap:0;border:2.5px solid var(--ink);border-radius:var(--r);background:#fff;overflow:hidden}
+.bar:focus-within{outline:3px solid var(--teal);outline-offset:3px}
+.bar input{flex:1 1 100%;min-width:0;height:64px;border:0;padding:0 18px;font-size:18px;background:transparent;outline:0}
+.bar input::placeholder{color:#5B6F6C;opacity:1}
+.bar .ghost,.bar .go{height:56px;border:0;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:800;padding:0 20px}
+.bar .ghost{flex:0 0 auto;background:var(--tint);color:var(--ink);border-top:2.5px solid var(--ink);flex:1 1 40%}
+.bar .go{flex:1 1 60%;background:var(--teal);color:#fff;border-top:2.5px solid var(--ink);border-left:2.5px solid var(--ink)}
+.bar .go:hover{background:var(--teal-d)}.bar .go:disabled{opacity:.55;cursor:not-allowed}
+.bar .ghost:hover{background:#CBE0D9}
+.plat{margin:18px 0 0;color:var(--muted)}
+.flow{margin:6px 0 0;color:var(--muted)}
+.status,.err{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:20px;padding:16px 0 0;border-top:2px solid var(--ink)}
+.status b,.err b{display:block;font-size:18px}
+.status span.t{color:var(--muted)}
+.err{color:var(--err);border-top-color:var(--err)}
+.err p{margin:0;color:var(--ink)}
+.err .ic{align-self:flex-start;margin-top:2px}
+.spin svg{animation:sp 0.9s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.link{background:none;border:0;min-height:44px;min-width:44px;padding:0 12px;font-weight:800;text-decoration:underline;text-underline-offset:3px;border-radius:8px}
+.btn{min-height:52px;padding:0 24px;border-radius:14px;border:2.5px solid var(--ink);background:var(--teal);color:#fff;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.btn:hover{background:var(--teal-d)}
+.btn.alt{background:transparent;color:var(--ink)}.btn.alt:hover{background:var(--tint)}
+.btn.red{background:var(--err);border-color:var(--err)}
+/* result */
+.result{margin-top:36px;padding-top:28px;border-top:6px solid var(--teal);display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
+.thumb{background:linear-gradient(135deg,#0F766E,#134E4A 60%,#CA8A04);position:relative;border-radius:12px;display:grid;place-items:center;color:#fff}
+.thumb.big{aspect-ratio:16/9;width:100%}
+.thumb.big .dur{position:absolute;right:10px;bottom:10px;background:#0A2624;color:#fff;font-size:16px;font-weight:700;padding:2px 8px;border-radius:6px}
+.thumb.sm{width:64px;height:48px;flex:none;border-radius:8px}
+.title{font-size:clamp(22px,4.6vw,30px);line-height:1.2;letter-spacing:-.02em;margin:0 0 6px;font-weight:800}
+.meta{color:var(--muted);margin:0 0 22px}
+.grp{margin:0 0 18px;border:0;padding:0;min-width:0}
+.grp legend{font-weight:700;padding:0;margin-bottom:8px}
+.seg{display:flex;max-width:100%;border:2.5px solid var(--ink);border-radius:14px;overflow:hidden}
+.seg label{display:block;flex:1}.seg label>span{justify-content:center}
+.seg input,.opt input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label>span{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 22px;font-weight:800;cursor:pointer}
+.seg input:checked+span{background:var(--ink);color:#fff}
+.seg label+label>span{border-left:2.5px solid var(--ink)}
+.seg input:focus-visible+span,.opt input:focus-visible+span{outline:3px solid var(--teal);outline-offset:-5px}
+#qopts{display:flex;flex-wrap:wrap;gap:8px}
+.opt span{display:flex;align-items:center;min-height:48px;padding:0 18px;border:2.5px solid var(--ink);border-radius:14px;font-weight:700;cursor:pointer;background:transparent}
+.opt input:checked+span{background:var(--tint);box-shadow:inset 0 0 0 2px var(--ink)}
+.opt span:hover{background:var(--tint)}
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.actions .btn{flex:1 1 220px;font-size:18px;min-height:56px}
+.prog{height:14px;border-radius:99px;background:#fff;border:2.5px solid var(--ink);overflow:hidden;margin:6px 0 10px}
+.bar-fill{height:100%;background:var(--teal);width:0;transition:width .14s linear}
+.pline{display:flex;justify-content:space-between;font-weight:800;font-variant-numeric:tabular-nums;margin-bottom:14px}
+.done-t{display:flex;gap:10px;align-items:center;font-weight:800;font-size:20px;margin:0 0 4px;color:var(--teal-d)}
+.sizeNote{color:var(--muted);margin:0 0 18px}
+/* lists */
+ul.rows{list-style:none;margin:0;padding:0}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1.5px solid var(--line);min-height:64px}
+.row:last-child{border-bottom:1.5px solid var(--line)}
+.row .rt{flex:1;min-width:0;display:flex;flex-direction:column}
+.row b{font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.row small{color:var(--muted);font-size:16px}
+.idx{font-variant-numeric:tabular-nums;font-weight:800;color:var(--muted);width:28px}
+.rbtn{min-height:44px;padding:0 16px;border:2px solid var(--ink);border-radius:12px;background:transparent;font-weight:800;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.rbtn:hover{background:var(--tint)}.rbtn.is-done{border-color:transparent;color:var(--teal-d)}
+.sec{margin-top:44px}
+.sec h2{font-size:22px;letter-spacing:-.02em;margin:0 0 4px}
+.sec .note{margin:0 0 12px;color:var(--muted);font-size:16px}
+.plhead{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.plhead h2{margin:0}
+/* about */
+.about{margin-top:56px;border-top:2px solid var(--ink)}
+.about details{border-bottom:1.5px solid var(--line)}
+.about summary{list-style:none;min-height:56px;display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:18px;cursor:pointer;border-radius:8px}
+.about summary::-webkit-details-marker{display:none}
+.about summary svg{transition:transform .2s}.about details[open] summary svg{transform:rotate(180deg)}
+.about .in{padding:0 0 18px;color:var(--muted);max-width:40em}
+.about ol{margin:0;padding-left:22px}.about ol li{margin:4px 0}
+.about dl{margin:0}.about dt{font-weight:800;color:var(--ink);margin-top:12px}.about dd{margin:2px 0 0}
+footer{padding:28px 0 40px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted)}
+footer a{color:var(--ink);font-weight:700;display:inline-flex;min-height:44px;align-items:center}
+#demoBar{position:fixed;left:8px;bottom:8px;z-index:50;background:#0A2624;color:#fff;border-radius:12px;padding:6px 10px;font-size:16px;display:flex;gap:8px;align-items:center;opacity:.92}
+#demoBar select{min-height:36px;font-size:16px;border-radius:8px;border:0;padding:0 6px}
+@media(min-width:720px){
+.wrap{padding:0 32px}
+.hero{padding-top:64px}
+.bar{flex-wrap:nowrap;align-items:center}
+.bar input{flex:1 1 auto;height:76px;font-size:20px;padding:0 24px}
+.bar .ghost,.bar .go{height:76px;flex:0 0 auto;border-top:0}
+.bar .ghost{border-left:2.5px solid var(--ink)}
+.bar .go{border-left:2.5px solid var(--ink);padding:0 32px;font-size:18px}
+.result{grid-template-columns:340px minmax(0,1fr);gap:36px}
+}
+@media(max-width:719px){
+.actions.stick{position:sticky;bottom:0;background:var(--bg);padding:12px 0 calc(12px + env(safe-area-inset-bottom));border-top:2px solid var(--ink);margin:0 -20px;padding-inline:20px;z-index:5}
+.actions .btn{flex:1 1 100%}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body data-state="empty">
+<a class="skip" href="#main" data-i="skip"></a>
+<div class="wrap">
+<header class="top">
+ <a class="brand" href="#"><i></i>Vidrop</a>
+ <nav><a class="nb" href="#hist-sec"><span data-icon="hist"></span><span data-i="menu"></span></a><button class="nb" id="lang" type="button"></button></nav>
+</header>
+<main id="main">
+<section class="hero">
+ <h1 data-i="tagline"></h1>
+ <p class="sub" data-i="sub"></p>
+ <form id="f" novalidate>
+  <label class="lab" for="url" data-i="label"></label>
+  <div class="bar">
+   <input id="url" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-ph="ph">
+   <button type="button" id="paste" class="ghost"><span data-icon="clip"></span><span data-i="paste"></span></button>
+   <button type="submit" id="check" class="go"><span data-i="check"></span><span data-icon="arrow"></span></button>
+  </div>
+ </form>
+ <p class="plat" data-s="empty" data-i="platforms"></p>
+ <p class="flow" data-s="empty" data-i="flow"></p>
+ <div class="status" data-s="analyzing" role="status">
+  <span class="spin" data-icon="spin" data-size="28"></span>
+  <div style="flex:1"><b data-i="analyzing"></b><span class="t" data-i="analyzingSub"></span></div>
+  <button type="button" class="link" id="cancelA" data-i="cancel"></button>
+ </div>
+ <div class="err" data-s="error" role="alert">
+  <span class="ic" data-icon="alert" data-size="26"></span>
+  <div style="flex:1;min-width:200px"><b id="errT"></b><p id="errB"></p></div>
+  <button type="button" class="btn red" id="retry"><span data-icon="refresh" data-size="18"></span><span id="retryLbl"></span></button>
+ </div>
+</section>
+
+<section class="result" data-s="result downloading done" aria-live="polite">
+ <div class="thumb big" aria-hidden="true"><span data-icon="play" data-size="44"></span><span class="dur">2:47</span></div>
+ <div>
+  <h2 class="title" data-i="t1"></h2>
+  <p class="meta" data-i="m1"></p>
+  <div data-s="result">
+   <fieldset class="grp"><legend data-i="video"></legend>
+    <div class="seg"><label><input type="radio" name="kind" value="video" checked><span><span data-icon="film" data-size="18"></span><span data-i="video"></span></span></label><label><input type="radio" name="kind" value="audio"><span><span data-icon="music" data-size="18"></span><span data-i="audio"></span></span></label></div>
+   </fieldset>
+   <fieldset class="grp"><legend data-i="quality"></legend><div id="qopts"></div></fieldset>
+   <div class="actions stick"><button type="button" class="btn" id="dl"><span data-icon="dl"></span><span id="dlLbl"></span></button></div>
+  </div>
+  <div data-s="downloading" role="status">
+   <div class="pline"><span><span data-i="dling"></span> <span class="pct"></span></span></div>
+   <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="64"><div class="bar-fill"></div></div>
+   <button type="button" class="btn alt" id="cancelD"><span data-icon="x" data-size="18"></span><span data-i="cancelDl"></span></button>
+  </div>
+  <div data-s="done" role="status">
+   <p class="done-t"><span data-icon="check" data-size="24"></span><span data-i="doneT"></span></p>
+   <p class="sizeNote"></p>
+   <div class="actions stick"><button type="button" class="btn" id="save"><span data-icon="dl"></span><span id="saveLbl"></span></button><button type="button" class="btn alt" id="another"><span data-i="another"></span></button></div>
+  </div>
+ </div>
+</section>
+
+<section class="sec" data-s="list">
+ <div class="plhead"><h2 data-i="listT"></h2><button type="button" class="btn" style="min-height:48px"><span data-icon="dl" data-size="18"></span><span data-i="listAll"></span></button></div>
+ <ul class="rows" id="plist"></ul>
+ <button type="button" class="link" style="margin-top:8px" data-i="listMore"></button>
+</section>
+
+<section class="sec" id="hist-sec" data-s="empty list">
+ <h2 data-i="histT"></h2><p class="note" data-i="histNote"></p>
+ <ul class="rows" id="hist"></ul>
+</section>
+
+<section class="about">
+ <details><summary><span data-i="howT"></span><span data-icon="chev"></span></summary><div class="in"><ol><li data-i="s1"></li><li data-i="s2"></li><li data-i="s3"></li></ol></div></details>
+ <details><summary><span data-i="whyT"></span><span data-icon="chev"></span></summary><div class="in"><p style="margin:0" data-i="why"></p></div></details>
+ <details><summary><span data-i="faqT"></span><span data-icon="chev"></span></summary><div class="in"><dl><dt data-i="q1"></dt><dd data-i="a1"></dd><dt data-i="q2"></dt><dd data-i="a2"></dd><dt data-i="q3"></dt><dd data-i="a3"></dd><dt data-i="q4"></dt><dd data-i="a4"></dd></dl></div></details>
+</section>
+</main>
+<footer><a href="#" data-i="terms"></a><span data-i="by"></span></footer>
+</div>
+<div id="demoBar"><label for="demo" data-i="demo"></label><select id="demo"><option value="empty">1 Empty</option><option value="analyzing">2 Analyzing</option><option value="result">3 Result</option><option value="downloading">4 Downloading</option><option value="done">5 Done</option><option value="error-invalid">6a Error · bad link</option><option value="error-unsupported">6b Error · unsupported</option><option value="error-network">6c Error · network</option><option value="list">7 Playlist + history</option></select></div>
+<script>/*SHARED*/</script>
+</body>
+</html>

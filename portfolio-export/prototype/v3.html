@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:,">
+<title>Vidrop · V3 Bold type</title>
+<style>
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url(fonts/space-grotesk-vietnamese-9d020152.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url(fonts/space-grotesk-latin-ext-1efa8776.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url(fonts/space-grotesk-latin-cbee7234.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-vietnamese-89d2b6c2.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-latin-ext-7e4c5ca7.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-latin-a14cd59a.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-vietnamese-02b585d6.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-latin-ext-61d59c58.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-latin-e3bdcd69.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-vietnamese-792dc32a.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-latin-ext-d7b18c96.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-latin-07e8d324.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-vietnamese-3d46c065.woff2) format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-latin-ext-b19029c3.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/be-vietnam-pro-latin-35200809.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+:root{--bg:#FAFAF7;--ink:#0A0A0A;--muted:#4A4A4A;--blue:#1738FF;--yt:#C80000;--lime:#C6FF3D;--yel:#FFD60A;
+--d:"Space Grotesk","Arial Black",system-ui,sans-serif;--b:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.5 var(--b);padding-bottom:env(safe-area-inset-bottom)}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:4px solid var(--blue);outline-offset:3px}
+.blk :focus-visible,.dark :focus-visible{outline-color:#fff}
+.skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:#fff;padding:12px 16px;z-index:10}.skip:focus{left:8px}
+.in{max-width:1200px;margin:0 auto;padding:0 20px}
+header.top{display:flex;justify-content:space-between;align-items:center;min-height:64px;border-bottom:3px solid var(--ink)}
+.brand{font:700 26px var(--d);letter-spacing:-.04em;text-transform:uppercase;color:var(--ink);text-decoration:none;min-height:44px;display:flex;align-items:center}
+.brand span{background:var(--ink);color:var(--yel);padding:0 6px;margin-left:2px}
+nav{display:flex;gap:6px}
+.nb{min-height:44px;min-width:44px;padding:0 14px;background:transparent;border:3px solid var(--ink);font:700 16px var(--d);display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);text-transform:uppercase}
+.nb:hover{background:var(--ink);color:#fff}
+.hero{padding:28px 0 28px}
+h1{font:700 clamp(52px,17vw,168px)/.86 var(--d);letter-spacing:-.06em;text-transform:uppercase;margin:0 0 20px}
+h1 em{font-style:normal;color:var(--blue)}
+.sub{font-size:19px;margin:0 0 22px;max-width:30em}
+.lab{display:inline-block;font:700 18px var(--d);margin-bottom:8px}
+.bar{display:flex;flex-wrap:wrap;background:var(--ink);box-shadow:6px 6px 0 var(--blue)}
+.bar input{flex:1 1 100%;min-width:0;height:68px;background:#fff;border:3px solid var(--ink);padding:0 18px;font:500 20px var(--b);outline:0}
+.bar input::placeholder{color:#555;opacity:1}
+.bar input:focus-visible{outline:4px solid var(--blue);outline-offset:-4px}
+.bar input[aria-invalid=true]{background:#FFF1B8}
+.bar button{flex:1 1 50%;min-height:60px;border:0;background:var(--ink);color:#fff;font:700 18px var(--d);text-transform:uppercase;display:inline-flex;gap:10px;align-items:center;justify-content:center}
+.bar button:hover{background:#222}
+.bar #check{background:var(--yel);color:var(--ink)}.bar #check:hover{background:#FFE55C}
+.bar #check:disabled{opacity:.6}
+.bar button:focus-visible{outline-color:#fff;outline-offset:-6px}
+.bar #check:focus-visible{outline-color:var(--ink)}
+.flow{margin:16px 0 0;font-weight:500}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);border-top:3px solid var(--ink);margin-top:8px}
+.tile{padding:16px 16px 18px;min-height:96px;display:flex;align-items:flex-end;font:700 clamp(24px,6vw,40px)/1 var(--d);letter-spacing:-.04em;color:#fff;border-bottom:3px solid var(--ink)}
+.tile:nth-child(odd){border-right:3px solid var(--ink)}
+.t-yt{background:#C80000}.t-tt{background:#0A0A0A;color:#3DF5EE}.t-ig{background:#B1226F}.t-fb{background:#1558D6}
+.t-x{background:#222}.t-th{background:#6A3DE8}.t-li{background:#0A66C2}.t-rn{background:#D6112A}
+.tilenote{margin:14px 0 0;font-weight:500}
+/* big blocks */
+.blk{color:#fff;border-top:3px solid var(--ink);border-bottom:3px solid var(--ink);padding:28px 0 36px}
+.blk.yt{background:var(--yt)}
+.blk.dark{background:var(--ink)}
+.blk.done{background:var(--lime);color:var(--ink)}
+.blk.err{background:var(--ink)}
+.bigs{font:700 clamp(40px,12vw,120px)/.9 var(--d);letter-spacing:-.05em;text-transform:uppercase;margin:0 0 14px}
+.status{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.spin svg{animation:sp .9s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.link{background:none;border:0;min-height:44px;min-width:44px;padding:0 4px;font:700 17px var(--d);text-decoration:underline;text-underline-offset:4px;color:inherit}
+.errwrap{display:grid;gap:12px}
+.errwrap p{font-size:20px;margin:0;max-width:30em}
+.errwrap .ic{color:var(--yel)}
+.errwrap .bigs{color:var(--yel)}
+.tag{display:inline-flex;align-items:center;gap:8px;font:700 16px var(--d);text-transform:uppercase;border:3px solid currentColor;padding:2px 10px;margin-bottom:14px}
+.res{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+.thumb{background:#000;display:grid;place-items:center;color:#fff;position:relative;border:3px solid #fff}
+.thumb.big{aspect-ratio:16/9;width:100%}
+.thumb.big .dur{position:absolute;right:8px;bottom:8px;background:#fff;color:#000;font:700 16px var(--d);padding:0 8px}
+.thumb.sm{width:64px;height:48px;flex:none;background:#333;border:2px solid currentColor}
+.title{font:700 clamp(28px,6vw,52px)/1.02 var(--d);letter-spacing:-.04em;margin:0 0 6px}
+.meta{margin:0 0 20px;font-size:18px}
+.grp{border:0;padding:0;margin:0 0 18px;min-width:0}.grp legend{font:700 17px var(--d);padding:0;margin-bottom:8px}
+.seg{display:flex;border:3px solid #fff}
+.seg label{flex:1}.seg input,.opt input{position:absolute;opacity:0;width:1px;height:1px}
+.seg .s{display:flex;justify-content:center;align-items:center;gap:8px;min-height:56px;font:700 19px var(--d);text-transform:uppercase;cursor:pointer}
+.seg label+label .s{border-left:3px solid #fff}
+.seg input:checked+.s{background:#fff;color:var(--yt)}
+.seg input:focus-visible+.s,.opt input:focus-visible+span{outline:4px solid var(--yel);outline-offset:-7px}
+.seg input:checked:focus-visible+.s,.opt input:checked:focus-visible+span{outline-color:var(--ink)}
+#qopts{display:flex;flex-wrap:wrap;gap:8px}
+.opt span{display:flex;align-items:center;min-height:48px;padding:0 20px;border:3px solid #fff;font:700 17px var(--d);cursor:pointer}
+.opt input:checked+span{background:#fff;color:var(--yt)}
+.opt span:hover{background:rgba(255,255,255,.18)}.opt input:checked+span:hover{background:#fff}
+.cta{min-height:64px;width:100%;border:3px solid var(--ink);background:var(--ink);color:#fff;font:700 22px var(--d);text-transform:uppercase;display:inline-flex;gap:12px;align-items:center;justify-content:center;box-shadow:6px 6px 0 #fff;padding:0 24px}
+.cta:hover{background:#222}.cta:active{transform:translate(3px,3px);box-shadow:3px 3px 0 #fff}
+.cta.light{background:#fff;color:var(--ink);border-color:var(--ink);box-shadow:6px 6px 0 var(--ink)}
+.cta.light:hover{background:var(--yel)}
+.cta.ghost{background:transparent;color:inherit;border-color:currentColor;box-shadow:none}
+.cta.yel{background:var(--yel);color:var(--ink);border-color:var(--ink);box-shadow:6px 6px 0 #fff}
+.row2{display:grid;gap:14px}
+.prog{height:28px;border:3px solid #fff;margin:8px 0 18px}
+.bar-fill{height:100%;background:#fff;width:0;transition:width .14s linear}
+.bigp{font:700 clamp(80px,26vw,240px)/.85 var(--d);letter-spacing:-.07em;font-variant-numeric:tabular-nums;margin:0}
+.sizeNote{font-size:18px;margin:0 0 20px;font-weight:500}
+/* lists as typographic rows */
+ul.rows{list-style:none;margin:0;padding:0}
+.row{display:flex;align-items:center;gap:12px;min-height:76px;border-top:3px solid currentColor;padding:10px 0}
+.row:last-child{border-bottom:3px solid currentColor}
+.row .rt{flex:1;min-width:0;display:flex;flex-direction:column}
+.row b{font:700 clamp(18px,3.2vw,26px)/1.15 var(--d);letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.row small{font-size:16px}
+.idx{font:700 22px var(--d);width:34px}
+.rbtn{min-height:48px;padding:0 16px;border:3px solid currentColor;background:transparent;font:700 16px var(--d);text-transform:uppercase;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.rbtn:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.blk .rbtn:hover{background:#fff;color:var(--ink);border-color:#fff}
+.rbtn.is-done{opacity:1;border-style:dashed}
+.sec{padding-block:36px}
+.sec h2{font:700 clamp(30px,7vw,64px)/.95 var(--d);letter-spacing:-.05em;text-transform:uppercase;margin:0 0 6px}
+.sec .note{margin:0 0 16px}
+.plhead{display:grid;gap:14px;margin-bottom:18px}
+.plhead h2{margin:0}
+.ab{border-top:3px solid var(--ink)}
+.ab details{border-bottom:3px solid var(--ink)}
+.ab summary{list-style:none;min-height:64px;display:flex;align-items:center;justify-content:space-between;font:700 22px var(--d);letter-spacing:-.02em;cursor:pointer}
+.ab summary::-webkit-details-marker{display:none}
+.ab summary svg{transition:transform .2s}.ab details[open] summary svg{transform:rotate(180deg)}
+.ab .c{padding:0 0 20px;max-width:42em}.ab ol{margin:0;padding-left:22px}.ab dt{font-weight:700;margin-top:12px}.ab dd{margin:0}.ab dl{margin:0}
+footer{padding:24px 0 48px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+footer a{color:var(--ink);font-weight:700;min-height:44px;display:inline-flex;align-items:center}
+#demoBar{position:fixed;left:8px;bottom:8px;z-index:50;background:var(--blue);color:#fff;padding:6px 10px;font-size:16px;display:flex;gap:8px;align-items:center}
+#demoBar select{min-height:36px;font-size:16px;border:0;padding:0 6px;color:#000}
+@media(min-width:760px){
+.in{padding:0 40px}
+.hero{padding:48px 0 48px}
+.bar{flex-wrap:nowrap}
+.bar input{flex:1 1 auto;height:84px;font-size:26px;padding:0 28px}
+.bar button{flex:0 0 auto;min-height:84px;padding:0 32px;font-size:20px}
+.tiles{grid-template-columns:repeat(4,1fr)}
+.tile{min-height:180px;padding:20px}
+.tile:nth-child(odd){border-right:0}.tile:not(:nth-child(4n)){border-right:3px solid var(--ink)}
+.res{grid-template-columns:5fr 7fr;gap:48px}
+.row2{grid-template-columns:2fr 1fr}
+.plhead{grid-template-columns:1fr auto;align-items:end}
+.cta{width:auto;min-width:320px}
+}
+/* once a link is in play the hero shrinks so the result stays above the fold */
+body:not([data-state=empty]) h1{font-size:clamp(34px,9vw,76px);line-height:.92;margin-bottom:14px}
+body:not([data-state=empty]) .hero{padding:18px 0 22px}
+body:not([data-state=empty]) .hero .sub{display:none}
+body:not([data-state=empty]) .blk{padding-top:22px}
+body:not([data-state=empty]) .blk .bigs{font-size:clamp(34px,8vw,84px)}
+body:not([data-state=empty]) .title{font-size:clamp(26px,4.4vw,44px)}
+body:not([data-state=empty]) .meta{margin-bottom:12px}
+body:not([data-state=empty]) .grp{margin-bottom:12px}
+body:not([data-state=empty]) .bigp{font-size:clamp(56px,12vw,128px)}
+body:not([data-state=empty]) .prog{margin:6px 0 10px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body data-state="empty">
+<a class="skip" href="#url" data-i="skip"></a>
+<div class="in"><header class="top">
+ <a class="brand" href="#">Vi<span>drop</span></a>
+ <nav><a class="nb" href="#hist-sec"><span data-icon="hist" data-size="18"></span><span data-i="menu"></span></a><button class="nb" id="lang" type="button"></button></nav>
+</header></div>
+<main id="main">
+<div class="in">
+ <section class="hero">
+  <h1><span data-i="tagline"></span></h1>
+  <p class="sub" data-i="sub"></p>
+  <form id="f" novalidate>
+   <label class="lab" for="url" data-i="label"></label>
+   <div class="bar">
+    <input id="url" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-ph="ph">
+    <button type="button" id="paste"><span data-icon="clip"></span><span data-i="paste"></span></button>
+    <button type="submit" id="check"><span data-i="check"></span><span data-icon="arrow"></span></button>
+   </div>
+  </form>
+  <p class="flow" data-s="empty" data-i="flow"></p>
+ </section>
+</div>
+
+<div data-s="empty">
+ <div class="in"><div class="tiles" role="list" aria-label="Platforms">
+  <div class="tile t-yt" role="listitem">YouTube</div><div class="tile t-tt" role="listitem">TikTok</div><div class="tile t-ig" role="listitem">Instagram</div><div class="tile t-fb" role="listitem">Facebook</div>
+  <div class="tile t-x" role="listitem">X</div><div class="tile t-th" role="listitem">Threads</div><div class="tile t-li" role="listitem">LinkedIn</div><div class="tile t-rn" role="listitem">RedNote</div>
+ </div></div>
+</div>
+
+<div class="blk dark" data-s="analyzing" role="status"><div class="in">
+ <div class="status"><span class="spin" data-icon="spin" data-size="40"></span><p class="bigs" style="margin:0" data-i="analyzing"></p></div>
+ <p style="font-size:20px;margin:12px 0 8px" data-i="analyzingSub"></p>
+ <button type="button" class="link" id="cancelA" data-i="cancel"></button>
+</div></div>
+
+<div class="blk err" data-s="error" role="alert"><div class="in"><div class="errwrap">
+ <span class="ic" data-icon="alert" data-size="44"></span>
+ <p class="bigs" id="errT"></p>
+ <p id="errB"></p>
+ <div><button type="button" class="cta yel" id="retry"><span data-icon="refresh"></span><span id="retryLbl"></span></button></div>
+</div></div></div>
+
+<div class="blk yt" data-s="result downloading" aria-live="polite"><div class="in"><div class="res">
+ <div><span class="tag"><span data-icon="play" data-size="14"></span>YouTube</span>
+  <div class="thumb big" aria-hidden="true"><span data-icon="play" data-size="56"></span><span class="dur">2:47</span></div></div>
+ <div>
+  <h2 class="title" data-i="t1"></h2><p class="meta" data-i="m1"></p>
+  <div data-s="result">
+   <fieldset class="grp"><legend data-i="video"></legend><div class="seg"><label><input type="radio" name="kind" value="video" checked><span class="s"><span data-icon="film" data-size="20"></span><span data-i="video"></span></span></label><label><input type="radio" name="kind" value="audio"><span class="s"><span data-icon="music" data-size="20"></span><span data-i="audio"></span></span></label></div></fieldset>
+   <fieldset class="grp"><legend data-i="quality"></legend><div id="qopts"></div></fieldset>
+   <button type="button" class="cta" id="dl"><span data-icon="dl" data-size="24"></span><span id="dlLbl"></span></button>
+  </div>
+  <div data-s="downloading" role="status">
+   <p class="bigp"><span class="pct"></span></p>
+   <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="64"><div class="bar-fill"></div></div>
+   <p style="font:700 20px var(--d);margin:0 0 16px"><span data-i="dling"></span></p>
+   <button type="button" class="cta ghost" id="cancelD"><span data-icon="x" data-size="20"></span><span data-i="cancelDl"></span></button>
+  </div>
+ </div>
+</div></div></div>
+
+<div class="blk done" data-s="done" role="status"><div class="in"><div class="res">
+ <div><div class="thumb big" aria-hidden="true" style="border-color:#0A0A0A"><span data-icon="check" data-size="64"></span></div></div>
+ <div>
+  <p class="bigs" style="margin-bottom:10px" data-i="doneT"></p>
+  <p class="sizeNote"></p>
+  <div class="row2"><button type="button" class="cta light" id="save"><span data-icon="dl" data-size="24"></span><span id="saveLbl"></span></button></div>
+  <p style="margin:18px 0 0"><button type="button" class="link" id="another" data-i="another"></button></p>
+ </div>
+</div></div></div>
+
+<div class="blk yt" data-s="history"><div class="in sec">
+ <span class="tag"><span data-icon="play" data-size="14"></span>YouTube</span>
+ <div class="plhead"><h2 data-i="listT"></h2><button type="button" class="cta light"><span data-icon="dl" data-size="22"></span><span data-i="listAll"></span></button></div>
+ <ul class="rows" id="plist"></ul>
+ <p style="margin:14px 0 0"><button type="button" class="link" data-i="listMore"></button></p>
+</div></div>
+
+<div class="in">
+ <section class="sec" id="hist-sec" data-s="empty history">
+  <h2 data-i="histT"></h2><p class="note" data-i="histNote"></p>
+  <ul class="rows" id="hist"></ul>
+ </section>
+ <section class="ab">
+  <details><summary><span data-i="howT"></span><span data-icon="chev"></span></summary><div class="c"><ol><li data-i="s1"></li><li data-i="s2"></li><li data-i="s3"></li></ol></div></details>
+  <details><summary><span data-i="whyT"></span><span data-icon="chev"></span></summary><div class="c" data-i="why"></div></details>
+  <details><summary><span data-i="faqT"></span><span data-icon="chev"></span></summary><div class="c"><dl><dt data-i="q1"></dt><dd data-i="a1"></dd><dt data-i="q2"></dt><dd data-i="a2"></dd><dt data-i="q3"></dt><dd data-i="a3"></dd><dt data-i="q4"></dt><dd data-i="a4"></dd></dl></div></details>
+ </section>
+</div>
+</main>
+<div class="in"><footer><a href="#" data-i="terms"></a><span data-i="by"></span></footer></div>
+<div id="demoBar"><label for="demo" data-i="demo"></label><select id="demo"><option value="empty">1 Empty</option><option value="analyzing">2 Analyzing</option><option value="result">3 Result</option><option value="downloading">4 Downloading</option><option value="done">5 Done</option><option value="error-link">6 Error · link</option><option value="error-platform">7 Error · platform</option><option value="error-network">8 Error · network</option><option value="history">9 History</option></select></div>
+<script>(function(){
+var D={
+en:{
+skip:"Skip to the tool",tagline:"Paste a link. Get the file.",sub:"Free, no sign-up. Up to 1080p, or audio only.",
+label:"Video link",ph:"Paste a link from YouTube, TikTok, Instagram…",paste:"Paste",check:"Check link",clear:"Clear",
+platforms:"Works with YouTube, TikTok, Instagram, Facebook, X, Threads, LinkedIn and RedNote.",
+flow:"Copy a link, paste it here, save the file.",
+analyzing:"Checking your link…",analyzingSub:"This usually takes a few seconds.",cancel:"Cancel",
+video:"Video",audio:"Audio",quality:"Quality",best:"Best",std:"128 kbps",
+dlVideo:"Download video",dlAudio:"Download audio",dling:"Downloading",cancelDl:"Cancel download",
+doneT:"Ready to save",save:"Save to device",saved:"Saved to your device",another:"Download another link",
+errInvalidT:"That isn't a link",errInvalidB:"Paste the full address, starting with https://.",
+errUnsupT:"This site isn't supported yet",errUnsupB:"Try a link from YouTube, TikTok, Instagram, Facebook, X, Threads, LinkedIn or RedNote.",
+errNetT:"Couldn't reach the server",errNetB:"Check your connection, then try again.",
+btnOther:"Paste another link",btnRetry:"Try again",
+ready:"Ready",failed:"Failed",queue:"This session",
+listT:"Playlist · 12 videos",listAll:"Download all (12)",listMore:"Show all 12 videos",rowDl:"Download",rowDone:"Saved",
+histT:"Recent downloads",again:"Download again",histNote:"Kept on this device only.",
+aboutT:"About Vidrop",howT:"How it works",s1:"Copy the link of a video or photo.",s2:"Paste it above, then pick video or audio and a quality.",s3:"Tap Download, then Save to device.",
+whyT:"Why Vidrop",why:"Free, no account, up to 1080p, whole playlists in one go.",
+faqT:"Questions",q1:"Where are my files saved?",a1:"On your device. On a phone, tap Save to device when the download finishes.",
+q2:"Is it really free?",a2:"Yes. No account and no limits.",q3:"Can I download a whole playlist?",a3:"Yes. Paste a YouTube playlist or channel link, then pick the videos.",
+q4:"Why did my link fail?",a4:"Private or deleted posts can't be downloaded. Make sure the post is public, then try again.",
+terms:"Terms of use",by:"By Quang",demo:"Preview state",langLabel:"Tiếng Việt",
+t1:"How to fold a paper boat in 60 seconds",t2:"Street food tour: night market",t3:"Pasta in 10 minutes",t4:"Desk setup, small room",
+m1:"YouTube · 2:47",menu:"History",dropIt:"Drop the link.",ex:"Tap a site to see which links work.",
+sizeNote:"Origami_paper_boat.mp4 · 18 MB"},
+vi:{
+skip:"Bỏ qua tới công cụ",tagline:"Dán link. Nhận file.",sub:"Miễn phí, không cần đăng ký. Tối đa 1080p hoặc chỉ lấy âm thanh.",
+label:"Link video",ph:"Dán link từ YouTube, TikTok, Instagram…",paste:"Dán",check:"Kiểm tra link",clear:"Xoá",
+platforms:"Hỗ trợ YouTube, TikTok, Instagram, Facebook, X, Threads, LinkedIn và RedNote.",
+flow:"Sao chép link, dán vào đây, lưu file.",
+analyzing:"Đang kiểm tra link…",analyzingSub:"Thường chỉ mất vài giây.",cancel:"Huỷ",
+video:"Video",audio:"Âm thanh",quality:"Chất lượng",best:"Tốt nhất",std:"128 kbps",
+dlVideo:"Tải video",dlAudio:"Tải âm thanh",dling:"Đang tải",cancelDl:"Huỷ tải",
+doneT:"Đã tải xong",save:"Lưu vào thiết bị",saved:"Đã lưu vào thiết bị",another:"Tải link khác",
+errInvalidT:"Đây chưa phải là link",errInvalidB:"Dán đầy đủ địa chỉ, bắt đầu bằng https://.",
+errUnsupT:"Chưa hỗ trợ trang này",errUnsupB:"Hãy thử link từ YouTube, TikTok, Instagram, Facebook, X, Threads, LinkedIn hoặc RedNote.",
+errNetT:"Không kết nối được máy chủ",errNetB:"Kiểm tra mạng rồi thử lại.",
+btnOther:"Dán link khác",btnRetry:"Thử lại",
+ready:"Sẵn sàng",failed:"Lỗi",queue:"Phiên này",
+listT:"Danh sách phát · 12 video",listAll:"Tải tất cả (12)",listMore:"Xem cả 12 video",rowDl:"Tải",rowDone:"Đã lưu",
+histT:"Tải gần đây",again:"Tải lại",histNote:"Chỉ lưu trên thiết bị này.",
+aboutT:"Giới thiệu Vidrop",howT:"Cách dùng",s1:"Sao chép link của video hoặc ảnh.",s2:"Dán vào ô phía trên, rồi chọn video hay âm thanh và chất lượng.",s3:"Bấm Tải, sau đó Lưu vào thiết bị.",
+whyT:"Vì sao chọn Vidrop",why:"Miễn phí, không cần tài khoản, tối đa 1080p, tải cả danh sách phát một lần.",
+faqT:"Câu hỏi thường gặp",q1:"File được lưu ở đâu?",a1:"Trên thiết bị của bạn. Với điện thoại, bấm Lưu vào thiết bị khi tải xong.",
+q2:"Có thật sự miễn phí không?",a2:"Có. Không cần tài khoản, không giới hạn.",q3:"Có tải được cả danh sách phát không?",a3:"Có. Dán link danh sách phát hoặc kênh YouTube, rồi chọn các video cần tải.",
+q4:"Vì sao link của tôi lỗi?",a4:"Bài riêng tư hoặc đã xoá thì không tải được. Hãy kiểm tra bài đăng ở chế độ công khai rồi thử lại.",
+terms:"Điều khoản sử dụng",by:"Bởi Quang",demo:"Xem trước trạng thái",langLabel:"English",
+t1:"How to fold a paper boat in 60 seconds",t2:"Street food tour: night market",t3:"Pasta in 10 minutes",t4:"Desk setup, small room",
+m1:"YouTube · 2:47",menu:"Lịch sử",dropIt:"Thả link vào.",ex:"Chạm vào một trang để xem link nào dùng được.",
+sizeNote:"Origami_paper_boat.mp4 · 18 MB"}};
+var IC={
+clip:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+dl:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+check:'<path d="M20 6 9 17l-5-5"/>',x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+alert:'<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+play:'<polygon points="6 3 20 12 6 21 6 3" fill="currentColor"/>',
+music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+film:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="m10 8 6 4-6 4Z"/>',
+hist:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+chev:'<path d="m6 9 6 6 6-6"/>',arrow:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',spin:'<path d="M21 12a9 9 0 1 1-6.219-8.56"/>'};
+var $=function(s){return document.querySelector(s)},$$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+var qs=new URLSearchParams(location.search);
+var lang=qs.get('lang')==='en'?'en':'vi';
+var state='empty',errKind='link',kind='video',pct=64,timer=null,tm=null;
+var SAMPLE='https://www.youtube.com/watch?v=jNQXAC9IVRw';
+var SUPPORTED=/(youtube\.com|youtu\.be|tiktok\.com|instagram\.com|facebook\.com|fb\.watch|x\.com|twitter\.com|threads\.(com|net)|linkedin\.com|rednote\.com|xiaohongshu\.com)/i;
+function t(k){return D[lang][k]}
+function icons(){$$('[data-icon]').forEach(function(e){if(e.dataset.done)return;e.dataset.done=1;e.innerHTML='<svg viewBox="0 0 24 24" width="'+(e.dataset.size||20)+'" height="'+(e.dataset.size||20)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+IC[e.dataset.icon]+'</svg>'})}
+function rowHTML(title,meta,label,done,idx){return '<li class="row"><span class="thumb sm" aria-hidden="true"></span>'+(idx?'<span class="idx" aria-hidden="true">'+idx+'</span>':'')+'<span class="rt"><b>'+title+'</b><small>'+meta+'</small></span><button type="button" class="rbtn'+(done?' is-done':'')+'">'+label+'</button></li>'}
+function renderLists(){
+var h=$('#hist'),p=$('#plist');
+if(h)h.innerHTML=rowHTML(t('t1'),'YouTube · 2:47',t('again'))+rowHTML(t('t2'),'TikTok · 0:48',t('again'))+rowHTML(t('t3'),'Instagram · 1:05',t('again'));
+if(p)p.innerHTML=rowHTML(t('t1'),'2:47',t('rowDone'),true,'01')+rowHTML(t('t2'),'8:12',t('rowDl'),false,'02')+rowHTML(t('t3'),'10:03',t('rowDl'),false,'03')+rowHTML(t('t4'),'4:31',t('rowDl'),false,'04');
+$$('.rbtn.is-done').forEach(function(b){b.insertAdjacentHTML('afterbegin','<span data-icon="check" data-size="16"></span>')});
+icons()}
+function renderQ(){
+var q=$('#qopts');if(!q)return;
+var o=kind==='video'?[['best',t('best')],['1080','1080p'],['720','720p'],['480','480p']]:[['best',t('best')],['128',t('std')]];
+q.innerHTML=o.map(function(x,i){return '<label class="opt"><input type="radio" name="q" value="'+x[0]+'"'+(i===0?' checked':'')+'><span>'+x[1]+'</span></label>'}).join('')}
+function errText(){var k={link:['errInvalidT','errInvalidB','btnOther'],platform:['errUnsupT','errUnsupB','btnOther'],network:['errNetT','errNetB','btnRetry']}[errKind];
+$('#errT').textContent=t(k[0]);$('#errB').textContent=t(k[1]);$('#retry').firstChild&&0;var r=$('#retryLbl');if(r)r.textContent=t(k[2])}
+function setProgress(){$$('.pct').forEach(function(e){e.textContent=pct+'%'});$$('.bar-fill').forEach(function(e){e.style.width=pct+'%'});$$('[role=progressbar]').forEach(function(e){e.setAttribute('aria-valuenow',pct)})}
+function sync(){try{var u=new URL(location.href);u.searchParams.set('state',state==='error'?'error-'+errKind:state);u.searchParams.delete('s');history.replaceState(null,'',u)}catch(e){}try{if(parent!==window)parent.postMessage({vidropState:state==='error'?'error-'+errKind:state},'*')}catch(e){}}
+function render(){
+document.body.dataset.state=state;document.body.dataset.err=errKind;
+$$('[data-s]').forEach(function(e){e.hidden=e.dataset.s.split(' ').indexOf(state)<0});
+var u=$('#url');
+if(u){u.readOnly=state==='analyzing';
+ if(state==='empty'){}
+ else if(state==='error'){if(errKind==='link'&&!/^https?:/.test(u.value))u.value=u.value||'hello world'}
+ else if(!u.value||!/^https?:/.test(u.value))u.value=SAMPLE;
+ u.setAttribute('aria-invalid',state==='error'&&errKind!=='network'?'true':'false');
+ u.setAttribute('aria-describedby',state==='error'?'errB':'');}
+var c=$('#check');if(c)c.disabled=state==='analyzing';
+errText();setProgress();
+var dl=$('#dlLbl');if(dl)dl.textContent=kind==='video'?t('dlVideo'):t('dlAudio');
+var d=$('#demo');if(d)d.value=state==='error'?'error-'+errKind:state;
+var sv=$('#save');if(sv&&state!=='done')sv.dataset.saved='';
+sync();var sl=$('#saveLbl');if(sl)sl.textContent=sv&&sv.dataset.saved?t('saved'):t('save')}
+function apply(){
+document.documentElement.lang=lang;
+$$('[data-i]').forEach(function(e){e.textContent=t(e.dataset.i)});
+$$('[data-ph]').forEach(function(e){e.placeholder=t(e.dataset.ph)});
+$$('[data-al]').forEach(function(e){e.setAttribute('aria-label',t(e.dataset.al))});
+var l=$('#lang');if(l){l.textContent=lang==='en'?'VI':'EN';l.setAttribute('aria-label',t('langLabel'))}
+$$('.sizeNote').forEach(function(e){e.textContent=t('sizeNote')});
+renderQ();renderLists();render();icons()}
+function stop(){clearInterval(timer);clearTimeout(tm)}
+function go(s,ek){stop();state=s;if(ek)errKind=ek;if(s==='empty'){var u=$('#url');if(u)u.value=''}
+if(s==='downloading'&&!timer&&pct>=100)pct=64;render()}
+function check(){
+var u=$('#url'),v=(u.value||'').trim();stop();
+if(!/^https?:\/\/\S+\.\S+/i.test(v)){errKind='link';state='error';render();return}
+if(!SUPPORTED.test(v)){errKind='platform';state='error';render();return}
+if(/offline/i.test(v)){errKind='network';state='error';render();return}
+state='analyzing';render();tm=setTimeout(function(){state=/playlist|list=/i.test(v)?'history':'result';render()},1600)}
+function startDl(){stop();pct=0;state='downloading';render();
+timer=setInterval(function(){pct=Math.min(100,pct+Math.ceil(Math.random()*8));setProgress();if(pct>=100){stop();state='done';render()}},140)}
+function init(){
+var f=$('#f');
+if(f)f.addEventListener('submit',function(e){e.preventDefault();check()});
+var p=$('#paste');if(p)p.addEventListener('click',function(){$('#url').value=SAMPLE;check()});
+var l=$('#lang');if(l)l.addEventListener('click',function(){lang=lang==='en'?'vi':'en';apply()});
+$$('input[name=kind]').forEach(function(r){r.addEventListener('change',function(){kind=r.value;renderQ();render()})});
+function on(id,fn){var e=$(id);if(e)e.addEventListener('click',fn)}
+on('#cancelA',function(){go('empty')});on('#dl',startDl);on('#cancelD',function(){go('result')});
+on('#another',function(){go('empty');var u=$('#url');if(u)u.focus()});
+on('#retry',function(){if(errKind==='network'){$('#url').value=$('#url').value||SAMPLE;check()}else{go('empty');$('#url').focus()}});
+on('#clear',function(){go('empty');$('#url').focus()});
+on('#save',function(){this.dataset.saved='1';render()});
+var d=$('#demo');if(d)d.addEventListener('change',function(){var v=d.value;stop();if(v.indexOf('error-')===0){errKind=v.slice(6);state='error'}else state=v;if(v==='downloading')pct=64;if(v==='empty'){var u=$('#url');if(u)u.value=''}if(v==='history'){$('#url').value='https://www.youtube.com/playlist?list=PLboat'}else if(v!=='empty'&&v.indexOf('error')!==0){$('#url').value=SAMPLE}if(v==='error-platform')$('#url').value='https://example.com/clip';if(v==='error-link')$('#url').value='hello world';render()});
+var dm=$('#demoBar');if(dm)dm.hidden=!qs.has('demo');
+var s0=qs.get('state')||qs.get('s');var AL={'error-invalid':'error-link','error-unsupported':'error-platform','list':'history'};if(AL[s0])s0=AL[s0];
+if(s0){if(s0.indexOf('error-')===0){errKind=s0.slice(6);state='error'}else state=s0;
+ var u=$('#url');
+ if(s0==='history')u.value='https://www.youtube.com/playlist?list=PLboat';
+ else if(s0==='error-link')u.value='hello world';
+ else if(s0==='error-platform')u.value='https://example.com/clip';
+ else if(s0!=='empty')u.value=SAMPLE;
+ if(s0==='downloading')pct=64}
+apply()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body>
+</html>

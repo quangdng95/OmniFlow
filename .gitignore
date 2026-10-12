@@ -41,3 +41,4 @@ remote_web/.tmp/
 
 # Isolated git worktrees used for subagent-driven plan execution
 .worktrees/
+portfolio-export/_src/

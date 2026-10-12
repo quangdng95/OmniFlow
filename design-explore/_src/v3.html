@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vidrop · v3 Bold type</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FAFAF7;--ink:#0A0A0A;--muted:#4A4A4A;--blue:#1738FF;--yt:#C80000;--lime:#C6FF3D;--yel:#FFD60A;
+--d:"Space Grotesk","Arial Black",system-ui,sans-serif;--b:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.5 var(--b);padding-bottom:env(safe-area-inset-bottom)}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:4px solid var(--blue);outline-offset:3px}
+.blk :focus-visible,.dark :focus-visible{outline-color:#fff}
+.skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:#fff;padding:12px 16px;z-index:10}.skip:focus{left:8px}
+.in{max-width:1200px;margin:0 auto;padding:0 20px}
+header.top{display:flex;justify-content:space-between;align-items:center;min-height:64px;border-bottom:3px solid var(--ink)}
+.brand{font:700 26px var(--d);letter-spacing:-.04em;text-transform:uppercase;color:var(--ink);text-decoration:none;min-height:44px;display:flex;align-items:center}
+.brand span{background:var(--ink);color:var(--yel);padding:0 6px;margin-left:2px}
+nav{display:flex;gap:6px}
+.nb{min-height:44px;min-width:44px;padding:0 14px;background:transparent;border:3px solid var(--ink);font:700 16px var(--d);display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);text-transform:uppercase}
+.nb:hover{background:var(--ink);color:#fff}
+.hero{padding:28px 0 28px}
+h1{font:700 clamp(52px,17vw,168px)/.86 var(--d);letter-spacing:-.06em;text-transform:uppercase;margin:0 0 20px}
+h1 em{font-style:normal;color:var(--blue)}
+.sub{font-size:19px;margin:0 0 22px;max-width:30em}
+.lab{display:inline-block;font:700 18px var(--d);margin-bottom:8px}
+.bar{display:flex;flex-wrap:wrap;background:var(--ink);box-shadow:6px 6px 0 var(--blue)}
+.bar input{flex:1 1 100%;min-width:0;height:68px;background:#fff;border:3px solid var(--ink);padding:0 18px;font:500 20px var(--b);outline:0}
+.bar input::placeholder{color:#555;opacity:1}
+.bar input:focus-visible{outline:4px solid var(--blue);outline-offset:-4px}
+.bar input[aria-invalid=true]{background:#FFF1B8}
+.bar button{flex:1 1 50%;min-height:60px;border:0;background:var(--ink);color:#fff;font:700 18px var(--d);text-transform:uppercase;display:inline-flex;gap:10px;align-items:center;justify-content:center}
+.bar button:hover{background:#222}
+.bar #check{background:var(--yel);color:var(--ink)}.bar #check:hover{background:#FFE55C}
+.bar #check:disabled{opacity:.6}
+.bar button:focus-visible{outline-color:#fff;outline-offset:-6px}
+.bar #check:focus-visible{outline-color:var(--ink)}
+.flow{margin:16px 0 0;font-weight:500}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);border-top:3px solid var(--ink);margin-top:8px}
+.tile{padding:16px 16px 18px;min-height:96px;display:flex;align-items:flex-end;font:700 clamp(24px,6vw,40px)/1 var(--d);letter-spacing:-.04em;color:#fff;border-bottom:3px solid var(--ink)}
+.tile:nth-child(odd){border-right:3px solid var(--ink)}
+.t-yt{background:#C80000}.t-tt{background:#0A0A0A;color:#3DF5EE}.t-ig{background:#B1226F}.t-fb{background:#1558D6}
+.t-x{background:#222}.t-th{background:#6A3DE8}.t-li{background:#0A66C2}.t-rn{background:#D6112A}
+.tilenote{margin:14px 0 0;font-weight:500}
+/* big blocks */
+.blk{color:#fff;border-top:3px solid var(--ink);border-bottom:3px solid var(--ink);padding:28px 0 36px}
+.blk.yt{background:var(--yt)}
+.blk.dark{background:var(--ink)}
+.blk.done{background:var(--lime);color:var(--ink)}
+.blk.err{background:var(--ink)}
+.bigs{font:700 clamp(40px,12vw,120px)/.9 var(--d);letter-spacing:-.05em;text-transform:uppercase;margin:0 0 14px}
+.status{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.spin svg{animation:sp .9s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.link{background:none;border:0;min-height:44px;min-width:44px;padding:0 4px;font:700 17px var(--d);text-decoration:underline;text-underline-offset:4px;color:inherit}
+.errwrap{display:grid;gap:12px}
+.errwrap p{font-size:20px;margin:0;max-width:30em}
+.errwrap .ic{color:var(--yel)}
+.errwrap .bigs{color:var(--yel)}
+.tag{display:inline-flex;align-items:center;gap:8px;font:700 16px var(--d);text-transform:uppercase;border:3px solid currentColor;padding:2px 10px;margin-bottom:14px}
+.res{display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+.thumb{background:#000;display:grid;place-items:center;color:#fff;position:relative;border:3px solid #fff}
+.thumb.big{aspect-ratio:16/9;width:100%}
+.thumb.big .dur{position:absolute;right:8px;bottom:8px;background:#fff;color:#000;font:700 16px var(--d);padding:0 8px}
+.thumb.sm{width:64px;height:48px;flex:none;background:#333;border:2px solid currentColor}
+.title{font:700 clamp(28px,6vw,52px)/1.02 var(--d);letter-spacing:-.04em;margin:0 0 6px}
+.meta{margin:0 0 20px;font-size:18px}
+.grp{border:0;padding:0;margin:0 0 18px;min-width:0}.grp legend{font:700 17px var(--d);padding:0;margin-bottom:8px}
+.seg{display:flex;border:3px solid #fff}
+.seg label{flex:1}.seg input,.opt input{position:absolute;opacity:0;width:1px;height:1px}
+.seg .s{display:flex;justify-content:center;align-items:center;gap:8px;min-height:56px;font:700 19px var(--d);text-transform:uppercase;cursor:pointer}
+.seg label+label .s{border-left:3px solid #fff}
+.seg input:checked+.s{background:#fff;color:var(--yt)}
+.seg input:focus-visible+.s,.opt input:focus-visible+span{outline:4px solid var(--yel);outline-offset:-7px}
+#qopts{display:flex;flex-wrap:wrap;gap:8px}
+.opt span{display:flex;align-items:center;min-height:48px;padding:0 20px;border:3px solid #fff;font:700 17px var(--d);cursor:pointer}
+.opt input:checked+span{background:#fff;color:var(--yt)}
+.opt span:hover{background:rgba(255,255,255,.18)}.opt input:checked+span:hover{background:#fff}
+.cta{min-height:64px;width:100%;border:3px solid var(--ink);background:var(--ink);color:#fff;font:700 22px var(--d);text-transform:uppercase;display:inline-flex;gap:12px;align-items:center;justify-content:center;box-shadow:6px 6px 0 #fff;padding:0 24px}
+.cta:hover{background:#222}.cta:active{transform:translate(3px,3px);box-shadow:3px 3px 0 #fff}
+.cta.light{background:#fff;color:var(--ink);border-color:var(--ink);box-shadow:6px 6px 0 var(--ink)}
+.cta.light:hover{background:var(--yel)}
+.cta.ghost{background:transparent;color:inherit;border-color:currentColor;box-shadow:none}
+.cta.yel{background:var(--yel);color:var(--ink);border-color:var(--ink);box-shadow:6px 6px 0 #fff}
+.row2{display:grid;gap:14px}
+.prog{height:28px;border:3px solid #fff;margin:8px 0 18px}
+.bar-fill{height:100%;background:#fff;width:0;transition:width .14s linear}
+.bigp{font:700 clamp(80px,26vw,240px)/.85 var(--d);letter-spacing:-.07em;font-variant-numeric:tabular-nums;margin:0}
+.sizeNote{font-size:18px;margin:0 0 20px;font-weight:500}
+/* lists as typographic rows */
+ul.rows{list-style:none;margin:0;padding:0}
+.row{display:flex;align-items:center;gap:12px;min-height:76px;border-top:3px solid currentColor;padding:10px 0}
+.row:last-child{border-bottom:3px solid currentColor}
+.row .rt{flex:1;min-width:0;display:flex;flex-direction:column}
+.row b{font:700 clamp(18px,3.2vw,26px)/1.15 var(--d);letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.row small{font-size:16px}
+.idx{font:700 22px var(--d);width:34px}
+.rbtn{min-height:48px;padding:0 16px;border:3px solid currentColor;background:transparent;font:700 16px var(--d);text-transform:uppercase;display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.rbtn:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+.blk .rbtn:hover{background:#fff;color:var(--ink);border-color:#fff}
+.rbtn.is-done{opacity:1;border-style:dashed}
+.sec{padding-block:36px}
+.sec h2{font:700 clamp(30px,7vw,64px)/.95 var(--d);letter-spacing:-.05em;text-transform:uppercase;margin:0 0 6px}
+.sec .note{margin:0 0 16px}
+.plhead{display:grid;gap:14px;margin-bottom:18px}
+.plhead h2{margin:0}
+.ab{border-top:3px solid var(--ink)}
+.ab details{border-bottom:3px solid var(--ink)}
+.ab summary{list-style:none;min-height:64px;display:flex;align-items:center;justify-content:space-between;font:700 22px var(--d);letter-spacing:-.02em;cursor:pointer}
+.ab summary::-webkit-details-marker{display:none}
+.ab summary svg{transition:transform .2s}.ab details[open] summary svg{transform:rotate(180deg)}
+.ab .c{padding:0 0 20px;max-width:42em}.ab ol{margin:0;padding-left:22px}.ab dt{font-weight:700;margin-top:12px}.ab dd{margin:0}.ab dl{margin:0}
+footer{padding:24px 0 48px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+footer a{color:var(--ink);font-weight:700;min-height:44px;display:inline-flex;align-items:center}
+#demoBar{position:fixed;left:8px;bottom:8px;z-index:50;background:var(--blue);color:#fff;padding:6px 10px;font-size:16px;display:flex;gap:8px;align-items:center}
+#demoBar select{min-height:36px;font-size:16px;border:0;padding:0 6px;color:#000}
+@media(min-width:760px){
+.in{padding:0 40px}
+.hero{padding:48px 0 48px}
+.bar{flex-wrap:nowrap}
+.bar input{flex:1 1 auto;height:84px;font-size:26px;padding:0 28px}
+.bar button{flex:0 0 auto;min-height:84px;padding:0 32px;font-size:20px}
+.tiles{grid-template-columns:repeat(4,1fr)}
+.tile{min-height:180px;padding:20px}
+.tile:nth-child(odd){border-right:0}.tile:not(:nth-child(4n)){border-right:3px solid var(--ink)}
+.res{grid-template-columns:5fr 7fr;gap:48px}
+.row2{grid-template-columns:2fr 1fr}
+.plhead{grid-template-columns:1fr auto;align-items:end}
+.cta{width:auto;min-width:320px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body data-state="empty">
+<a class="skip" href="#url" data-i="skip"></a>
+<div class="in"><header class="top">
+ <a class="brand" href="#">Vi<span>drop</span></a>
+ <nav><a class="nb" href="#hist-sec"><span data-icon="hist" data-size="18"></span><span data-i="menu"></span></a><button class="nb" id="lang" type="button"></button></nav>
+</header></div>
+<main id="main">
+<div class="in">
+ <section class="hero">
+  <h1><span data-i="tagline"></span></h1>
+  <p class="sub" data-i="sub"></p>
+  <form id="f" novalidate>
+   <label class="lab" for="url" data-i="label"></label>
+   <div class="bar">
+    <input id="url" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-ph="ph">
+    <button type="button" id="paste"><span data-icon="clip"></span><span data-i="paste"></span></button>
+    <button type="submit" id="check"><span data-i="check"></span><span data-icon="arrow"></span></button>
+   </div>
+  </form>
+  <p class="flow" data-s="empty" data-i="flow"></p>
+ </section>
+</div>
+
+<div data-s="empty">
+ <div class="in"><div class="tiles" role="list" aria-label="Platforms">
+  <div class="tile t-yt" role="listitem">YouTube</div><div class="tile t-tt" role="listitem">TikTok</div><div class="tile t-ig" role="listitem">Instagram</div><div class="tile t-fb" role="listitem">Facebook</div>
+  <div class="tile t-x" role="listitem">X</div><div class="tile t-th" role="listitem">Threads</div><div class="tile t-li" role="listitem">LinkedIn</div><div class="tile t-rn" role="listitem">RedNote</div>
+ </div></div>
+</div>
+
+<div class="blk dark" data-s="analyzing" role="status"><div class="in">
+ <div class="status"><span class="spin" data-icon="spin" data-size="40"></span><p class="bigs" style="margin:0" data-i="analyzing"></p></div>
+ <p style="font-size:20px;margin:12px 0 8px" data-i="analyzingSub"></p>
+ <button type="button" class="link" id="cancelA" data-i="cancel"></button>
+</div></div>
+
+<div class="blk err" data-s="error" role="alert"><div class="in"><div class="errwrap">
+ <span class="ic" data-icon="alert" data-size="44"></span>
+ <p class="bigs" id="errT"></p>
+ <p id="errB"></p>
+ <div><button type="button" class="cta yel" id="retry"><span data-icon="refresh"></span><span id="retryLbl"></span></button></div>
+</div></div></div>
+
+<div class="blk yt" data-s="result downloading" aria-live="polite"><div class="in"><div class="res">
+ <div><span class="tag"><span data-icon="play" data-size="14"></span>YouTube</span>
+  <div class="thumb big" aria-hidden="true"><span data-icon="play" data-size="56"></span><span class="dur">2:47</span></div></div>
+ <div>
+  <h2 class="title" data-i="t1"></h2><p class="meta" data-i="m1"></p>
+  <div data-s="result">
+   <fieldset class="grp"><legend data-i="video"></legend><div class="seg"><label><input type="radio" name="kind" value="video" checked><span class="s"><span data-icon="film" data-size="20"></span><span data-i="video"></span></span></label><label><input type="radio" name="kind" value="audio"><span class="s"><span data-icon="music" data-size="20"></span><span data-i="audio"></span></span></label></div></fieldset>
+   <fieldset class="grp"><legend data-i="quality"></legend><div id="qopts"></div></fieldset>
+   <button type="button" class="cta" id="dl"><span data-icon="dl" data-size="24"></span><span id="dlLbl"></span></button>
+  </div>
+  <div data-s="downloading" role="status">
+   <p class="bigp"><span class="pct"></span></p>
+   <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="64"><div class="bar-fill"></div></div>
+   <p style="font:700 20px var(--d);margin:0 0 16px"><span data-i="dling"></span></p>
+   <button type="button" class="cta ghost" id="cancelD"><span data-icon="x" data-size="20"></span><span data-i="cancelDl"></span></button>
+  </div>
+ </div>
+</div></div></div>
+
+<div class="blk done" data-s="done" role="status"><div class="in"><div class="res">
+ <div><div class="thumb big" aria-hidden="true" style="border-color:#0A0A0A"><span data-icon="check" data-size="64"></span></div></div>
+ <div>
+  <p class="bigs" style="margin-bottom:10px" data-i="doneT"></p>
+  <p class="sizeNote"></p>
+  <div class="row2"><button type="button" class="cta light" id="save"><span data-icon="dl" data-size="24"></span><span id="saveLbl"></span></button></div>
+  <p style="margin:18px 0 0"><button type="button" class="link" id="another" data-i="another"></button></p>
+ </div>
+</div></div></div>
+
+<div class="blk yt" data-s="list"><div class="in sec">
+ <span class="tag"><span data-icon="play" data-size="14"></span>YouTube</span>
+ <div class="plhead"><h2 data-i="listT"></h2><button type="button" class="cta light"><span data-icon="dl" data-size="22"></span><span data-i="listAll"></span></button></div>
+ <ul class="rows" id="plist"></ul>
+ <p style="margin:14px 0 0"><button type="button" class="link" data-i="listMore"></button></p>
+</div></div>
+
+<div class="in">
+ <section class="sec" id="hist-sec" data-s="empty list">
+  <h2 data-i="histT"></h2><p class="note" data-i="histNote"></p>
+  <ul class="rows" id="hist"></ul>
+ </section>
+ <section class="ab">
+  <details><summary><span data-i="howT"></span><span data-icon="chev"></span></summary><div class="c"><ol><li data-i="s1"></li><li data-i="s2"></li><li data-i="s3"></li></ol></div></details>
+  <details><summary><span data-i="whyT"></span><span data-icon="chev"></span></summary><div class="c" data-i="why"></div></details>
+  <details><summary><span data-i="faqT"></span><span data-icon="chev"></span></summary><div class="c"><dl><dt data-i="q1"></dt><dd data-i="a1"></dd><dt data-i="q2"></dt><dd data-i="a2"></dd><dt data-i="q3"></dt><dd data-i="a3"></dd><dt data-i="q4"></dt><dd data-i="a4"></dd></dl></div></details>
+ </section>
+</div>
+</main>
+<div class="in"><footer><a href="#" data-i="terms"></a><span data-i="by"></span></footer></div>
+<div id="demoBar"><label for="demo" data-i="demo"></label><select id="demo"><option value="empty">1 Empty</option><option value="analyzing">2 Analyzing</option><option value="result">3 Result</option><option value="downloading">4 Downloading</option><option value="done">5 Done</option><option value="error-invalid">6a Error · bad link</option><option value="error-unsupported">6b Error · unsupported</option><option value="error-network">6c Error · network</option><option value="list">7 Playlist + history</option></select></div>
+<script>/*SHARED*/</script>
+</body>
+</html>
