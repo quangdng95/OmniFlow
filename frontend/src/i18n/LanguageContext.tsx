@@ -16,7 +16,6 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     persistLanguage(language);
-    document.documentElement.lang = language;
   }, [language]);
 
   const setLanguage = (next: Language) => setLanguageState(next);
