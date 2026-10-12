@@ -81,7 +81,7 @@ export interface Translations {
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
-  downloadSuccess: { saved: string; openFolder: string; save: string; tryAgain: string; tapAgain: string; savedToDevice: string; downloadStarted: string };
+  downloadSuccess: { saved: string; openFolder: string; save: string; tryAgain: string; tapAgain: string; savedToDevice: string; downloadStarted: string; ready: string; batchSaved: string; batchReady: string; failedSuffix: string };
   home: {
     supportedPlatformsHeading: string;
     howToHeading: string;
@@ -270,7 +270,7 @@ const en: Translations = {
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
-  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tryAgain: "Try download again", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your Downloads" },
+  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tryAgain: "Try download again", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your Downloads", ready: "Ready to save", batchSaved: "{saved} saved", batchReady: "{saved} ready to save", failedSuffix: ", {failed} failed" },
   home: {
     supportedPlatformsHeading: "Supported platforms",
     howToHeading: "How it works",
@@ -721,7 +721,7 @@ const vi: Translations = {
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
-  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tryAgain: "Thử tải lại", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - hãy xem mục Tải xuống" },
+  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tryAgain: "Thử tải lại", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - hãy xem mục Tải xuống", ready: "Sẵn sàng để lưu", batchSaved: "Đã lưu {saved} mục", batchReady: "{saved} mục sẵn sàng để lưu", failedSuffix: ", {failed} mục lỗi" },
   home: {
     supportedPlatformsHeading: "Nền tảng được hỗ trợ",
     howToHeading: "Cách dùng",
