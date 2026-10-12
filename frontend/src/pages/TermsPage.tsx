@@ -9,7 +9,7 @@ interface TermsPageProps {
 const TermsPage = ({ onNavigate: _onNavigate }: TermsPageProps) => {
   const { t } = useLanguage();
   return (
-    <div className="w-full select-none">
+    <div className="w-full">
       <div className="w-full flex flex-col gap-4">
           <SectionCard className="p-6 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-6 text-slate-800">
             {/* Header info */}

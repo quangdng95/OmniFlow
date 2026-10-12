@@ -22,7 +22,7 @@ const LanguageSwitcher = () => {
     <div
       role="group"
       aria-label={t.languageSwitcher.label}
-      className="box-border inline-flex h-(--control-h) items-stretch border-[3px] border-ink"
+      className="box-border inline-flex select-none h-(--control-h) items-stretch border-[3px] border-ink"
     >
       {OPTIONS.map(({ value, short }) => {
         const isActive = language === value;

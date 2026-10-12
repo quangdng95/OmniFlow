@@ -38,7 +38,7 @@ const HistoryPage = ({ onNavigate: _onNavigate, onOpenUrl }: HistoryPageProps) =
   };
 
   return (
-    <div className="w-full select-none flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-4">
       <AnimatedSection>
         <SectionCard className="p-6 bg-white border border-slate-200/50 shadow-sm rounded-xl flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3 flex-wrap">

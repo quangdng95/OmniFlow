@@ -12,7 +12,7 @@ interface CheckingStatusCardProps {
 const CheckingStatusCard = ({ seconds, onCancel, showKeychainHint }: CheckingStatusCardProps) => {
   const { t } = useLanguage();
   return (
-    <PlatformBlock tone="ink" role="status" className="select-none">
+    <PlatformBlock tone="ink" role="status">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Loader2 className="h-10 w-10 shrink-0 animate-spin" aria-hidden />
         <p className={`${bigStatus} text-[clamp(2rem,9vw,5.5rem)]`}>

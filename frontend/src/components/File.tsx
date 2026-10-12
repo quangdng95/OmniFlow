@@ -60,9 +60,14 @@ export default function File({
 
   return (
     <li
-      onClick={() => !busy && available && onToggle()}
+      onClick={() => {
+        // Dragging across the title to select it ends in a click on the row; that
+        // must not tick the checkbox.
+        if (window.getSelection()?.toString()) return;
+        if (!busy && available) onToggle();
+      }}
       className={cn(
-        "flex min-h-[76px] list-none flex-wrap items-center gap-x-3 gap-y-2 border-t-[3px] border-current py-3 select-none last:border-b-[3px] sm:flex-nowrap sm:gap-4",
+        "flex min-h-[76px] list-none flex-wrap items-center gap-x-3 gap-y-2 border-t-[3px] border-current py-3 last:border-b-[3px] sm:flex-nowrap sm:gap-4",
         !available ? "cursor-default opacity-60" : busy ? "cursor-default" : "cursor-pointer"
       )}
     >
