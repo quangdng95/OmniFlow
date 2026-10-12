@@ -11,14 +11,6 @@ const ChangelogPage = ({ onNavigate: _onNavigate }: ChangelogPageProps) => {
 
   return (
     <div className="w-full flex flex-col gap-4">
-      <SectionCard className="p-5 md:p-6 flex flex-col gap-2">
-        <span className="text-base font-mono font-bold uppercase tracking-wider text-brand">
-          {t.changelog.eyebrow}
-        </span>
-        <h3 className="text-lg font-bold text-ink m-0">{t.changelog.heading}</h3>
-        <p className="text-base text-ink-muted leading-relaxed m-0">{t.changelog.intro}</p>
-      </SectionCard>
-
       {t.changelog.releases.map((release) => (
         <SectionCard
           key={`${release.date}|${release.title}`}

@@ -176,9 +176,6 @@ export interface Translations {
     fileFetchFailed: string; // "{status}" placeholder
   };
   changelog: {
-    eyebrow: string;
-    heading: string;
-    intro: string;
     releases: { date: string; title: string; items: string[] }[];
   };
 }
@@ -542,10 +539,6 @@ const en: Translations = {
     fileFetchFailed: "Failed to fetch file ({status})",
   },
   changelog: {
-    eyebrow: "Changelog · what's new",
-    heading: "What's changed in Vidrop",
-    intro:
-      "A running log of what actually shipped, in plain language — newest first. This tracks real changes as they land here, separately from whatever's already described on the download page.",
     releases: [
       {
         date: "2026-09-30",
@@ -993,10 +986,6 @@ const vi: Translations = {
     fileFetchFailed: "Không lấy được tệp ({status}).",
   },
   changelog: {
-    eyebrow: "Nhật ký cập nhật · có gì mới",
-    heading: "Vidrop đã thay đổi những gì",
-    intro:
-      "Nhật ký thật các thay đổi đã lên production, viết dễ hiểu — mới nhất ở trên đầu. Trang này ghi lại đúng những gì đã đổi, tách riêng khỏi phần giới thiệu/marketing đã public sẵn ở trang tải.",
     releases: [
       {
         date: "30-09-2026",
