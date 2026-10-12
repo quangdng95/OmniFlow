@@ -1,7 +1,6 @@
-import { Ban, Loader2, TriangleAlert } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, TriangleAlert } from "lucide-react";
+import PlatformBlock from "./PlatformBlock";
+import { bigStatus, linkButton } from "../lib/blockStyles";
 import { useLanguage } from "../i18n/LanguageContext";
 
 interface CheckingStatusCardProps {
@@ -13,24 +12,25 @@ interface CheckingStatusCardProps {
 const CheckingStatusCard = ({ seconds, onCancel, showKeychainHint }: CheckingStatusCardProps) => {
   const { t } = useLanguage();
   return (
-    <Card className="w-full select-none">
-      <CardContent className="flex flex-col gap-3">
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+    <PlatformBlock tone="ink" role="status" className="select-none">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Loader2 className="h-10 w-10 shrink-0 animate-spin" aria-hidden />
+        <p className={`${bigStatus} text-[clamp(2rem,9vw,5.5rem)]`}>
           {t.checkingStatus.checkingLink} ({seconds}s)
-        </span>
-        {showKeychainHint && (
-          <Alert>
-            <TriangleAlert />
-            <AlertDescription>{t.checkingStatus.keychainHint}</AlertDescription>
-          </Alert>
-        )}
-        <Button variant="outline" className="w-full" onClick={onCancel}>
-          <Ban />
+        </p>
+      </div>
+      {showKeychainHint && (
+        <p className="m-0 flex max-w-[42em] items-start gap-3 text-lg leading-snug">
+          <TriangleAlert className="mt-1 h-5 w-5 shrink-0 text-signal" aria-hidden />
+          {t.checkingStatus.keychainHint}
+        </p>
+      )}
+      <div>
+        <button type="button" onClick={onCancel} className={linkButton}>
           {t.checkingStatus.cancel}
-        </Button>
-      </CardContent>
-    </Card>
+        </button>
+      </div>
+    </PlatformBlock>
   );
 };
 

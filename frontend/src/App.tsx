@@ -4,6 +4,7 @@ import PageTitle from "./components/PageTitle";
 import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
+import { MotionConfig } from "framer-motion";
 import { LanguageProvider } from "./i18n/LanguageContext";
 
 const HistoryPage = lazy(() => import("./pages/HistoryPage"));
@@ -34,6 +35,7 @@ const App = () => {
 
   return (
     <LanguageProvider>
+      <MotionConfig reducedMotion="user">
       <div className="w-full min-h-screen bg-background flex flex-col items-center">
         {/* Full-width Header */}
         <Header active={page} onNavigate={setPage} />
@@ -61,6 +63,7 @@ const App = () => {
           <Footer />
         </div>
       </div>
+      </MotionConfig>
     </LanguageProvider>
   );
 };

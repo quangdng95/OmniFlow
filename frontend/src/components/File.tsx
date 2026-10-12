@@ -1,7 +1,8 @@
-import { Download, RefreshCw, FolderCheck, FolderX } from "lucide-react";
+import { Download, RefreshCw, Check, AlertCircle, Image as ImageIcon, Film } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { blockCheckbox, progressSlab, rowButton } from "../lib/blockStyles";
+import { cn } from "@/lib/utils";
 import { useLanguage } from "../i18n/LanguageContext";
 
 export type FileState = "Default" | "Downloading" | "Completed" | "Fail";
@@ -58,169 +59,121 @@ export default function File({
   const formattedNum = String(position).padStart(numWidth, "0");
 
   return (
-    <div
+    <li
       onClick={() => !busy && available && onToggle()}
-      className={`flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-2 sm:gap-4 px-3 py-2 sm:py-0 rounded-lg border border-transparent transition-colors w-full select-none sm:h-[60px] ${
-        !available 
-          ? "opacity-45 cursor-default bg-neutral-50/50" 
-          : busy 
-          ? "cursor-default" 
-          : "cursor-pointer hover:bg-neutral-50"
-      }`}
+      className={cn(
+        "flex min-h-[76px] list-none flex-wrap items-center gap-x-3 gap-y-2 border-t-[3px] border-current py-3 select-none last:border-b-[3px] sm:flex-nowrap sm:gap-4",
+        !available ? "cursor-default opacity-60" : busy ? "cursor-default" : "cursor-pointer"
+      )}
     >
-      {/* Checkbox */}
       {/* Base UI renders a hidden <input> beside the checkbox; a click on the
           box makes that input fire its own click, which bubbles to the row and
           would toggle a second time (net: nothing changes). The wrapper
           swallows both, so the checkbox toggles itself exactly once while a
           click anywhere else on the row still toggles via the row handler. */}
-      <span className="shrink-0 flex items-center" onClick={(e) => e.stopPropagation()}>
+      <span className="flex shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
         <Checkbox
           checked={checked && available}
           disabled={busy || !available}
           onCheckedChange={() => onToggle()}
-          className="shrink-0 w-4 h-4"
+          className={blockCheckbox}
         />
       </span>
 
-      {/* Index Number */}
-      <span className="text-xs font-semibold text-slate-400 w-8 text-right shrink-0">
-        {formattedNum}.
-      </span>
+      <span className="w-9 shrink-0 text-right font-display text-[1.375rem] font-bold tabular-nums">{formattedNum}.</span>
 
-      {/* Thumbnail (click to enlarge) or Fallback Placeholder */}
       {thumbnail && onPreview ? (
         <button
           type="button"
           onClick={handlePreviewClick}
           aria-label={t.playlist.previewItem.replace("{title}", title)}
-          className="h-11 w-11 rounded-lg bg-neutral-100 shrink-0 border border-neutral-200/50 overflow-hidden flex items-center justify-center cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d9585]"
+          className="flex h-12 w-16 shrink-0 cursor-zoom-in items-center justify-center overflow-hidden border-2 border-current bg-black"
         >
-          <img
-            src={thumbnail}
-            referrerPolicy="no-referrer"
-            alt=""
-            className="h-full w-full object-cover"
-          />
+          <img src={thumbnail} referrerPolicy="no-referrer" alt="" className="h-full w-full object-cover" />
         </button>
       ) : (
-        <div className="h-11 w-11 rounded-lg bg-neutral-100 shrink-0 border border-neutral-200/50 overflow-hidden flex items-center justify-center">
+        <div className="flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden border-2 border-current bg-black/30">
           {thumbnail ? (
-            <img
-              src={thumbnail}
-              referrerPolicy="no-referrer"
-              alt={title}
-              className="h-full w-full object-cover"
-            />
+            <img src={thumbnail} referrerPolicy="no-referrer" alt={title} className="h-full w-full object-cover" />
+          ) : kind === "image" ? (
+            <ImageIcon className="h-5 w-5" aria-hidden />
           ) : (
-            <span className="text-[14px]">
-              {kind === "image" ? "📷" : "🎥"}
-            </span>
+            <Film className="h-5 w-5" aria-hidden />
           )}
         </div>
       )}
 
-      {/* Info Description */}
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <h4 className="text-xs font-medium text-slate-900 truncate leading-snug">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <h4 className="m-0 line-clamp-2 font-display text-[clamp(1.125rem,3.2vw,1.625rem)] leading-[1.15] font-bold tracking-[-0.02em]">
           {title}
         </h4>
-        {uploader && (
-          <p className="text-[11px] text-slate-500 truncate leading-none">
-            {uploader}
-          </p>
-        )}
-        <div className="flex items-center gap-2 mt-0.5">
-          {kind && (
-            <span 
-              className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                kind === "image" 
-                  ? "bg-blue-50 text-blue-600" 
-                  : "bg-green-50 text-green-600"
-              }`}
-            >
-              {kind === "image" ? t.playlist.photo : t.playlist.video}
-            </span>
-          )}
-          {!available && (
-            <span className="text-[10px] font-semibold bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">
-              {t.playlist.unavailable}
-            </span>
-          )}
-          {duration && (
-            <span className="text-[11px] text-slate-400 font-normal">
-              {duration}
-            </span>
-          )}
-        </div>
+        <p className="m-0 flex flex-wrap items-center gap-x-3 text-base">
+          {uploader && <span className="truncate">{uploader}</span>}
+          {kind && <span className="font-bold uppercase">{kind === "image" ? t.playlist.photo : t.playlist.video}</span>}
+          {!available && <span className="font-bold uppercase">{t.playlist.unavailable}</span>}
+          {duration && <span className="tabular-nums">{duration}</span>}
+        </p>
       </div>
 
-      {/* Right Content Area. Phones: the status + action drop onto their own line
-          under the row (a 32px button beside the title left no room for it).
-          sm and up: the original fixed 146px column at the right of the row. */}
+      {/* Status + action: on phones they drop onto their own line under the
+          row; from sm up they sit in a fixed column at the right. */}
       {available && (
-        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1 w-full sm:w-[146px] shrink-0 sm:text-right">
+        <div className="flex w-full shrink-0 flex-row items-center justify-between gap-2 sm:w-[11.5rem] sm:flex-col sm:items-end sm:justify-center">
           {state === "Downloading" && (
-            <div className="w-full flex flex-col gap-1">
-              <span className="text-[11px] font-semibold text-[#0d9585] leading-none">
+            <div role="status" className="flex w-full flex-col gap-1.5">
+              <span className="font-display text-base font-bold">
                 {t.playlist.percentDownloading.replace("{p}", String(Math.round(percent)))}
               </span>
-              <Progress value={percent} className="h-1 w-full bg-neutral-100 [&>[data-slot=progress-indicator]]:bg-[#0d9585]" />
+              <Progress
+                value={percent}
+                aria-label={t.playlist.downloading}
+                className={cn(progressSlab, "[&_[data-slot=progress-track]]:h-3.5")}
+              />
             </div>
           )}
 
           {state === "Completed" && (
-            <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1 w-full sm:w-auto shrink-0">
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-[#0d9585] leading-none">
-                <FolderCheck className="h-3.5 w-3.5" />
+            <div className="flex w-full flex-row items-center justify-between gap-2 sm:w-auto sm:flex-col sm:items-end">
+              <span className="inline-flex items-center gap-1.5 font-display text-base font-bold uppercase">
+                <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
                 {t.playlist.downloaded}
               </span>
               {!hideRedownload && (
-                <Button
-                  variant="outline"
-                  className="border-neutral-200 text-slate-700 hover:bg-neutral-100 hover:text-slate-900 rounded-lg shadow-none"
-                  onClick={handleActionClick}
-                  disabled={busy}
-                >
-                  <RefreshCw className="h-4 w-4" />
+                <button type="button" className={rowButton} onClick={handleActionClick} disabled={busy}>
+                  <RefreshCw className="h-5 w-5" aria-hidden />
                   {t.playlist.downloadAgain}
-                </Button>
+                </button>
               )}
             </div>
           )}
 
           {state === "Fail" && (
-            <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1 w-full sm:w-auto shrink-0">
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-red-500 leading-none">
-                <FolderX className="h-3.5 w-3.5" />
+            <div className="flex w-full flex-row items-center justify-between gap-2 sm:w-auto sm:flex-col sm:items-end">
+              <span className="inline-flex items-center gap-1.5 font-display text-base font-bold uppercase">
+                <AlertCircle className="h-5 w-5" aria-hidden />
                 {t.playlist.failed}
               </span>
-              <Button
-                variant="destructive"
-                className="bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg shadow-none border-none"
-                onClick={handleActionClick}
-                disabled={busy}
-              >
-                <RefreshCw className="h-4 w-4" />
+              <button type="button" className={rowButton} onClick={handleActionClick} disabled={busy}>
+                <RefreshCw className="h-5 w-5" aria-hidden />
                 {t.playlist.retry}
-              </Button>
+              </button>
             </div>
           )}
 
           {state === "Default" && (
-            <Button
-              variant="outline"
-              className="ml-auto sm:ml-0 border-[#0d9585] text-[#0d9585] hover:bg-[#0d9585]/5 rounded-lg shadow-none"
+            <button
+              type="button"
+              className={cn(rowButton, "ml-auto sm:ml-0")}
               onClick={handleActionClick}
               disabled={busy}
               aria-label="download-item"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-5 w-5" aria-hidden />
               {t.playlist.download}
-            </Button>
+            </button>
           )}
         </div>
       )}
-    </div>
+    </li>
   );
 }
