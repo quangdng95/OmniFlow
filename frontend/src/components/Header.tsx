@@ -1,6 +1,5 @@
 import { Check, FileText, History, Home, Menu, ScrollText, Settings as SettingsIcon, Smartphone } from "lucide-react";
 import type { ComponentType } from "react";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,28 +46,36 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-neutral-200/70 bg-[#fbfbf9]/90 backdrop-blur-md select-none">
-      <div className="mx-auto flex h-12 w-full max-w-[680px] items-center justify-between gap-3 px-4">
+    <header className="sticky top-0 z-40 w-full bg-background select-none">
+      <div className="mx-auto w-full max-w-[1200px] px-5 md:px-10">
+      <div className="flex min-h-16 items-center justify-between gap-3 border-b-[3px] border-ink">
         <button
           type="button"
           onClick={() => onNavigate("home")}
           aria-label={t.header.nav.home}
-          className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[#0d9585]/50"
+          className="flex min-h-11 items-center"
         >
           <Logo size="compact" />
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <LanguageSwitcher />
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
-                <Button variant="outline" size="icon" aria-label={t.header.menu} className="border-neutral-200 bg-white shadow-none" />
+                <button
+                  type="button"
+                  aria-label={t.header.menu}
+                  className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 border-[3px] border-ink bg-transparent px-2.5 font-display text-base font-bold text-ink uppercase hover:bg-ink hover:text-on-ink aria-expanded:bg-ink aria-expanded:text-on-ink sm:px-3.5"
+                />
               }
             >
-              <Menu className="h-4 w-4" />
+              <Menu className="h-5 w-5" aria-hidden />
+              <span className="hidden sm:inline" aria-hidden>
+                {t.header.menu}
+              </span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52 min-w-52 p-1.5">
+            <DropdownMenuContent align="end" className="w-56 min-w-56 border-[3px] border-ink p-0 shadow-hard ring-0">
               {navItems.map(({ key, label, icon: Icon }) => {
                 const isActive = active === key;
                 return (
@@ -76,17 +83,21 @@ const Header = ({ active, onNavigate }: HeaderProps) => {
                     key={key}
                     onClick={() => onNavigate(key)}
                     aria-current={isActive ? "page" : undefined}
-                    className={cn("gap-2.5 px-2.5 py-2 text-sm", isActive && "font-semibold text-[#0d9585]")}
+                    className={cn(
+                      "min-h-11 cursor-pointer gap-2.5 px-3.5 text-base",
+                      isActive && "font-bold text-brand focus:text-ink"
+                    )}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-5 w-5" aria-hidden />
                     <span className="flex-1">{label}</span>
-                    {isActive && <Check className="h-4 w-4" />}
+                    {isActive && <Check className="h-5 w-5" aria-hidden />}
                   </DropdownMenuItem>
                 );
               })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
       </div>
     </header>
   );

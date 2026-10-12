@@ -4,7 +4,7 @@ export interface Translations {
   header: {
     menu: string;
     nav: { home: string; history: string; settings: string; terms: string; shortcut: string; changelog: string };
-    home: { title: string; descriptionLine1: string; descriptionLine2: string };
+    home: { title: string; descriptionLine1: string; descriptionLine2: string; tagline: string; sub: string };
     settings: { title: string };
     terms: { title: string };
     shortcut: { title: string };
@@ -27,6 +27,7 @@ export interface Translations {
   login: { tagline: string; platforms: string; title: string; subtitle: string; label: string; placeholder: string; submit: string; submitting: string; wrong: string; locked: string; network: string; show: string; hide: string };
   urlInput: {
     label: string;
+    fieldLabel: string;
     placeholder: string;
     paste: string;
     pasting: string;
@@ -191,6 +192,8 @@ const en: Translations = {
       title: "Vidrop – All-in-One Video Downloader",
       descriptionLine1: "Download videos and media instantly with Vidrop.",
       descriptionLine2: "It's fast, free, and fully compatible with all your devices!",
+      tagline: "Paste a link. Get the file.",
+      sub: "Free, no sign-up. Up to 1080p, or audio only.",
     },
     settings: { title: "Settings" },
     terms: { title: "Terms of Use" },
@@ -214,6 +217,7 @@ const en: Translations = {
   footer: { by: "By" },
   urlInput: {
     label: "Insert URL (All in One)",
+    fieldLabel: "Video link",
     placeholder: "Copy and Paste your url",
     paste: "Paste",
     pasting: "Pasting…",
@@ -671,6 +675,8 @@ const vi: Translations = {
       title: "Vidrop – Tải video từ mọi nền tảng",
       descriptionLine1: "Tải video và media ngay lập tức với Vidrop.",
       descriptionLine2: "Nhanh, miễn phí và tương thích với mọi thiết bị của bạn!",
+      tagline: "Dán link. Nhận file.",
+      sub: "Miễn phí, không cần đăng ký. Tối đa 1080p hoặc chỉ lấy âm thanh.",
     },
     settings: { title: "Cài đặt" },
     terms: { title: "Điều khoản sử dụng" },
@@ -694,6 +700,7 @@ const vi: Translations = {
   footer: { by: "Bởi" },
   urlInput: {
     label: "Nhập đường dẫn (Tất cả trong một)",
+    fieldLabel: "Link video",
     placeholder: "Sao chép và dán đường dẫn của bạn",
     paste: "Dán",
     pasting: "Đang dán…",

@@ -393,12 +393,12 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   return (
     <div className="w-full select-none">
       <div className="w-full flex flex-col gap-6">
-          {/* Short intro (it used to be the bottom half of a ~340px-tall header). */}
-          <div className="flex flex-col items-start gap-1 text-left">
-            <h1 className="m-0 text-2xl font-semibold leading-tight tracking-tight">{t.header.home.title}</h1>
-            <p className="m-0 max-w-[520px] text-sm leading-relaxed text-muted-foreground">
-              {t.header.home.descriptionLine1} {t.header.home.descriptionLine2}
-            </p>
+          {/* Hero: kept short so the URL bar sits inside the first mobile screen. */}
+          <div className="flex flex-col items-start gap-3 pt-2 text-left md:pt-6">
+            <h1 className="m-0 font-display text-[clamp(2.75rem,14vw,10.5rem)] leading-[0.9] [:lang(vi)_&]:leading-[1.02] font-bold tracking-[-0.06em] text-ink uppercase">
+              {t.header.home.tagline}
+            </h1>
+            <p className="m-0 max-w-[30em] text-[1.1875rem] leading-snug text-ink">{t.header.home.sub}</p>
           </div>
           <UrlInputCard
             ref={inputRef}
