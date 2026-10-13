@@ -13,6 +13,11 @@ This runs on user-supplied URLs inside a server, so it is deliberately narrow:
   * every hop must stay on a short-link host or land on a supported platform
     (classify.get_platform_info() != "Link"), with a plain http(s) scheme;
   * the destination page is never fetched - the last hop's Location is returned.
+
+A Threads share link (threads.com/share/<id>) is expanded the same way. Threads
+answers a real 302 to that link only for a non-browser User-Agent (yt-dlp's own
+default and curl get it; a full Chrome UA gets a 200 JS app shell with no
+redirect and no post data), so those requests use _SHARE_UA.
 On any problem the original URL is returned unchanged.
 """
 
@@ -34,6 +39,10 @@ _UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
+
+# A UA without a "Chrome/…" token: this is what makes threads.com answer 302.
+_SHARE_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+THREADS_HOSTS = frozenset({"threads.com", "www.threads.com", "threads.net", "www.threads.net"})
 
 _cache = {}  # short url -> (expires_at, expanded url)
 
@@ -57,9 +66,25 @@ def _is_short(url):
     return _host(url) in SHORT_HOSTS
 
 
+def _is_threads_share(url):
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except ValueError:
+        return False
+    if (parsed.hostname or "").lower() not in THREADS_HOSTS:
+        return False
+    parts = [p for p in parsed.path.split("/") if p]
+    return len(parts) == 2 and parts[0] == "share"
+
+
+def _needs_expansion(url):
+    return _is_short(url) or _is_threads_share(url)
+
+
 def _fetch_location(url):
     # One request, redirects NOT followed; returns the Location header or None.
-    request = urllib.request.Request(url, headers={"User-Agent": _UA})
+    ua = _SHARE_UA if _is_threads_share(url) else _UA
+    request = urllib.request.Request(url, headers={"User-Agent": ua})
     try:
         with _opener.open(request, timeout=_TIMEOUT_SECONDS):
             return None  # answered directly, no redirect
@@ -73,12 +98,12 @@ def _acceptable(url):
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme not in ("http", "https"):
         return False
-    return _is_short(url) or classify.get_platform_info(url) != "Link"
+    return _needs_expansion(url) or classify.get_platform_info(url) != "Link"
 
 
 def expand(url, fetch=None):
     url = (url or "").strip()
-    if not url or not _is_short(url):
+    if not url or not _needs_expansion(url):
         return url
 
     cached = _cache.get(url)
@@ -89,7 +114,7 @@ def expand(url, fetch=None):
     current = url
     try:
         for _ in range(MAX_HOPS):
-            if not _is_short(current):
+            if not _needs_expansion(current):
                 break
             location = fetch(current)
             if not location:
