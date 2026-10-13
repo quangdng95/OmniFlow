@@ -484,7 +484,6 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
               <AlertCircle className="h-11 w-11 text-signal" aria-hidden />
               <p className={`${bigStatus} text-[clamp(2rem,9vw,5.5rem)] text-signal`}>{t.urlInput.checkFailedTitle}</p>
               <p className="m-0 max-w-[32em] text-xl leading-snug">{checkError}</p>
-              <p className="m-0 max-w-[32em] text-lg leading-snug">{t.urlInput.checkFailedRetryHint}</p>
               <div>
                 <button type="button" onClick={handleRetryCheck} className={ctaSignal}>
                   {t.playlist.retry}

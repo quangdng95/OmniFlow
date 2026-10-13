@@ -167,15 +167,37 @@ def extract_video_info(cls):
     if cookies_path:
         ydl_opts["cookiefile"] = cookies_path
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    def attempt(cookiefile):
+        opts = dict(ydl_opts)
+        if cookiefile:
+            opts["cookiefile"] = cookiefile
+        with yt_dlp.YoutubeDL(opts) as ydl:
             return ydl.extract_info(url, download=False)
+
+    try:
+        # A YouTube login/anti-bot answer gets exactly one retry with the
+        # configured browser profile's cookies (see cookies.run_with_youtube_cookie_fallback).
+        return cookies.run_with_youtube_cookie_fallback(url, cookies_path, attempt)
     except Exception as e:
         print(f"[debug] Instagram check failed for {url}. Error: {e}", flush=True)
         raise
     finally:
         if auto_cookiefile:
             cookies._cleanup_temp_cookiefiles([auto_cookiefile])
+
+
+_YOUTUBE_RESTRICTED_MARKERS = (
+    "private video",
+    "members-only",
+    "members only",
+    "join this channel",
+    "not available in your country",
+    "blocked it in your country",
+    "age-restricted",
+    "video unavailable",
+    "has been removed",
+    "this video is unavailable",
+)
 
 
 def describe_extraction_error(url, error, cookies_path=None, lang=None):
@@ -192,6 +214,17 @@ def describe_extraction_error(url, error, cookies_path=None, lang=None):
     # that doesn't say so.
     if isinstance(error, (ConnectionError, TimeoutError, socket.gaierror)):
         return messages.text("network_unreachable", lang)
+
+    # YouTube: tell the three causes apart (browser-cookie read denied, login /
+    # anti-bot demand, a video that is restricted for everyone) - the generic
+    # "check the link" text below misled the user when the link was fine.
+    if isinstance(error, cookies.YouTubeCookieAccessError):
+        return messages.text("youtube_cookies_keychain", lang)
+    if cookies.is_youtube_url(url):
+        if cookies.is_youtube_auth_error(error):
+            return messages.text("youtube_signin_required", lang)
+        if any(marker in lower for marker in _YOUTUBE_RESTRICTED_MARKERS):
+            return messages.text("youtube_restricted", lang)
 
     # A bare builtin exception (ValueError, KeyError, TypeError, ...) means
     # something broke unexpectedly deep inside an extractor (e.g. a yt-dlp

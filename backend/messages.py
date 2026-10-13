@@ -68,6 +68,20 @@ _CATALOG = {
         VI: "❌ Lỗi: Không thể xử lý liên kết này. Vui lòng kiểm tra lại link hoặc thử lại sau.",
         EN: "❌ Error: Couldn't process this link. Please check the link or try again later.",
     },
+    # YouTube failures, told apart so the user knows what to do (the retry
+    # button is the single instruction - never "paste the link again").
+    "youtube_signin_required": {
+        VI: "❌ YouTube đang yêu cầu đăng nhập trước khi cho tải video này. Hãy đăng nhập YouTube trên Chrome rồi bấm Thử lại.",
+        EN: "❌ YouTube wants you signed in before it allows this download. Sign in to YouTube in Chrome, then press Retry.",
+    },
+    "youtube_restricted": {
+        VI: "❌ Không tải được video YouTube này. Video có thể ở chế độ riêng tư, dành cho hội viên, giới hạn độ tuổi hoặc bị chặn ở khu vực của bạn.",
+        EN: "❌ Couldn't download this YouTube video. It may be private, members-only, age-limited, or blocked in your region.",
+    },
+    "youtube_cookies_keychain": {
+        VI: "❌ Không đọc được phiên đăng nhập YouTube từ Chrome. Khi macOS hỏi quyền Keychain, hãy chọn \"Luôn cho phép\", rồi bấm Thử lại.",
+        EN: "❌ Couldn't read your YouTube sign-in from Chrome. When macOS asks for Keychain access, choose \"Always Allow\", then press Retry.",
+    },
     "load_failed": {
         VI: "❌ Lỗi: Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau.",
         EN: "❌ Error: Something went wrong while loading the content. Please try again later.",

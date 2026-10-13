@@ -21,6 +21,11 @@ from backend import classify, config, cookies, download, extraction, instagram, 
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
+# This is the local server (desktop window / browser on this machine): the only
+# place allowed to read a browser profile's YouTube cookies. remote_web does not
+# import this module, so it stays False on the cloud VM.
+cookies.BROWSER_COOKIES_ALLOWED = True
+
 LOCAL_HOSTNAMES = {"127.0.0.1", "localhost", "::1"}
 
 
@@ -526,13 +531,17 @@ def start_download():
                     # Clean up other temporary files immediately
                     cookies._cleanup_temp_cookiefiles(candidates[1:])
 
-        ydl_opts = download.build_download_options(
-            quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookies_path, entry_index, url
-        )
-
-        try:
+        def attempt(cookiefile):
+            ydl_opts = download.build_download_options(
+                quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookiefile, entry_index, url
+            )
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
+
+        try:
+            # A YouTube login/anti-bot answer gets one retry with the configured
+            # browser profile's cookies (cookies.run_with_youtube_cookie_fallback).
+            cookies.run_with_youtube_cookie_fallback(url, cookies_path, attempt)
             # Safety net: if a VP9/AV1 stream still slipped through into the .mp4
             # despite the h264-preferring selector, re-encode it to H.264 so the
             # file is actually playable on macOS. No-op (a fast probe only) for
@@ -630,6 +639,13 @@ def start_download():
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
+        except cookies.YouTubeCookieAccessError as e:
+            jobs.jobs[job_id]["status"] = "error"
+            jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path, lang=lang)
+            download.cleanup_partial_download(output_path_no_ext)
+            if remote_temp_dir:
+                shutil.rmtree(remote_temp_dir, ignore_errors=True)
+            return
         except Exception as e:
             print(f"[download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
@@ -641,7 +657,7 @@ def start_download():
         finally:
             # If build_download_options auto-extracted a browser cookies.txt for
             # Instagram, it's served its purpose once the download call returns.
-            cookies._cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
+            cookies._cleanup_temp_cookiefiles([cookies_path])
 
         jobs.jobs[job_id]["status"] = "done"
         jobs.jobs[job_id]["percent"] = 100

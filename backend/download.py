@@ -478,15 +478,22 @@ def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_
                 cookies_path = candidates[0]
                 cookies._cleanup_temp_cookiefiles(candidates[1:])
 
-    ydl_opts = build_download_options(
-        quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookies_path, entry_index, url
-    )
-    try:
+    auto_cookiefiles = [cookies_path]
+
+    def attempt(cookiefile):
+        ydl_opts = build_download_options(
+            quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookiefile, entry_index, url
+        )
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
+
+    try:
+        # A YouTube login/anti-bot answer gets one retry with the configured
+        # browser profile's cookies (cookies.run_with_youtube_cookie_fallback).
+        cookies.run_with_youtube_cookie_fallback(url, cookies_path, attempt)
         if "Audio" not in quality:
             ensure_h264(final_output_path, ffmpeg_bin, job_id)
             ensure_apple_audio(final_output_path, ffmpeg_bin, job_id)
     finally:
-        cookies._cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
+        cookies._cleanup_temp_cookiefiles(auto_cookiefiles)
     return final_output_path
