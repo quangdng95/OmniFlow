@@ -7,7 +7,7 @@ import ThumbnailPreviewDialog, { type PreviewEntry } from "./ThumbnailPreviewDia
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { blockCheckbox, blockSwitch, bigStatus, ctaGhost, ctaLight, progressSlab } from "../lib/blockStyles";
+import { blockCheckbox, blockSwitch, playlistTitle, ctaGhost, ctaLight, progressSlab } from "../lib/blockStyles";
 import { useLanguage } from "../i18n/LanguageContext";
 import { prepareZipFiles } from "../lib/saveFile";
 import { usePreparedSave } from "../hooks/usePreparedSave";
@@ -177,17 +177,17 @@ const PlaylistItemsCard = ({
 
   return (
     <>
-      <PlatformBlock tone={platform}>
+      <PlatformBlock tone={platform} className="py-5 md:py-6">
         <PlatformTag platform={platform} />
 
-        {/* Playlist title + the main action */}
-        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-          <div className="flex min-w-0 flex-col gap-2">
-            <h2 className={`${bigStatus} text-[clamp(1.75rem,4.5vw,3rem)] break-words`}>{title}</h2>
-            <p className="m-0 text-lg">
-              {t.playlist.totalItems} <strong className="font-bold tabular-nums">{items.length}</strong>
-            </p>
-          </div>
+        {/* Playlist title (full width, clamped) + count and the main action on one row */}
+        <h2 title={title} className={playlistTitle}>
+          {title}
+        </h2>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <p className="m-0 min-w-0 text-lg">
+            {t.playlist.totalItems} <strong className="font-bold tabular-nums">{items.length}</strong>
+          </p>
           {canSave ? (
             renderSaveButton()
           ) : (
