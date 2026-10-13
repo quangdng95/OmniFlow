@@ -188,8 +188,34 @@ def test_classify_youtube_playlist_shapes():
         assert cls.kind == LinkKind.YOUTUBE_PLAYLIST, url
         assert cls.is_multi
         assert cls.playlist_cap == classify.PLAYLIST_ITEM_CAP
-        # Path-shaped playlist/channel URLs need no rewrite.
-        assert cls.extraction_url == url
+        # What downloads fetch is always the pasted link.
+        assert cls.url == url
+
+
+@pytest.mark.parametrize("pasted,listed", [
+    ("https://www.youtube.com/@SomeHandle", "https://www.youtube.com/@SomeHandle/videos"),
+    ("https://www.youtube.com/@SomeHandle/", "https://www.youtube.com/@SomeHandle/videos"),
+    ("https://youtube.com/@SomeHandle?si=abc", "https://youtube.com/@SomeHandle/videos"),
+    ("https://www.youtube.com/channel/UCabc", "https://www.youtube.com/channel/UCabc/videos"),
+    ("https://www.youtube.com/c/SomeChannel", "https://www.youtube.com/c/SomeChannel/videos"),
+    ("https://www.youtube.com/user/SomeUser", "https://www.youtube.com/user/SomeUser/videos"),
+    # already pointing somewhere specific: left alone
+    ("https://www.youtube.com/@SomeHandle/videos", "https://www.youtube.com/@SomeHandle/videos"),
+    ("https://www.youtube.com/@SomeHandle/shorts", "https://www.youtube.com/@SomeHandle/shorts"),
+    ("https://www.youtube.com/@SomeHandle/playlists", "https://www.youtube.com/@SomeHandle/playlists"),
+    ("https://www.youtube.com/playlist?list=PLxyz", "https://www.youtube.com/playlist?list=PLxyz"),
+])
+def test_a_bare_channel_link_is_listed_through_its_videos_tab(pasted, listed):
+    # Regression (2026-10-13): the channel HOME page lists three tabs, not videos.
+    cls = classify_url(pasted)
+    assert cls.kind == LinkKind.YOUTUBE_PLAYLIST
+    assert cls.extraction_url == listed
+    assert cls.url == pasted  # downloads keep the pasted link
+
+
+def test_the_channel_rewrite_ignores_other_hosts_and_junk():
+    for url in ("https://example.com/@SomeHandle", "https://vimeo.com/user/1", "not a url", ""):
+        assert classify.normalize_youtube_channel_url(url) == url
 
 
 def test_classify_watch_plus_list_rewrites_extraction_url_only():
