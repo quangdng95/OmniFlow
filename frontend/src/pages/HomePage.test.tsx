@@ -752,7 +752,7 @@ describe("HomePage save-to-device notification (remote mode)", () => {
     expect(await screen.findByText("Saved to your device")).toBeInTheDocument();
   });
 
-  it("tells the user a download started when it fell back to a plain download link", async () => {
+  it("tells the user a download started (not saved) on desktop, where the plain download link is used", async () => {
     vi.mocked(sharePreparedSave).mockResolvedValueOnce("downloaded");
     await finishDownloadAndPressSave();
     expect(await screen.findByText(/download started/i)).toBeInTheDocument();
@@ -767,5 +767,13 @@ describe("HomePage save-to-device notification (remote mode)", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(screen.queryByText("Saved to your device")).not.toBeInTheDocument();
     expect(screen.queryByText(/download started/i)).not.toBeInTheDocument();
+  });
+
+  it("never leaves Save to device spinning: a failed save shows an error and re-enables the button", async () => {
+    vi.mocked(sharePreparedSave).mockRejectedValueOnce(new Error("Failed to fetch file (500)"));
+    await finishDownloadAndPressSave();
+    expect(await screen.findByText("Failed to fetch file (500)")).toBeInTheDocument();
+    const retry = await screen.findByRole("button", { name: "Try download again" });
+    expect(retry).toBeEnabled();
   });
 });
