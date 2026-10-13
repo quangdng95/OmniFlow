@@ -4,7 +4,8 @@
 # installs and runs 100% on their own machine (no owner server involved).
 #
 # Build:  pyinstaller vidrop.spec --noconfirm
-# Output: dist/ViDrop.app
+# Output: <distpath>/ViDrop.app (scripts/build.sh publishes it under release/v<VERSION>/)
+import json
 import os
 import platform
 import shutil
@@ -22,6 +23,11 @@ from PyInstaller.utils.hooks import collect_all
 # The bundled file must always be literally named "ffmpeg"
 # (get_ffmpeg_path()'s resource_path("ffmpeg") expectation), so the chosen
 # source is staged under that name before PyInstaller ever sees it.
+# The version number lives in ONE place, frontend/package.json (and its lock file, kept equal
+# by tests/test_release_version.py). The app's Info.plist and scripts/build.sh read it from there.
+with open("frontend/package.json") as _package_file:
+    VERSION = json.load(_package_file)["version"]
+
 _IS_ARM64 = platform.machine() == "arm64"
 _FFMPEG_SOURCE = "ffmpeg" if _IS_ARM64 else "ffmpeg-x86_64"
 _STAGE_DIR = ".ffmpeg_stage"
@@ -118,8 +124,8 @@ app = BUNDLE(
         "CFBundleName": "ViDrop",
         "CFBundleDisplayName": "ViDrop",
         "NSHighResolutionCapable": True,
-        "CFBundleShortVersionString": "2.0.0",
-        "CFBundleVersion": "2.0.0",
+        "CFBundleShortVersionString": VERSION,
+        "CFBundleVersion": VERSION,
         "LSMinimumSystemVersion": "11.0",
     },
 )
