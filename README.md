@@ -21,8 +21,8 @@
 Not sure which chip your Mac has? Apple menu (top-left) → **About This Mac**.
 
 <p align="center">
-  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Download-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Download for Apple Silicon (M1/M2/M3/M4)" /></a>
-  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Download-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Download for Intel Mac" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/ViDrop-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Download-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Download for Apple Silicon (M1/M2/M3/M4)" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/ViDrop-Intel.dmg"><img src="https://img.shields.io/badge/Download-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Download for Intel Mac" /></a>
 </p>
 
 These links always point at the latest release. See [Installation](#installation) below for what to do after downloading — including the one-time macOS security prompts on first launch.
@@ -47,16 +47,19 @@ platforms creators, designers, and researchers actually pull reference material 
 
 **YouTube · TikTok · Instagram · Facebook · RedNote (Xiaohongshu) · LinkedIn · Threads · X (Twitter)**
 
-| Platform | Single item | Bulk / multi-item | Notes |
-|---|---|---|---|
-| YouTube | ✅ Video, audio-only | ✅ Playlist, channel, Mix/Radio | |
-| TikTok | ✅ Video, Photo Mode slideshow | — | |
-| Instagram | ✅ Post, Reel, photo | ✅ Carousel, Story, profile/Reels | Private content needs a logged-in browser session |
-| Facebook | ✅ Video, Reel | — | |
-| RedNote (Xiaohongshu) | ✅ Video, image | — | Needs a logged-in RedNote session (RedNote now requires a login to show any post) |
-| LinkedIn | ✅ Video post, image post | ✅ Document / slide-deck (PDF) — every page as an image | `lnkd.in` share links work |
-| Threads | ✅ Video post, image post | — | Needs a logged-in browser session |
-| X (Twitter) | ✅ Video post | — | |
+| Platform | What works | Notes |
+|---|---|---|
+| YouTube | Video up to 4K, audio only (MP3), Mix, playlist, channel | May need your Chrome sign-in: Settings → YouTube sign-in |
+| TikTok | Video, audio only (MP3), Photo Mode slideshow | Photo Mode uses the third-party service tikwm.com |
+| Instagram | Reel, photo post, carousel | Needs a login in your browser. Profile / Reels lists are often refused by Instagram |
+| Facebook | Video, Reel, `share/r/` links | |
+| X (Twitter) | Video post | |
+| Threads | Video post, image post | Needs a login in your browser |
+| LinkedIn | Video post, image post, slide-deck (PDF) — every page as an image | `lnkd.in` links work. No login needed |
+| RedNote (Xiaohongshu) | Video note, image note | Needs a login in your browser. Share links expire, so copy a fresh one |
+
+Every row was checked with real links. The full table, with what was and wasn't tested, is in
+[docs/PLATFORM_SUPPORT.md](docs/PLATFORM_SUPPORT.md).
 
 ## Features
 
@@ -78,13 +81,18 @@ platforms creators, designers, and researchers actually pull reference material 
 
 1. Download the `.dmg` matching your Mac's chip — see [Download](#download) above, or grab it
    from [Releases](../../releases/latest):
-   - **OmniFlow-AppleSilicon.dmg** — for M1/M2/M3/M4 Macs
-   - **OmniFlow-Intel.dmg** — for Intel Macs
+   - **ViDrop-AppleSilicon.dmg** — for M1/M2/M3/M4 Macs
+   - **ViDrop-Intel.dmg** — for Intel Macs
 2. Open the `.dmg` and drag **ViDrop** into `Applications`.
 3. On first launch, macOS will show one or two security prompts (an "unidentified developer"
-   warning, and — only if you plan to download from Instagram, Threads or RedNote — a Keychain
-   permission request). Both are normal, one-time, and explained step-by-step in
-   [First Launch & macOS Security Warnings](docs/FIRST_LAUNCH.md).
+   warning, and — only if you plan to download from Instagram, Threads or RedNote, or turn on
+   YouTube sign-in — a Keychain permission request). Both are normal, one-time, and explained
+   step-by-step in [First Launch & macOS Security Warnings](docs/FIRST_LAUNCH.md).
+
+**Coming from the old app (OmniFlow)?** ViDrop is a separate app. The first time you open it, it
+copies your settings from the old app's folder and leaves that folder as it was, so you can keep
+the old app until you're happy. macOS treats ViDrop as a new app, so it asks for Keychain access
+again. Your History starts empty.
 
 Prefer to build it yourself? See [Building from source](#building-from-source) below.
 
@@ -99,7 +107,8 @@ Prefer to build it yourself? See [Building from source](#building-from-source) b
 
 Some platforms (Instagram, Threads, RedNote) need a logged-in browser session to resolve private/gated
 content — ViDrop reads this automatically from your local browser cookies; no manual export
-needed.
+needed. If YouTube asks you to sign in, choose your Chrome profile in **Settings → YouTube sign-in**
+(off by default).
 
 **Example:**
 
@@ -133,7 +142,7 @@ cd frontend && npm install && cd ..
 ./scripts/dev.sh
 ```
 
-**Build the standalone macOS app** (produces `dist/Vidrop.app` and `dist/Vidrop.dmg`):
+**Build the standalone macOS app** (produces `dist/ViDrop.app` and `dist/ViDrop-AppleSilicon.dmg`, or `dist/ViDrop-Intel.dmg` on an Intel Mac):
 
 ```bash
 ./scripts/build.sh

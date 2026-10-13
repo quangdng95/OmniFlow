@@ -431,18 +431,38 @@ def apply_progress_update(job, progress_dict, stream_index, total_streams):
     return stream_index
 
 
-def cleanup_partial_download(output_path_no_ext):
+def cleanup_partial_download(output_path_no_ext, final_path=None):
+    """Remove what a failed or cancelled yt-dlp download left in the save folder.
+
+    Deletes only this download's own temporary files - the separate video/audio
+    streams (`Title.f137.mp4`), `.part` / `.ytdl` / `.temp.*` files - plus, when
+    given, the exact `final_path`. It never matches by name prefix alone: a plain
+    `startswith` also swept up other files the user kept, such as `Title 2.mp4`.
+    """
     directory = os.path.dirname(output_path_no_ext) or "."
-    prefix = os.path.basename(output_path_no_ext)
+    stem = re.escape(os.path.basename(output_path_no_ext))
+    # yt-dlp names a separate stream `Title.f<format id>.<ext>`: the id is digits
+    # (`f137`, `f251-drc`) or a protocol word (`fhls-720p`, `fhttp-2176`, `fdash-1`).
+    stream = r"\.f(?:\d[0-9A-Za-z-]*|hls-[0-9A-Za-z-]+|http-[0-9A-Za-z-]+|dash-[0-9A-Za-z-]+)\.[A-Za-z0-9]+"
+    temporary = re.compile(
+        rf"^{stem}(?:{stream}|\.temp\.[A-Za-z0-9]+|\.[A-Za-z0-9]+)?(?:\.part|\.ytdl)$"
+        rf"|^{stem}{stream}$"
+        rf"|^{stem}\.temp\.[A-Za-z0-9]+$"
+    )
     try:
         for name in os.listdir(directory):
-            if name.startswith(prefix):
+            if temporary.match(name):
                 try:
                     os.remove(os.path.join(directory, name))
                 except OSError:
                     pass
     except OSError:
         pass
+    if final_path:
+        try:
+            os.remove(final_path)
+        except OSError:
+            pass
 
 
 def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_index=None, on_progress=None):
@@ -494,6 +514,11 @@ def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_
         if "Audio" not in quality:
             ensure_h264(final_output_path, ffmpeg_bin, job_id)
             ensure_apple_audio(final_output_path, ffmpeg_bin, job_id)
+    except BaseException:
+        # A failed or cancelled item must not leave half a download (a video-only
+        # .f137.mp4, a .part file) in the user's save folder.
+        cleanup_partial_download(output_path_no_ext, final_output_path)
+        raise
     finally:
         cookies._cleanup_temp_cookiefiles(auto_cookiefiles)
     return final_output_path

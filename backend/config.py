@@ -5,12 +5,17 @@ import os
 import re
 import sys
 
-from backend import paths
+from backend import migration, paths
 
 # config.json must be writable at runtime: next to the source in dev, but the
 # frozen .app bundle is read-only, so fall back to a per-user app-support dir.
 if getattr(sys, "frozen", False):
-    _config_dir = os.path.join(os.path.expanduser("~/Library/Application Support"), "OmniFlow")
+    _config_dir = paths.APP_SUPPORT_DIR
+    # Must run before the makedirs below: it only copies when the ViDrop
+    # directory does not exist yet (first launch after the OmniFlow-era app).
+    _migration_status, _migration_error = migration.migrate_from_omniflow(paths.LEGACY_APP_SUPPORT_DIR, _config_dir)
+    if _migration_error is not None:
+        paths.log_exception("migrating OmniFlow data", _migration_error)
     os.makedirs(_config_dir, exist_ok=True)
     CONFIG_FILE = os.path.join(_config_dir, "config.json")
 else:
@@ -84,6 +89,35 @@ def get_youtube_cookie_source():
         return None
     browser, profile = raw.split(":", 1)
     return browser, profile
+
+
+def youtube_cookie_source_value():
+    # The raw saved value ("chrome:Default"), or "" when off / missing / not valid.
+    source = get_youtube_cookie_source()
+    return f"{source[0]}:{source[1]}" if source else ""
+
+
+def set_youtube_cookie_source(value):
+    """Save (or, with "", clear) which Chrome profile YouTube cookies come from.
+
+    Only an exact "chrome:Default" / "chrome:Profile N" is accepted - never a path.
+    Raises ValueError for anything else. Every other key in the file is kept.
+    """
+    if value != "" and not (isinstance(value, str) and _YOUTUBE_SOURCE_RE.match(value)):
+        raise ValueError("invalid youtube_cookie_source")
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            data = {}
+    except (OSError, ValueError):
+        data = {}
+    if value:
+        data[YOUTUBE_COOKIE_SOURCE_KEY] = value
+    else:
+        data.pop(YOUTUBE_COOKIE_SOURCE_KEY, None)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(data, f)
 
 
 def save_session(path_val, cookies_path_val="", browser_val="chrome", playlist_limit_val=100):

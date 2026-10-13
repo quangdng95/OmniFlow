@@ -12,8 +12,22 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}=== Starting ViDrop Build Process ===${NC}"
 
+# Which Mac this build is for. The DMG is named after it so both can live side by side
+# in a release: ViDrop-AppleSilicon.dmg (arm64) and ViDrop-Intel.dmg (x86_64).
+# Defaults build for THIS machine with .venv. For the Intel build on an Apple Silicon Mac
+# (needs Rosetta 2), point it at the x86_64 Python and give it its own output folder:
+#   PYTHON_BIN=envs/x86_64/bin/python ARCH_PREFIX="arch -x86_64" DIST_DIR=dist-x86_64 \
+#     TARGET_ARCH=x86_64 ./scripts/build.sh
+TARGET_ARCH="${TARGET_ARCH:-$(uname -m)}"
+if [ "$TARGET_ARCH" = "arm64" ]; then DMG_NAME="ViDrop-AppleSilicon.dmg"; else DMG_NAME="ViDrop-Intel.dmg"; fi
+DIST_DIR="${DIST_DIR:-dist}"
+PYTHON_BIN="${PYTHON_BIN:-}"
+ARCH_PREFIX="${ARCH_PREFIX:-}"
+
 # 1. Setup/Activate Python virtual environment
-if [ ! -d ".venv" ]; then
+if [ -n "$PYTHON_BIN" ]; then
+    echo -e "${GREEN}[1/6] Using $PYTHON_BIN (${TARGET_ARCH}) instead of .venv.${NC}"
+elif [ ! -d ".venv" ]; then
     echo -e "${YELLOW}[1/6] Creating Python virtual environment .venv...${NC}"
     python3 -m venv .venv
 else
@@ -21,9 +35,14 @@ else
 fi
 
 echo -e "${BLUE}[2/6] Activating virtual environment and updating dependencies...${NC}"
-source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
+if [ -n "$PYTHON_BIN" ]; then
+    $ARCH_PREFIX "$PYTHON_BIN" -m pip install --upgrade pip
+    $ARCH_PREFIX "$PYTHON_BIN" -m pip install -r requirements.txt
+else
+    source .venv/bin/activate
+    pip install --upgrade pip
+    pip install -r requirements.txt
+fi
 
 # 2. Build the React Frontend
 echo -e "${BLUE}[3/6] Building React frontend...${NC}"
@@ -37,40 +56,44 @@ cd ..
 
 # 3. Build standalone macOS app using PyInstaller
 echo -e "${BLUE}[4/6] Packaging desktop app with PyInstaller...${NC}"
-pyinstaller vidrop.spec --noconfirm --clean
+if [ -n "$PYTHON_BIN" ]; then
+    $ARCH_PREFIX "$PYTHON_BIN" -m PyInstaller vidrop.spec --noconfirm --clean --distpath "$DIST_DIR"
+else
+    pyinstaller vidrop.spec --noconfirm --clean --distpath "$DIST_DIR"
+fi
 
 # 4. Strip extended attributes and sign ad-hoc in a temp folder to bypass iCloud FileProvider issues
 echo -e "${BLUE}[5/6] Stripping extended attributes and signing ad-hoc in a temp directory...${NC}"
-if [ -d "dist/Vidrop.app" ]; then
-    TEMP_DIR="$HOME/OnmiFlow_temp"
+if [ -d "$DIST_DIR/ViDrop.app" ]; then
+    TEMP_DIR="$HOME/ViDrop_temp"
     rm -rf "$TEMP_DIR"
     mkdir -p "$TEMP_DIR"
     
     # Copy to temp directory outside iCloud
-    cp -R dist/Vidrop.app "$TEMP_DIR/Vidrop.app"
+    cp -R "$DIST_DIR/ViDrop.app" "$TEMP_DIR/ViDrop.app"
     
     # Strip attributes and sign
-    xattr -cr "$TEMP_DIR/Vidrop.app"
-    codesign --force --deep --sign - "$TEMP_DIR/Vidrop.app"
+    xattr -cr "$TEMP_DIR/ViDrop.app"
+    codesign --force --deep --sign - "$TEMP_DIR/ViDrop.app"
     
     # 5. Create DMG installer with an Applications shortcut for drag-and-drop install
     echo -e "${BLUE}[6/6] Creating DMG installer with Applications shortcut...${NC}"
     STAGING_DIR="$TEMP_DIR/dmg_staging"
     rm -rf "$STAGING_DIR"
     mkdir -p "$STAGING_DIR"
-    cp -R "$TEMP_DIR/Vidrop.app" "$STAGING_DIR/Vidrop.app"
+    cp -R "$TEMP_DIR/ViDrop.app" "$STAGING_DIR/ViDrop.app"
     ln -s /Applications "$STAGING_DIR/Applications"
 
     # Detach a stale "ViDrop" volume left mounted from a previous run, if any
-    if [ -d "/Volumes/Vidrop" ]; then
-        hdiutil detach "/Volumes/Vidrop" -force >/dev/null 2>&1 || true
+    if [ -d "/Volumes/ViDrop" ]; then
+        hdiutil detach "/Volumes/ViDrop" -force >/dev/null 2>&1 || true
     fi
 
-    RW_DMG="$TEMP_DIR/Vidrop-rw.dmg"
+    RW_DMG="$TEMP_DIR/ViDrop-rw.dmg"
     rm -f "$RW_DMG"
     hdiutil create -volname ViDrop -srcfolder "$STAGING_DIR" -ov -format UDRW -fs HFS+ "$RW_DMG"
     MOUNT_OUTPUT=$(hdiutil attach "$RW_DMG" -readwrite -noverify -noautoopen)
-    MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep -o '/Volumes/Vidrop.*')
+    MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep -o '/Volumes/ViDrop.*')
 
     # Best-effort Finder styling (icon layout) — arranges the app + Applications
     # shortcut side by side. Backgrounded with a hard 15s cutoff so a missing
@@ -88,7 +111,7 @@ tell application "Finder"
         set viewOptions to the icon view options of container window
         set arrangement of viewOptions to not arranged
         set icon size of viewOptions to 100
-        set position of item "Vidrop.app" of container window to {125, 150}
+        set position of item "ViDrop.app" of container window to {125, 150}
         set position of item "Applications" of container window to {375, 150}
         close
         open
@@ -105,24 +128,24 @@ APPLESCRIPT
     kill $OSA_PID 2>/dev/null || true
 
     sync
-    hdiutil detach "$MOUNT_DIR" -force >/dev/null 2>&1 || hdiutil detach "/Volumes/Vidrop" -force >/dev/null 2>&1 || true
+    hdiutil detach "$MOUNT_DIR" -force >/dev/null 2>&1 || hdiutil detach "/Volumes/ViDrop" -force >/dev/null 2>&1 || true
 
-    rm -f "$TEMP_DIR/Vidrop.dmg"
-    hdiutil convert "$RW_DMG" -format UDZO -ov -o "$TEMP_DIR/Vidrop.dmg"
+    rm -f "$TEMP_DIR/$DMG_NAME"
+    hdiutil convert "$RW_DMG" -format UDZO -ov -o "$TEMP_DIR/$DMG_NAME"
     rm -f "$RW_DMG"
 
     # Copy signed app and DMG back to dist/
     echo -e "${BLUE}Copying signed app and DMG back to dist/...${NC}"
-    rm -rf dist/Vidrop.app
-    cp -R "$TEMP_DIR/Vidrop.app" dist/Vidrop.app
-    cp "$TEMP_DIR/Vidrop.dmg" dist/Vidrop.dmg
+    rm -rf "$DIST_DIR/ViDrop.app"
+    cp -R "$TEMP_DIR/ViDrop.app" "$DIST_DIR/ViDrop.app"
+    cp "$TEMP_DIR/$DMG_NAME" "$DIST_DIR/$DMG_NAME"
     
     # Clean up temp dir
     rm -rf "$TEMP_DIR"
     
     echo -e "${GREEN}App successfully signed ad-hoc and DMG created with an Applications shortcut!${NC}"
 else
-    echo -e "${RED}Error: dist/Vidrop.app was not created!${NC}"
+    echo -e "${RED}Error: $DIST_DIR/ViDrop.app was not created!${NC}"
     exit 1
 fi
 
@@ -133,6 +156,6 @@ echo -e "${GREEN}Temporary build/ and .ffmpeg_stage/ folders removed.${NC}"
 
 echo -e "\n${GREEN}=== Build Completed Successfully! ===${NC}"
 echo -e "You can find and run your app here:"
-echo -e "  - Standalone App: ${BLUE}dist/Vidrop.app${NC}"
-echo -e "  - DMG Installer:  ${BLUE}dist/Vidrop.dmg${NC}"
-echo -e "Double-click ${BLUE}dist/Vidrop.app${NC} to start and test it!\n"
+echo -e "  - Standalone App: ${BLUE}$DIST_DIR/ViDrop.app${NC}"
+echo -e "  - DMG Installer:  ${BLUE}$DIST_DIR/$DMG_NAME${NC}"
+echo -e "Double-click ${BLUE}$DIST_DIR/ViDrop.app${NC} to start and test it!\n"

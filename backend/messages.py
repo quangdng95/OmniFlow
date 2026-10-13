@@ -33,6 +33,14 @@ _CATALOG = {
         VI: "❌ Lỗi: Cần một trình duyệt đã đăng nhập Threads (threads.com) trên máy này để tải bài viết. Vui lòng đăng nhập rồi thử lại.",
         EN: "❌ Error: A browser signed in to Threads (threads.com) is required on this machine to download this post. Please sign in, then try again.",
     },
+    "no_audio_track": {
+        VI: "❌ Lỗi: Video này không có âm thanh nên không thể lưu riêng phần âm thanh. Hãy chọn video thay thế.",
+        EN: "❌ Error: This video has no audio track, so there is nothing to save as audio. Pick a video quality instead.",
+    },
+    "rednote_expired": {
+        VI: "❌ Lỗi: Link RedNote này đã hết hạn. Hãy mở bài trong RedNote, sao chép link chia sẻ mới rồi dán lại.",
+        EN: "❌ Error: This RedNote link has expired. Open the post in RedNote, copy a fresh share link, and paste it again.",
+    },
     "rednote_auth": {
         VI: "❌ Lỗi: RedNote yêu cầu đăng nhập để xem bài này. Hãy đăng nhập RedNote (rednote.com) trong trình duyệt trên máy chủ rồi thử lại.",
         EN: "❌ Error: RedNote requires a signed-in session to view this post. Sign in to RedNote (rednote.com) in the browser on the server, then try again.",
@@ -71,8 +79,8 @@ _CATALOG = {
     # YouTube failures, told apart so the user knows what to do (the retry
     # button is the single instruction - never "paste the link again").
     "youtube_signin_required": {
-        VI: "❌ YouTube đang yêu cầu đăng nhập trước khi cho tải video này. Hãy đăng nhập YouTube trên Chrome rồi bấm Thử lại.",
-        EN: "❌ YouTube wants you signed in before it allows this download. Sign in to YouTube in Chrome, then press Retry.",
+        VI: "❌ YouTube đang yêu cầu đăng nhập trước khi cho tải video này. Nếu dùng app Mac, hãy chọn profile Chrome của bạn trong Cài đặt → Đăng nhập YouTube, rồi bấm Thử lại.",
+        EN: "❌ YouTube wants you signed in before it allows this download. If you use the Mac app, choose your Chrome profile in Settings → YouTube sign-in, then press Retry.",
     },
     "youtube_restricted": {
         VI: "❌ Không tải được video YouTube này. Video có thể ở chế độ riêng tư, dành cho hội viên, giới hạn độ tuổi hoặc bị chặn ở khu vực của bạn.",

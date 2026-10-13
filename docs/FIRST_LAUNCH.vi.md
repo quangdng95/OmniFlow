@@ -37,8 +37,9 @@ phiên bản app đó nữa.
 ## 2. "ViDrop wants to use your confidential information stored in 'Chrome Safe Storage' in your keychain"
 
 Cảnh báo này **không bắt buộc** để dùng ViDrop — nó chỉ xuất hiện khi bạn check hoặc tải một
-link từ **Instagram** hoặc **Threads**, và chỉ khi bạn đang đăng nhập một trong hai nền tảng đó
-trên trình duyệt của máy này (Chrome, Brave, Edge, Vivaldi, Opera, hoặc Safari).
+link từ **Instagram**, **Threads** hoặc **RedNote** (và chỉ khi bạn đang đăng nhập một trong các
+nền tảng đó trên trình duyệt của máy này: Chrome, Brave, Edge, Vivaldi, Opera, hoặc Safari), hoặc
+khi bạn bật **Cài đặt → Đăng nhập YouTube**.
 
 **Nó đang xin quyền gì:** để tải nội dung Instagram/Threads riêng tư hoặc yêu cầu đăng nhập (một
 Reel từ tài khoản bạn follow, một Story, một bài đăng riêng tư), ViDrop cần dùng lại phiên đăng
@@ -53,18 +54,33 @@ sẽ hoạt động mà không hỏi lại. Nếu bạn bấm **Allow** (dùng m
 - **Allow (một lần):** hoạt động cho lượt tải đó, nhưng lần sau có thể sẽ hỏi lại.
 - **Deny:** ViDrop sẽ không đọc được phiên đăng nhập của trình duyệt đó — các lượt tải
   Instagram, Threads và RedNote cần đăng nhập sẽ báo lỗi "không tìm thấy session", nhưng mọi nền
-  tảng khác (YouTube, TikTok, Facebook, LinkedIn, X) hoàn toàn không bị ảnh hưởng.
+  tảng khác (TikTok, Facebook, LinkedIn, X, và YouTube nếu bạn không bật đăng nhập YouTube) hoàn toàn
+  không bị ảnh hưởng.
 
 **Mọi thứ đều ở lại trên máy bạn.** Quyền này chỉ cho phép ViDrop đọc session token cục bộ,
 ngay trên máy của bạn, để gửi request tới Instagram/Threads thay bạn — không có gì được gửi đi
 nơi khác. Xem [Quyền riêng tư](../README.vi.md#quyền-riêng-tư) trong README chính.
 
-> **Vì sao cảnh báo này có thể hiện lại sau khi cập nhật app?** Mỗi phiên bản ViDrop mới bạn
+> **Vì sao cảnh báo này có thể hiện lại sau khi cập nhật app?** (Nó cũng hiện lại khi bạn chuyển
+> từ app cũ thời OmniFlow, vì macOS coi ViDrop là một app mới.) Mỗi phiên bản ViDrop mới bạn
 > tải về được ký độc lập (xem giải thích về Gatekeeper ở trên), và Keychain của macOS gắn quyền
 > này với *đúng* phiên bản app đã xin quyền đó. Điều đó có nghĩa cập nhật lên bản ViDrop mới hơn
 > có thể khiến cảnh báo này hiện lại, dù bạn đã từng bấm "Always Allow" cho phiên bản trước — đây
 > là hành vi bình thường của macOS, không phải lỗi, và bấm **Always Allow** lần nữa sẽ xử lý y hệt
 > như trước.
+
+## 3. Chuyển từ app cũ (OmniFlow)
+
+ViDrop là một app riêng, có tên, biểu tượng và thư mục dữ liệu riêng, nên không có gì bị thay thế.
+
+- **Cài đặt của bạn được sao chép một lần.** Lần đầu mở ViDrop, nó sao chép cài đặt của app cũ
+  (thư mục tải, giới hạn playlist, v.v.) vào `~/Library/Application Support/ViDrop`. Thư mục cũ,
+  `~/Library/Application Support/OmniFlow`, được giữ nguyên như trước.
+- **Lịch sử bắt đầu từ trống.** App Mac cũ không giữ lại Lịch sử sau khi bạn đóng app, nên không có
+  gì để chuyển sang. Từ giờ ViDrop giữ Lịch sử và ngôn ngữ bạn chọn.
+- **macOS hỏi lại quyền** (Keychain, ở trên), vì nó thấy đây là app mới.
+- **Khi đã yên tâm với ViDrop,** bạn có thể xóa app cũ và, nếu muốn, cả thư mục cũ. ViDrop không
+  đụng tới cả hai.
 
 ## Vẫn còn kẹt?
 

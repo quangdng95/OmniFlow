@@ -46,6 +46,11 @@ class RedNoteAuthError(RedNoteError):
     """RedNote sent us to its login page: no (valid) logged-in session."""
 
 
+class RedNoteExpiredError(RedNoteError):
+    """RedNote sent us to its 404 page: the share link's xsec_token has expired
+    (or the note was removed). A fresh share link from the RedNote app fixes it."""
+
+
 def _base_domain(host):
     host = (host or "").lower()
     for base in _BASE_DOMAINS:
@@ -149,8 +154,11 @@ def _fetch_page(url, cookies_path):
     with urllib.request.urlopen(request, timeout=25) as resp:
         html = resp.read().decode("utf-8", "replace")
         final = resp.geturl()
-    if urllib.parse.urlparse(final).path.startswith("/login"):
+    final_path = urllib.parse.urlparse(final).path
+    if final_path.startswith("/login"):
         raise RedNoteAuthError("RedNote requires a logged-in session")
+    if final_path.startswith("/404"):
+        raise RedNoteExpiredError("RedNote link expired or note removed")
     return html, final
 
 
@@ -182,6 +190,8 @@ def fetch_rednote_post_any(url, cookiefiles):
             return fetch_rednote_post(url, cf)
         except RedNoteAuthError as e:
             last_auth_error = e
+        except RedNoteExpiredError:
+            raise  # every account sees the same dead link: do not hit RedNote again
         except Exception as e:
             last_error = e
     if last_auth_error:

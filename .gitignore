@@ -5,6 +5,9 @@ __pycache__/
 .DS_Store
 node_modules/
 
+# Release artifacts (DMGs, checksums, release notes drafts) - never committed.
+release/
+
 # PyInstaller packaging artifacts (see vidrop.spec / rules/packaging.md)
 build/
 .ffmpeg_stage/

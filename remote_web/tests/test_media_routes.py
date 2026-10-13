@@ -347,6 +347,22 @@ def test_check_rednote_without_a_synced_session_explains_what_to_do(client, monk
     assert resp.status_code == 400 and "RedNote" in resp.get_json()["error"]
 
 
+def test_check_rednote_expired_link_tells_the_visitor_to_copy_a_fresh_one(client, monkeypatch):
+    import yt_dlp
+    from backend import rednote as rednote_module
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda cls: (_ for _ in ()).throw(yt_dlp.utils.DownloadError("No video formats found!")))
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: ["/synced.txt"])
+
+    def expired(url, cfs):
+        raise rednote_module.RedNoteExpiredError("404")
+
+    monkeypatch.setattr(rednote_module, "fetch_rednote_post_any", expired)
+    resp = client.post("/api/check", json={"url": "https://www.rednote.com/discovery/item/6aae0dc50000000011036339?xsec_token=T"},
+                       headers={"X-Language": "en"})
+    assert resp.status_code == 400 and "fresh share link" in resp.get_json()["error"]
+
+
 def test_download_batch_deletes_raw_files_as_it_goes(client, monkeypatch, tmp_path):
     monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
     monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")

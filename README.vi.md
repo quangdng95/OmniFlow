@@ -22,8 +22,8 @@ Không chắc máy Mac của bạn dùng chip gì? Menu Apple (góc trên bên t
 Mac này** (About This Mac).
 
 <p align="center">
-  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Tải_về-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Tải cho Apple Silicon (M1/M2/M3/M4)" /></a>
-  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Tải_về-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Tải cho Mac Intel" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/ViDrop-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Tải_về-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Tải cho Apple Silicon (M1/M2/M3/M4)" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/ViDrop-Intel.dmg"><img src="https://img.shields.io/badge/Tải_về-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Tải cho Mac Intel" /></a>
 </p>
 
 Hai link trên luôn trỏ tới bản phát hành mới nhất. Xem [Cài đặt](#cài-đặt) bên dưới để biết việc
@@ -49,16 +49,19 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
 
 **YouTube · TikTok · Instagram · Facebook · RedNote (Xiaohongshu) · LinkedIn · Threads · X (Twitter)**
 
-| Nền tảng | Từng item | Hàng loạt / nhiều item | Ghi chú |
-|---|---|---|---|
-| YouTube | ✅ Video, chỉ âm thanh | ✅ Playlist, kênh, Mix/Radio | |
-| TikTok | ✅ Video, slideshow Photo Mode | — | |
-| Instagram | ✅ Post, Reel, ảnh | ✅ Carousel, Story, profile/Reels | Nội dung riêng tư cần đăng nhập trên trình duyệt |
-| Facebook | ✅ Video, Reel | — | |
-| RedNote (Xiaohongshu) | ✅ Video, ảnh | — | Cần phiên đăng nhập RedNote (RedNote giờ yêu cầu đăng nhập để xem bài) |
-| LinkedIn | ✅ Bài video, bài ảnh | ✅ Tài liệu/slide (PDF) — mỗi trang là một ảnh | Link rút gọn `lnkd.in` dùng được |
-| Threads | ✅ Bài video, bài ảnh | — | Cần đăng nhập trên trình duyệt |
-| X (Twitter) | ✅ Bài video | — | |
+| Nền tảng | Dùng được | Ghi chú |
+|---|---|---|
+| YouTube | Video đến 4K, chỉ âm thanh (MP3), Mix, playlist, kênh | Có thể cần đăng nhập Chrome: Cài đặt → Đăng nhập YouTube |
+| TikTok | Video, chỉ âm thanh (MP3), slideshow Photo Mode | Photo Mode dùng dịch vụ bên thứ ba tikwm.com |
+| Instagram | Reel, bài ảnh, carousel | Cần đăng nhập trên trình duyệt. Danh sách profile / Reels thường bị Instagram từ chối |
+| Facebook | Video, Reel, link `share/r/` | |
+| X (Twitter) | Bài video | |
+| Threads | Bài video, bài ảnh | Cần đăng nhập trên trình duyệt |
+| LinkedIn | Bài video, bài ảnh, slide (PDF) — mỗi trang là một ảnh | Link `lnkd.in` dùng được. Không cần đăng nhập |
+| RedNote (Xiaohongshu) | Bài video, bài ảnh | Cần đăng nhập trên trình duyệt. Link chia sẻ hết hạn nên hãy copy link mới |
+
+Mọi dòng đều được kiểm tra bằng link thật. Bảng đầy đủ, ghi rõ phần đã và chưa kiểm tra, nằm ở
+[docs/PLATFORM_SUPPORT.md](docs/PLATFORM_SUPPORT.md) (bằng tiếng Anh).
 
 ## Tính năng
 
@@ -80,13 +83,17 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
 
 1. Tải file `.dmg` đúng với chip máy Mac của bạn — xem [Tải xuống](#tải-xuống) ở trên, hoặc lấy
    từ [Releases](../../releases/latest):
-   - **OmniFlow-AppleSilicon.dmg** — cho Mac M1/M2/M3/M4
-   - **OmniFlow-Intel.dmg** — cho Mac dùng chip Intel
+   - **ViDrop-AppleSilicon.dmg** — cho Mac M1/M2/M3/M4
+   - **ViDrop-Intel.dmg** — cho Mac dùng chip Intel
 2. Mở file `.dmg` và kéo **ViDrop** vào thư mục `Applications`.
 3. Lần đầu mở app, macOS sẽ hiện một hoặc hai cảnh báo bảo mật (cảnh báo "nhà phát triển không
-   xác định", và — chỉ khi bạn định tải từ Instagram, Threads hoặc RedNote — yêu cầu quyền
-   truy cập Keychain). Cả hai đều bình thường, chỉ xuất hiện một lần, và được giải thích từng bước
-   trong [Cảnh báo bảo mật macOS khi mở app lần đầu](docs/FIRST_LAUNCH.vi.md).
+   xác định", và — chỉ khi bạn định tải từ Instagram, Threads hoặc RedNote, hoặc bật đăng nhập
+   YouTube — yêu cầu quyền truy cập Keychain). Cả hai đều bình thường, chỉ xuất hiện một lần, và
+   được giải thích từng bước trong [Cảnh báo bảo mật macOS khi mở app lần đầu](docs/FIRST_LAUNCH.vi.md).
+
+**Đang dùng app cũ (OmniFlow)?** ViDrop là một app riêng. Lần đầu mở, nó sao chép cài đặt từ thư
+mục của app cũ và giữ nguyên thư mục đó, nên bạn có thể giữ app cũ đến khi yên tâm. macOS coi ViDrop
+là app mới nên sẽ hỏi lại quyền Keychain. Lịch sử của bạn bắt đầu từ trống.
 
 Muốn tự build app? Xem [Build từ mã nguồn](#build-từ-mã-nguồn) bên dưới.
 
@@ -101,7 +108,8 @@ Muốn tự build app? Xem [Build từ mã nguồn](#build-từ-mã-nguồn) bê
 
 Một số nền tảng (Instagram, Threads, RedNote) cần một phiên đăng nhập trên trình duyệt để lấy được nội
 dung riêng tư/bị giới hạn — ViDrop tự đọc thông tin này từ cookie trình duyệt trên máy bạn;
-không cần export thủ công.
+không cần export thủ công. Nếu YouTube yêu cầu đăng nhập, hãy chọn profile Chrome của bạn trong
+**Cài đặt → Đăng nhập YouTube** (mặc định đang tắt).
 
 **Ví dụ:**
 
@@ -135,7 +143,7 @@ cd frontend && npm install && cd ..
 ./scripts/dev.sh
 ```
 
-**Build app macOS độc lập** (tạo ra `dist/Vidrop.app` và `dist/Vidrop.dmg`):
+**Build app macOS độc lập** (tạo ra `dist/ViDrop.app` và `dist/ViDrop-AppleSilicon.dmg`, hoặc `dist/ViDrop-Intel.dmg` trên Mac Intel):
 
 ```bash
 ./scripts/build.sh

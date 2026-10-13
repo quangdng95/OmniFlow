@@ -463,3 +463,15 @@ def test_extract_video_info_passes_the_setting_to_yt_dlp_as_playlistend(monkeypa
     monkeypatch.setattr(yt_dlp, "YoutubeDL", FakeYoutubeDL)
     extraction_module.extract_video_info(classify.classify_url(YT_PLAYLIST))
     assert captured["opts"]["playlistend"] == expected
+
+
+# ---- Audio Only on a video with no sound track (live 2026-10-13, a silent X clip) ----
+
+
+@pytest.mark.parametrize("lang,expected", [("en", "no audio track"), ("vi", "không có âm thanh")])
+def test_audio_only_on_a_silent_video_says_there_is_no_audio(lang, expected):
+    error = yt_dlp.utils.DownloadError("ERROR: Postprocessing: WARNING: unable to obtain file audio codec with ffprobe")
+    message = describe_extraction_error("https://x.com/user/status/1", error, lang=lang)
+    assert expected in message
+    assert "ffprobe" not in message and "github" not in message.lower()
+

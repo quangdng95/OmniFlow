@@ -56,12 +56,26 @@ def index():
 @app.get("/api/settings")
 def get_settings():
     session = config.load_session()
-    return jsonify({**session, "cookies_status": config.cookies_status_for(session["cookies_path"])})
+    payload = {**session, "cookies_status": config.cookies_status_for(session["cookies_path"])}
+    if is_local_request():
+        # Only the machine's own user may see which Chrome profiles exist here.
+        payload["youtube_cookie_source"] = config.youtube_cookie_source_value()
+        payload["youtube_profiles"] = cookies.list_chrome_profiles()
+    return jsonify(payload)
 
 
 @app.post("/api/settings")
 def update_settings():
     data = request.get_json(force=True) or {}
+    # Validate this first so a refused request changes nothing at all.
+    if "youtube_cookie_source" in data:
+        # Reading a browser's cookies only makes sense on the user's own machine.
+        if not is_local_request():
+            return jsonify({"error": LOCAL_ONLY_ERROR}), 403
+        try:
+            config.set_youtube_cookie_source(data["youtube_cookie_source"])
+        except ValueError:
+            return jsonify({"error": "Invalid YouTube sign-in profile"}), 400
     session = config.load_session()
     path_val = data.get("path", session["path"])
     cookies_path_val = data.get("cookies_path", session["cookies_path"])
@@ -285,6 +299,8 @@ def check_link():
                 if rn_candidates:
                     media = rednote.fetch_rednote_post_any(url, rn_candidates)
                     return jsonify(instagram.instagram_check_response(url, media))
+            except rednote.RedNoteExpiredError:
+                return jsonify({"error": messages.text("rednote_expired", lang)}), 400
             except rednote.RedNoteAuthError:
                 return jsonify({"error": messages.text("rednote_auth", lang)}), 400
             except Exception:
@@ -552,7 +568,7 @@ def start_download():
         except yt_dlp.utils.DownloadCancelled:
             jobs.jobs[job_id]["status"] = "cancelled"
             jobs.jobs[job_id]["text"] = "Cancelled"
-            download.cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext, final_output_path)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
@@ -616,6 +632,10 @@ def start_download():
                     jobs.jobs[job_id]["status"] = "cancelled"
                     jobs.jobs[job_id]["text"] = "Cancelled"
                     return
+                except rednote.RedNoteExpiredError:
+                    jobs.jobs[job_id]["status"] = "error"
+                    jobs.jobs[job_id]["text"] = messages.text("rednote_expired", lang)
+                    return
                 except rednote.RedNoteAuthError:
                     jobs.jobs[job_id]["status"] = "error"
                     jobs.jobs[job_id]["text"] = messages.text("rednote_auth", lang)
@@ -635,14 +655,14 @@ def start_download():
             print(f"[download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
             jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path, lang=lang)
-            download.cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext, final_output_path)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
         except cookies.YouTubeCookieAccessError as e:
             jobs.jobs[job_id]["status"] = "error"
             jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path, lang=lang)
-            download.cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext, final_output_path)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
@@ -650,7 +670,7 @@ def start_download():
             print(f"[download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
             jobs.jobs[job_id]["text"] = str(e) or "Download failed"
-            download.cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext, final_output_path)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return

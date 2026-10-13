@@ -119,6 +119,28 @@ def normalize_youtube_playlist_url(url):
     return f"https://www.youtube.com/playlist?list={list_id}"
 
 
+_CHANNEL_HOME_RE = re.compile(r"^/(?:@[^/]+|(?:channel|c|user)/[^/]+)/?$", re.IGNORECASE)
+
+
+def normalize_youtube_channel_url(url):
+    # A bare channel link (`youtube.com/@name`, `/channel/UC...`, `/c/name`,
+    # `/user/name`) is the channel's HOME page. yt-dlp lists that page's TABS
+    # (Videos / Live / Shorts) as three "playlist entries" with no duration - so a
+    # pasted channel showed three dead rows (all flagged unavailable) instead of
+    # its videos (confirmed live 2026-10-13 on @mkbhd). Point at the Videos tab,
+    # which lists the uploads. A link that already names a tab is left alone.
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except ValueError:
+        return url
+    host = (parsed.hostname or "").lower()
+    if not (host == "youtube.com" or host.endswith(".youtube.com")):
+        return url
+    if not _CHANNEL_HOME_RE.match(parsed.path):
+        return url
+    return urllib.parse.urlunparse((parsed.scheme or "https", parsed.netloc, parsed.path.rstrip("/") + "/videos", "", "", ""))
+
+
 def _youtube_list_id(url):
     # The `list=` query param of a YouTube/youtu.be URL, or None.
     try:
@@ -288,6 +310,7 @@ def classify_url(raw_url):
             playlist_cap = PLAYLIST_ITEM_CAP
         elif _PLAYLIST_URL_RE.search(url):
             kind = LinkKind.YOUTUBE_PLAYLIST
+            extraction_url = normalize_youtube_channel_url(url)
             playlist_cap = PLAYLIST_ITEM_CAP
     elif platform == "Threads":
         shortcode = threads_shortcode_from_url(url)

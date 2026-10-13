@@ -26,13 +26,13 @@ cho tình huống này:
 
 ## Các thông báo thường gặp và ý nghĩa
 
-Dưới đây là nguyên văn các thông báo lỗi mà ViDrop hiển thị (app luôn báo lỗi bằng tiếng Việt,
-bất kể ngôn ngữ giao diện bạn chọn trong Cài đặt), kèm giải thích và cách xử lý.
+Thông báo lỗi của ViDrop theo ngôn ngữ bạn chọn trong Cài đặt. Các trích dẫn bên dưới là bản tiếng
+Việt (bản tiếng Anh nói đúng nội dung đó), kèm giải thích và cách xử lý.
 
 ### Sai bản cài đặt cho chip máy Mac
 
 > ❌ Lỗi: Bản ViDrop này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc ...).
-> Vui lòng tải đúng bản dành cho máy bạn (Vidrop-AppleSilicon.dmg hoặc Vidrop-Intel.dmg) tại
+> Vui lòng tải đúng bản dành cho máy bạn (ViDrop-AppleSilicon.dmg hoặc ViDrop-Intel.dmg) tại
 > trang GitHub Releases của ViDrop.
 
 ViDrop có hai bản build riêng biệt — một bản native cho Apple Silicon (M1/M2/M3/M4) và một bản
@@ -41,7 +41,7 @@ cho. Thông báo này nghĩa là bạn đã cài nhầm bản không đúng vớ
 
 **Cách sửa:** tải lại từ [mục Tải xuống trong README](../README.vi.md#tải-xuống) hoặc từ
 [Releases](https://github.com/quangdng95/ViDrop/releases/latest), chọn
-**Vidrop-AppleSilicon.dmg** cho Mac M1/M2/M3/M4 hoặc **Vidrop-Intel.dmg** cho Mac Intel.
+**ViDrop-AppleSilicon.dmg** cho Mac M1/M2/M3/M4 hoặc **ViDrop-Intel.dmg** cho Mac Intel.
 Không chắc máy mình dùng chip gì? Menu Apple (góc trên bên trái) → **About This Mac** — sẽ ghi rõ
 tên chip.
 
@@ -116,6 +116,23 @@ trang một ảnh, giống một carousel. Link rút gọn `lnkd.in` cũng dùng
 chính bài đăng không đọc được: đã bị xoá, không công khai, hoặc LinkedIn đã đổi cách phục vụ. Hãy mở
 link trong cửa sổ ẩn danh để kiểm tra bài có công khai không; nếu có mà vẫn lỗi, mở một GitHub
 Issue kèm link sẽ giúp ích.
+
+### "YouTube đang yêu cầu đăng nhập trước khi cho tải video này"
+
+Đôi khi YouTube từ chối tải với thông báo "Sign in to confirm you're not a bot", kể cả với một video
+công khai ngắn. Trên app Mac, mở **Cài đặt → Đăng nhập YouTube** và chọn profile Chrome mà bạn đã
+đăng nhập YouTube, rồi bấm Thử lại. ViDrop chỉ dùng phiên YouTube đó khi YouTube yêu cầu. macOS có
+thể hỏi quyền Keychain: hãy chọn **Always Allow**. Mặc định đang tắt, và chỉ hỗ trợ Chrome.
+
+### "Link RedNote này đã hết hạn"
+
+Link chia sẻ RedNote sẽ hết hiệu lực sau một thời gian. Hãy mở bài trong RedNote, sao chép link chia
+sẻ mới rồi dán link đó.
+
+### "Video này không có âm thanh"
+
+Bạn chọn **Audio Only** cho một video không có tiếng (một số clip trên X không có âm thanh). Hãy chọn
+chất lượng video thay thế.
 
 ### RedNote yêu cầu đăng nhập
 

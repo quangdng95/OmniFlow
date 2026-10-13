@@ -251,6 +251,12 @@ def describe_extraction_error(url, error, cookies_path=None, lang=None):
     if isinstance(error, (ConnectionError, TimeoutError, socket.gaierror)):
         return messages.text("network_unreachable", lang)
 
+    # "Audio Only" on a video that has no sound track (a silent X clip, for
+    # example): yt-dlp's audio extractor cannot find an audio stream and says so
+    # in a ffprobe warning. Say what is true instead of the generic failure.
+    if "unable to obtain file audio codec" in lower:
+        return messages.text("no_audio_track", lang)
+
     # YouTube: tell the three causes apart (browser-cookie read denied, login /
     # anti-bot demand, a video that is restricted for everyone) - the generic
     # "check the link" text below misled the user when the link was fine.

@@ -66,8 +66,15 @@ WEB_DIR = os.path.join(RESOURCE_BASE, "frontend", "dist")
 # Same reasoning as config.py's CONFIG_FILE: the frozen .app bundle is
 # read-only, so diagnostic logs need a per-user writable dir instead of
 # living next to the source.
+#
+# The per-user data directory is named after the app (ViDrop). The app used to be
+# called OmniFlow; LEGACY_APP_SUPPORT_DIR is where its data lives, and
+# backend/migration.py copies it across once on first launch.
+APP_SUPPORT_DIR = os.path.join(os.path.expanduser("~/Library/Application Support"), "ViDrop")
+LEGACY_APP_SUPPORT_DIR = os.path.join(os.path.expanduser("~/Library/Application Support"), "OmniFlow")
+
 if getattr(sys, "frozen", False):
-    LOG_DIR = os.path.join(os.path.expanduser("~/Library/Logs"), "OmniFlow")
+    LOG_DIR = os.path.join(os.path.expanduser("~/Library/Logs"), "ViDrop")
 else:
     LOG_DIR = os.path.join(BASE_DIR, ".logs")
 
@@ -153,6 +160,6 @@ def ffmpeg_unavailable_message(lang=None):
     err = _ffmpeg_exec_error(local_ffmpeg)
     if isinstance(err, OSError) and err.errno == _BAD_CPU_TYPE_ERRNO:
         machine = platform.machine()
-        wanted_dmg = "Vidrop-AppleSilicon.dmg" if machine == "arm64" else "Vidrop-Intel.dmg"
+        wanted_dmg = "ViDrop-AppleSilicon.dmg" if machine == "arm64" else "ViDrop-Intel.dmg"
         return messages.text("ffmpeg_wrong_chip", lang, machine=machine, dmg=wanted_dmg)
     return messages.text("ffmpeg_missing", lang)

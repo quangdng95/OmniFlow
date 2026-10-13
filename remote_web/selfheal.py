@@ -63,6 +63,12 @@ def _check_one(api, canary):
     code, data = api("/api/check", {"url": canary["url"]})
     if code != 200 or data.get("type") != canary["expect"]:
         return False, (data.get("error") or f"HTTP {code}, type={data.get('type')}")[:160]
+    # Optional, stricter expectations for a content type (a photo post must come
+    # back as an image, a carousel / slideshow as a real list):
+    if canary.get("kind") and data.get("kind") != canary["kind"]:
+        return False, f"kind={data.get('kind')}, expected {canary['kind']}"[:160]
+    if canary.get("min_items") and len(data.get("items") or []) < canary["min_items"]:
+        return False, f"{len(data.get('items') or [])} items, expected at least {canary['min_items']}"[:160]
     if not canary.get("download"):
         return True, ""
     code, job = api("/api/download", {"url": canary["url"], "title": "canary", "quality": (data.get("qualities") or ["Best"])[0]})

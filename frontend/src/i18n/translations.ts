@@ -128,6 +128,13 @@ export interface Translations {
       option500: string;
       optionAll: string;
     };
+    youtubeSignIn: {
+      heading: string;
+      description: string;
+      keychainHint: string;
+      off: string;
+      noProfiles: string;
+    };
     exportLogs: {
       heading: string;
       description: string;
@@ -328,13 +335,20 @@ const en: Translations = {
     },
     playlistLimit: {
       heading: "Playlist / Channel Loading Limit",
-      description: "Configure the maximum number of videos to load when parsing a playlist or channel (applies to YouTube, Instagram Reels, etc.). Lower values load faster.",
+      description: "Choose the most videos to list from a YouTube playlist or channel. Lower values load faster. A YouTube Mix always lists 50, and an Instagram profile at most 30.",
       option30: "30 items (Fastest)",
       option50: "50 items",
       option100: "100 items (Recommended)",
       option200: "200 items",
       option500: "500 items",
       optionAll: "All items (Slowest, could hit rate limits)",
+    },
+    youtubeSignIn: {
+      heading: "YouTube sign-in",
+      description: "YouTube sometimes asks for a sign-in before it lets you download. Choose the Chrome profile where you're signed in to YouTube. ViDrop uses that YouTube login only when YouTube asks for it. Off by default.",
+      keychainHint: "macOS may ask for Keychain access. Choose Always Allow, so it asks only once.",
+      off: "Off",
+      noProfiles: "No Chrome profile found on this Mac.",
     },
     exportLogs: {
       heading: "Diagnostic Logs",
@@ -544,6 +558,19 @@ const en: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "2026-10-13",
+        title: "ViDrop 2.0: a new Mac app, eight platforms checked",
+        items: [
+          "A new ViDrop Mac app, with its own name and icon. The first time you open it, your settings are copied over from the old app. The old app's data stays untouched.",
+          "History and your language choice are now kept after you close the Mac app.",
+          "YouTube sign-in is now in Settings. Pick your Chrome profile so YouTube downloads work when YouTube asks you to sign in. It is off by default.",
+          "Pasting a YouTube channel link now lists its videos.",
+          "A failed or cancelled download no longer leaves partial files in your folder, and never touches other files with a similar name.",
+          "Clearer messages for an expired RedNote link, and for \"Audio Only\" on a video with no sound.",
+          "We checked all eight platforms with real links: YouTube, TikTok, Instagram, Facebook, X, Threads, LinkedIn and RedNote. The README now says what works on each.",
+        ],
+      },
       {
         date: "2026-10-13",
         title: "Meet ViDrop: a new look, clearer messages",
@@ -799,13 +826,20 @@ const vi: Translations = {
     },
     playlistLimit: {
       heading: "Giới hạn tải Playlist / Kênh",
-      description: "Cấu hình số lượng video tối đa được tải khi quét playlist hoặc kênh (áp dụng cho YouTube, Instagram Reels, v.v.). Giới hạn nhỏ giúp tải nhanh hơn.",
+      description: "Chọn số video tối đa để liệt kê từ một playlist hoặc kênh YouTube. Giá trị nhỏ tải nhanh hơn. YouTube Mix luôn liệt kê 50 video, và trang Instagram tối đa 30.",
       option30: "30 video (Nhanh nhất)",
       option50: "50 video",
       option100: "100 video (Khuyên dùng)",
       option200: "200 video",
       option500: "500 video",
       optionAll: "Tất cả video (Chậm nhất, có thể bị giới hạn chặn)",
+    },
+    youtubeSignIn: {
+      heading: "Đăng nhập YouTube",
+      description: "Đôi khi YouTube yêu cầu đăng nhập trước khi cho tải. Hãy chọn profile Chrome mà bạn đã đăng nhập YouTube. ViDrop chỉ dùng phiên YouTube đó khi YouTube yêu cầu. Mặc định đang tắt.",
+      keychainHint: "macOS có thể hỏi quyền Keychain. Hãy chọn \"Luôn cho phép\" để chỉ hỏi một lần.",
+      off: "Tắt",
+      noProfiles: "Không tìm thấy profile Chrome nào trên máy Mac này.",
     },
     exportLogs: {
       heading: "Nhật ký chẩn đoán",
@@ -1012,6 +1046,19 @@ const vi: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "13-10-2026",
+        title: "ViDrop 2.0: app Mac mới, tám nền tảng đã kiểm tra",
+        items: [
+          "App ViDrop mới cho Mac, có tên và biểu tượng riêng. Lần đầu mở, cài đặt của bạn được sao chép từ app cũ. Dữ liệu của app cũ vẫn được giữ nguyên.",
+          "Lịch sử và ngôn ngữ bạn chọn giờ được giữ lại sau khi đóng app Mac.",
+          "Đăng nhập YouTube giờ nằm trong Cài đặt. Hãy chọn profile Chrome để tải YouTube được khi YouTube yêu cầu đăng nhập. Mặc định đang tắt.",
+          "Dán link kênh YouTube giờ sẽ liệt kê các video của kênh.",
+          "Tải lỗi hoặc bị hủy không còn để lại file dở trong thư mục của bạn, và không động tới các file khác có tên gần giống.",
+          "Thông báo rõ hơn khi link RedNote hết hạn, và khi chọn \"Audio Only\" cho video không có tiếng.",
+          "Chúng tôi đã kiểm tra cả tám nền tảng bằng link thật: YouTube, TikTok, Instagram, Facebook, X, Threads, LinkedIn và RedNote. README giờ nêu rõ từng nền tảng dùng được những gì.",
+        ],
+      },
       {
         date: "13-10-2026",
         title: "Chào ViDrop: giao diện mới, thông báo rõ ràng hơn",

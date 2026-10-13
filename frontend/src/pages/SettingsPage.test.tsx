@@ -63,6 +63,64 @@ describe("SettingsPage", () => {
     await waitFor(() => expect(screen.getByText("Ngôn ngữ")).toBeInTheDocument());
   });
 
+  it("lists the Chrome profiles for YouTube sign-in, off by default, and saves the choice", async () => {
+    mockedApi.getSettings.mockResolvedValue({
+      path: "/Users/test/Downloads",
+      cookies_path: "",
+      cookies_status: "none",
+      youtube_cookie_source: "",
+      youtube_profiles: [
+        { id: "Default", name: "Default" },
+        { id: "Profile 2", name: "Work" },
+      ],
+    });
+    const user = userEvent.setup({ delay: null });
+    renderSettingsPage();
+
+    expect(await screen.findByText("YouTube sign-in")).toBeInTheDocument();
+    expect(await screen.findByRole("radio", { name: "Work · Profile 2" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Off" })).toBeChecked();
+
+    await user.click(screen.getByRole("radio", { name: "Work · Profile 2" }));
+    expect(mockedApi.updateSettings).toHaveBeenCalledWith({ youtube_cookie_source: "chrome:Profile 2" });
+
+    await user.click(screen.getByRole("radio", { name: "Off" }));
+    expect(mockedApi.updateSettings).toHaveBeenLastCalledWith({ youtube_cookie_source: "" });
+  });
+
+  it("shows the saved Chrome profile as selected and says so when Chrome has no profile", async () => {
+    mockedApi.getSettings.mockResolvedValue({
+      path: "/x",
+      cookies_path: "",
+      cookies_status: "none",
+      youtube_cookie_source: "chrome:Default",
+      youtube_profiles: [{ id: "Default", name: "Default" }],
+    });
+    const { unmount } = renderSettingsPage();
+    await waitFor(() => expect(screen.getByRole("radio", { name: "Default" })).toBeChecked());
+    unmount();
+
+    mockedApi.getSettings.mockResolvedValue({ path: "/x", cookies_path: "", cookies_status: "none", youtube_profiles: [] });
+    renderSettingsPage();
+    expect(await screen.findByText("No Chrome profile found on this Mac.")).toBeInTheDocument();
+  });
+
+  it("goes back to the previous choice if saving the YouTube sign-in fails", async () => {
+    mockedApi.getSettings.mockResolvedValue({
+      path: "/x",
+      cookies_path: "",
+      cookies_status: "none",
+      youtube_cookie_source: "",
+      youtube_profiles: [{ id: "Default", name: "Default" }],
+    });
+    mockedApi.updateSettings.mockRejectedValue(new Error("nope"));
+    const user = userEvent.setup({ delay: null });
+    renderSettingsPage();
+
+    await user.click(await screen.findByRole("radio", { name: "Default" }));
+    await waitFor(() => expect(screen.getByRole("radio", { name: "Off" })).toBeChecked());
+  });
+
   it("loads the configured download path from the server", async () => {
     renderSettingsPage();
     await waitFor(() => expect(mockedApi.getSettings).toHaveBeenCalled());
@@ -97,5 +155,10 @@ describe("SettingsPage in remote mode (non-local hostname)", () => {
 
     expect(screen.queryByText("Target Path")).not.toBeInTheDocument();
     expect(screen.getByText("Language")).toBeInTheDocument();
+  });
+
+  it("hides the YouTube sign-in section (reading a browser's cookies is a Mac-only thing)", () => {
+    renderSettingsPage();
+    expect(screen.queryByText("YouTube sign-in")).not.toBeInTheDocument();
   });
 });

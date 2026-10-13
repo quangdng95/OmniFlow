@@ -60,6 +60,38 @@ def test_a_check_that_returns_the_wrong_kind_fails():
     assert results["tiktok"]["ok"] is False
 
 
+def test_a_photo_canary_must_come_back_as_an_image():
+    canary = {"name": "threads-image", "url": "https://www.threads.com/@a/post/B", "expect": "video", "kind": "image"}
+    ok = selfheal.run_canary(lambda path, body=None: (200, {"type": "video", "kind": "image"}), [canary])
+    wrong = selfheal.run_canary(lambda path, body=None: (200, {"type": "video", "kind": "video"}), [canary])
+    assert ok["threads-image"]["ok"] is True
+    assert wrong["threads-image"]["ok"] is False and "expected image" in wrong["threads-image"]["detail"]
+
+
+def test_a_list_canary_needs_enough_items():
+    canary = {"name": "tiktok-photo", "url": "https://www.tiktok.com/@a/photo/1", "expect": "playlist", "min_items": 2}
+    enough = selfheal.run_canary(lambda path, body=None: (200, {"type": "playlist", "items": [{}, {}, {}]}), [canary])
+    one = selfheal.run_canary(lambda path, body=None: (200, {"type": "playlist", "items": [{}]}), [canary])
+    assert enough["tiktok-photo"]["ok"] is True
+    assert one["tiktok-photo"]["ok"] is False and "at least 2" in one["tiktok-photo"]["detail"]
+
+
+def test_the_shipped_canary_list_is_well_formed_and_covers_every_platform():
+    canaries = selfheal.load_canaries()
+    names = [c["name"] for c in canaries]
+    assert len(names) == len(set(names))
+    for c in canaries:
+        assert c["expect"] in ("video", "playlist") and c["url"].startswith("https://")
+        assert "xsec_token" not in c["url"]  # RedNote links expire, so they would fail on their own
+    from backend import classify, shortlinks
+
+    # a short link (lnkd.in) only reveals its platform once expanded, so skip those here
+    platforms = {classify.get_platform_info(c["url"]) for c in canaries if not shortlinks._is_short(c["url"])}
+    assert platforms == {"YouTube", "TikTok", "Instagram", "Facebook", "X", "Threads", "LinkedIn"}
+    # only the YouTube single video is actually downloaded: keep the canary light
+    assert [c["name"] for c in canaries if c.get("download")] == ["youtube"]
+
+
 def test_a_transient_failure_is_retried_once_before_it_counts():
     calls = {"n": 0}
 
