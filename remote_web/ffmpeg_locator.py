@@ -4,7 +4,7 @@
 for the Linux branch added here).
 
 backend.paths.get_ffmpeg_path() always looks for a file literally named
-`ffmpeg` (vendor/ffmpeg/ffmpeg when unfrozen) - correct only because vidrop.spec already staged
+`ffmpeg` (vendor/ffmpeg/ffmpeg when unfrozen) - correct only because packaging/vidrop.spec already staged
 the matching-architecture binary under that exact name at BUILD time.
 remote_web runs unfrozen (`python3 -m remote_web.app`, no PyInstaller step),
 so nothing performs that selection - this module does its own resolution

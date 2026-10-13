@@ -69,9 +69,9 @@ cd ..
 # 3. Build standalone macOS app using PyInstaller
 echo -e "${BLUE}[4/6] Packaging desktop app with PyInstaller...${NC}"
 if [ -n "$PYTHON_BIN" ]; then
-    $ARCH_PREFIX "$PYTHON_BIN" -m PyInstaller vidrop.spec --noconfirm --clean --distpath "$DIST_DIR"
+    $ARCH_PREFIX "$PYTHON_BIN" -m PyInstaller packaging/vidrop.spec --noconfirm --clean --distpath "$DIST_DIR"
 else
-    pyinstaller vidrop.spec --noconfirm --clean --distpath "$DIST_DIR"
+    pyinstaller packaging/vidrop.spec --noconfirm --clean --distpath "$DIST_DIR"
 fi
 
 # 4. Strip extended attributes and sign ad-hoc in a temp folder to bypass iCloud FileProvider issues

@@ -40,6 +40,6 @@ certifi
 # Testing (tests/test_server.py)
 pytest
 
-# Packaging the standalone macOS .app (see vidrop.spec / rules/packaging.md).
+# Packaging the standalone macOS .app (see packaging/vidrop.spec / rules/packaging.md).
 # Build-time only — not needed to run server.py/desktop_app.py from source.
 pyinstaller

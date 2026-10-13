@@ -81,7 +81,7 @@ else:
 
 # The vendored ffmpeg binaries live in vendor/ffmpeg/ (ffmpeg = arm64, ffmpeg-x86_64 = Intel,
 # libs/ = the arm64 binary's dylibs; libs must stay a sibling of ffmpeg because the binary's
-# Mach-O load commands say @executable_path/libs/*.dylib). vidrop.spec flattens the chosen binary to
+# Mach-O load commands say @executable_path/libs/*.dylib). packaging/vidrop.spec flattens the chosen binary to
 # <bundle>/ffmpeg + <bundle>/libs, so only the unfrozen (dev / cloud) case needs this folder.
 VENDOR_FFMPEG_DIR = os.path.join(BASE_DIR, "vendor", "ffmpeg")
 
