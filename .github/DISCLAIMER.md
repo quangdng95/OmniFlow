@@ -4,6 +4,15 @@
 
 ViDrop is a **download utility tool only**. It provides functionality to download media and video content from various platforms. Nothing more.
 
+## Where Your Links Are Processed
+
+ViDrop runs in two modes:
+
+- **Mac app** — every link is processed on your own machine.
+- **Web version (`remote_web`)** — links are processed on a server, and you need an access token to use it.
+
+In both modes, a TikTok link that can't be read directly is sent to the third-party service tikwm.com. The responsibilities below apply in both modes.
+
 ## User Responsibility
 
 By using this tool, you acknowledge and agree:

@@ -188,9 +188,10 @@ Những gap còn tồn đọng, được ghi nhận trung thực thay vì giấu
 - [ ] App iOS native
 
 > **Về 2 mục app di động native ở trên:** đây vẫn là ý tưởng sớm, mang tính khám phá, chưa cam
-> kết thực hiện. `yt-dlp` là một công cụ Python, và toàn bộ thiết kế của dự án này chủ đích tránh
-> dùng server trung tâm (xem [Disclaimer](.github/DISCLAIMER.md)) nên mỗi lượt tải chạy cục bộ,
-> trên chính máy của người dùng — ràng buộc đó không biến mất chỉ vì thiết bị là điện thoại. Cả
+> kết thực hiện. `yt-dlp` là một công cụ Python, nên app di động native sẽ cần một server làm phần xử
+> lý, như bản web. Hiện ViDrop có hai chế độ: app Mac xử lý mọi link ngay trên máy của người dùng,
+> còn bản web (`remote_web`) xử lý link trên server, có access token (xem
+> [Disclaimer](.github/DISCLAIMER.md)). Cả
 > App Store lẫn Play Store đều có lịch sử rõ ràng về việc từ chối hoặc gỡ bỏ các app "tải video"
 > vì lo ngại bản quyền/ToS, nên một app di động native có thể sẽ phải phân phối ngoài store chính
 > thức (sideloading, kiểu phân phối như TestFlight) thay vì mặc định có sẵn trên store thông

@@ -186,9 +186,10 @@ Known gaps, tracked honestly rather than hidden.
 - [ ] Native iOS app
 
 > **On the two native mobile app items:** these are early and exploratory, not committed.
-> `yt-dlp` is a Python tool, and this project's whole design deliberately avoids a central server
-> (see [Disclaimer](.github/DISCLAIMER.md)) so each download runs locally, on the user's own
-> machine — that constraint doesn't disappear just because the device is a phone. Both the App
+> `yt-dlp` is a Python tool, so a native phone app would need a server to do the work, as the web
+> version does. ViDrop has two modes today: the Mac app processes every link on the user's own
+> machine, and the web version (`remote_web`) processes links on a server, behind an access token
+> (see [Disclaimer](.github/DISCLAIMER.md)). Both the App
 > Store and Play Store have a well-documented history of rejecting or removing "video downloader"
 > apps over copyright/ToS concerns, so a native mobile app may end up needing to ship outside the
 > official stores (sideloading, TestFlight-style distribution) rather than assuming normal store
