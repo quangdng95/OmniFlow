@@ -116,3 +116,65 @@ def test_download_file_can_be_fetched_a_second_time(client, tmp_path):
     assert first.status_code == 200
     assert second.status_code == 200
     assert second.data == b"fake mp4 bytes"
+
+
+# ---- streaming contract: the browser downloads this URL straight to disk ----
+
+def _done_job(tmp_path, filename, payload=b"0123456789" * 100):
+    job_dir = tmp_path / "omniflow-remote-stream"
+    job_dir.mkdir()
+    file_path = job_dir / "stored.mp4"
+    file_path.write_bytes(payload)
+    jobs_module.jobs["job1"] = {"status": "done", "filepath": str(file_path), "filename": filename}
+    return payload
+
+
+def test_download_file_sends_length_range_support_and_attachment_headers(client, tmp_path):
+    payload = _done_job(tmp_path, "video.mp4")
+    resp = client.get("/api/download-file/job1")
+    assert resp.headers["Content-Length"] == str(len(payload))
+    assert resp.headers["Accept-Ranges"] == "bytes"
+    assert resp.headers["Content-Disposition"].startswith("attachment;")
+    assert 'filename=video.mp4' in resp.headers["Content-Disposition"]
+
+
+def test_download_file_answers_a_range_request_with_206(client, tmp_path):
+    payload = _done_job(tmp_path, "video.mp4")
+    resp = client.get("/api/download-file/job1", headers={"Range": "bytes=10-19"})
+    assert resp.status_code == 206
+    assert resp.data == payload[10:20]
+    assert resp.headers["Content-Range"] == f"bytes 10-19/{len(payload)}"
+
+
+def test_download_file_unicode_name_gets_a_utf8_filename_star(client, tmp_path):
+    _done_job(tmp_path, "한국어 영상 – Tiếng Việt.mp4")
+    disposition = client.get("/api/download-file/job1").headers["Content-Disposition"]
+    assert "filename*=UTF-8''" in disposition
+    assert "%ED%95%9C%EA%B5%AD%EC%96%B4" in disposition  # 한국어
+    assert "Ti%E1%BA%BFng" in disposition  # Tiếng
+    assert disposition.encode("latin-1")  # the whole header is plain ASCII/latin-1 safe
+
+
+def test_download_file_is_streamed_not_buffered(client, tmp_path):
+    _done_job(tmp_path, "video.mp4")
+    resp = client.get("/api/download-file/job1", buffered=False)
+    assert resp.is_streamed
+
+
+def test_download_file_missing_on_disk_returns_404(client, tmp_path):
+    _done_job(tmp_path, "video.mp4")
+    os.remove(jobs_module.jobs["job1"]["filepath"])
+    assert client.get("/api/download-file/job1").status_code == 404
+
+
+def test_download_file_path_traversal_in_job_id_is_not_served(client, tmp_path):
+    _done_job(tmp_path, "video.mp4")
+    for evil in ("../../etc/passwd", "..%2F..%2Fetc%2Fpasswd", "job1/../../../etc/passwd"):
+        resp = client.get(f"/api/download-file/{evil}")
+        assert resp.status_code in (404, 308)
+        assert b"root:" not in resp.data
+
+
+def test_download_file_requires_trust():
+    remote_app.config["TESTING"] = True
+    assert remote_app.test_client().get("/api/download-file/job1").status_code == 401
