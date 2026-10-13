@@ -299,6 +299,8 @@ def check_link():
                 if rn_candidates:
                     media = rednote.fetch_rednote_post_any(url, rn_candidates)
                     return jsonify(instagram.instagram_check_response(url, media))
+            except rednote.RedNoteExpiredError:
+                return jsonify({"error": messages.text("rednote_expired", lang)}), 400
             except rednote.RedNoteAuthError:
                 return jsonify({"error": messages.text("rednote_auth", lang)}), 400
             except Exception:
@@ -566,7 +568,7 @@ def start_download():
         except yt_dlp.utils.DownloadCancelled:
             jobs.jobs[job_id]["status"] = "cancelled"
             jobs.jobs[job_id]["text"] = "Cancelled"
-            download.cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext, final_output_path)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
@@ -630,6 +632,10 @@ def start_download():
                     jobs.jobs[job_id]["status"] = "cancelled"
                     jobs.jobs[job_id]["text"] = "Cancelled"
                     return
+                except rednote.RedNoteExpiredError:
+                    jobs.jobs[job_id]["status"] = "error"
+                    jobs.jobs[job_id]["text"] = messages.text("rednote_expired", lang)
+                    return
                 except rednote.RedNoteAuthError:
                     jobs.jobs[job_id]["status"] = "error"
                     jobs.jobs[job_id]["text"] = messages.text("rednote_auth", lang)
@@ -649,14 +655,14 @@ def start_download():
             print(f"[download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
             jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path, lang=lang)
-            download.cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext, final_output_path)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
         except cookies.YouTubeCookieAccessError as e:
             jobs.jobs[job_id]["status"] = "error"
             jobs.jobs[job_id]["text"] = extraction.describe_extraction_error(url, e, cookies_path, lang=lang)
-            download.cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext, final_output_path)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return
@@ -664,7 +670,7 @@ def start_download():
             print(f"[download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"
             jobs.jobs[job_id]["text"] = str(e) or "Download failed"
-            download.cleanup_partial_download(output_path_no_ext)
+            download.cleanup_partial_download(output_path_no_ext, final_output_path)
             if remote_temp_dir:
                 shutil.rmtree(remote_temp_dir, ignore_errors=True)
             return

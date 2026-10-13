@@ -123,6 +123,8 @@ def check_link():
                 if rn_candidates:
                     media = rednote.fetch_rednote_post_any(url, rn_candidates)
                     return jsonify(instagram.instagram_check_response(url, media))
+            except rednote.RedNoteExpiredError:
+                return jsonify({"error": messages.text("rednote_expired", lang)}), 400
             except rednote.RedNoteAuthError:
                 return jsonify({"error": messages.text("rednote_auth", lang)}), 400
             except Exception:
@@ -402,6 +404,10 @@ def start_download():
                 except yt_dlp.utils.DownloadCancelled:
                     jobs.jobs[job_id]["status"] = "cancelled"
                     jobs.jobs[job_id]["text"] = "Cancelled"
+                    return
+                except rednote.RedNoteExpiredError:
+                    jobs.jobs[job_id]["status"] = "error"
+                    jobs.jobs[job_id]["text"] = messages.text("rednote_expired", lang)
                     return
                 except rednote.RedNoteAuthError:
                     jobs.jobs[job_id]["status"] = "error"

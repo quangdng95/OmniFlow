@@ -104,6 +104,26 @@ def test_a_redirect_to_the_login_page_means_a_session_is_required(monkeypatch, t
         rednote.fetch_rednote_post(URL, _cookies(tmp_path))
 
 
+def test_a_redirect_to_the_404_page_means_the_share_link_expired(monkeypatch, tmp_path):
+    # Live 2026-10-13: a share link whose xsec_token expired lands on /404?source=/404/sec_...
+    _serve(monkeypatch, "<html>not found</html>", final_url="https://www.rednote.com/404?source=/404/sec_x&redirectPath=y")
+    with pytest.raises(rednote.RedNoteExpiredError):
+        rednote.fetch_rednote_post(URL, _cookies(tmp_path))
+
+
+def test_an_expired_link_is_not_retried_with_every_account(monkeypatch):
+    calls = []
+
+    def fake(url, cookiefile):
+        calls.append(cookiefile)
+        raise rednote.RedNoteExpiredError("expired")
+
+    monkeypatch.setattr(rednote, "fetch_rednote_post", fake)
+    with pytest.raises(rednote.RedNoteExpiredError):
+        rednote.fetch_rednote_post_any(URL, ["a.txt", "b.txt", "c.txt"])
+    assert calls == ["a.txt"]
+
+
 def test_an_image_note_lists_every_image(monkeypatch, tmp_path):
     note = {"type": "normal", "title": "Photos", "imageList": [
         {"urlDefault": f"http://sns-web.rednotecdn.com/{n}.jpg", "infoList": [{"url": f"http://x/{n}-small"}]} for n in (1, 2, 3)

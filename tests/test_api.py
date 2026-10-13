@@ -845,6 +845,22 @@ def test_check_link_rednote_logged_out_session_gets_the_login_message(client, mo
     assert resp.status_code == 400 and "RedNote" in resp.get_json()["error"]
 
 
+def test_check_link_rednote_expired_link_says_so_in_both_languages(client, monkeypatch):
+    rednote_module = _rednote_yt_dlp_fails(monkeypatch)
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: ["/rn.txt"])
+
+    def expired(url, cfs):
+        raise rednote_module.RedNoteExpiredError("404")
+
+    monkeypatch.setattr(rednote_module, "fetch_rednote_post_any", expired)
+    en = client.post("/api/check", json={"url": RN_URL}, headers={"X-Language": "en"})
+    vi = client.post("/api/check", json={"url": RN_URL}, headers={"X-Language": "vi"})
+    assert en.status_code == vi.status_code == 400
+    assert "expired" in en.get_json()["error"] and "fresh share link" in en.get_json()["error"]
+    assert "hết hạn" in vi.get_json()["error"]
+    assert "github.com" not in en.get_json()["error"].lower()
+
+
 def test_start_download_rednote_saves_the_video_via_the_resolver(client, monkeypatch, tmp_path):
     rednote_module = _rednote_yt_dlp_fails(monkeypatch)
     monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})

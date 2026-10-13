@@ -625,3 +625,86 @@ def test_the_rename_never_overwrites_an_existing_file(tmp_path):
     assert fixed != str(tmp_path / "Deck (1).png")
     assert (tmp_path / "Deck (1).png").read_bytes() == b"existing"
     assert open(fixed, "rb").read() == PNG_BYTES
+
+
+# ---- cleanup of a failed / cancelled download (live 2026-10-13: a 403 left a silent .mp4 behind) ----
+
+
+def _touch(folder, *names):
+    for name in names:
+        (folder / name).write_text("x")
+
+
+def test_cleanup_removes_this_downloads_temporary_files_and_its_final_file(tmp_path):
+    stem = str(tmp_path / "My Video")
+    _touch(
+        tmp_path,
+        "My Video.f137.mp4", "My Video.f251.webm", "My Video.f251-drc.webm.part", "My Video.fhls-720p.mp4",
+        "My Video.mp4.part", "My Video.mp4.ytdl", "My Video.temp.mp4", "My Video.part", "My Video.mp4",
+    )
+    download_module.cleanup_partial_download(stem, stem + ".mp4")
+    assert os.listdir(tmp_path) == []
+
+
+def test_cleanup_never_touches_other_files_that_merely_share_the_name_start(tmp_path):
+    keep = ["My Video 2.mp4", "My Video (1).mp4", "My Video.mp3", "My Video.txt", "My Video.final.mp4", "My Videos.f137.mp4", "Other.f137.mp4"]
+    _touch(tmp_path, *keep, "My Video.f137.mp4")
+    download_module.cleanup_partial_download(str(tmp_path / "My Video"), str(tmp_path / "My Video.mp4"))
+    assert sorted(os.listdir(tmp_path)) == sorted(keep)
+
+
+def test_cleanup_copes_with_a_missing_folder_and_a_missing_final_file(tmp_path):
+    download_module.cleanup_partial_download(str(tmp_path / "no-such-dir" / "Clip"), str(tmp_path / "no-such-dir" / "Clip.mp4"))
+
+
+def _fake_ydl_that_leaves_files_then(error, folder, stem):
+    class FakeYDL:
+        def __init__(self, opts):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def download(self, urls):
+            for name in (f"{stem}.f137.mp4", f"{stem}.f251.webm.part"):
+                (folder / name).write_text("half")
+            raise error
+
+    return FakeYDL
+
+
+@pytest.mark.parametrize("error", [
+    yt_dlp.utils.DownloadError("ERROR: unable to download video data: HTTP Error 403: Forbidden"),
+    yt_dlp.utils.DownloadCancelled("cancelled by user"),
+])
+def test_a_failed_or_cancelled_batch_item_leaves_nothing_behind(tmp_path, monkeypatch, error):
+    jobs_module.jobs["j1"] = {"cancelled": False}
+    (tmp_path / "Clip 2.mp4").write_text("someone else's file")
+    monkeypatch.setattr(download_module.yt_dlp, "YoutubeDL", _fake_ydl_that_leaves_files_then(error, tmp_path, "Clip"))
+    with pytest.raises(type(error)):
+        download_module.download_one_video("https://youtu.be/x", str(tmp_path), "Clip", "Best", "/fake/ffmpeg", "j1")
+    assert os.listdir(tmp_path) == ["Clip 2.mp4"]
+
+
+def test_a_successful_batch_item_keeps_its_file(tmp_path, monkeypatch):
+    jobs_module.jobs["j2"] = {"cancelled": False}
+
+    class FakeYDL:
+        def __init__(self, opts):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def download(self, urls):
+            (tmp_path / "Clip.mp3").write_text("audio")
+
+    monkeypatch.setattr(download_module.yt_dlp, "YoutubeDL", FakeYDL)
+    out = download_module.download_one_video("https://youtu.be/x", str(tmp_path), "Clip", "Audio Only", "/fake/ffmpeg", "j2")
+    assert out == str(tmp_path / "Clip.mp3") and os.listdir(tmp_path) == ["Clip.mp3"]
