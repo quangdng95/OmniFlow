@@ -48,7 +48,7 @@ describe("Header", () => {
 
   it("keeps the logo at half its old size (23px icon, was 46px)", () => {
     renderHeader();
-    const logo = screen.getByAltText("Logo");
+    const logo = screen.getByAltText("ViDrop");
     expect(logo).toHaveAttribute("width", "23");
     expect(logo).toHaveAttribute("height", "23");
   });

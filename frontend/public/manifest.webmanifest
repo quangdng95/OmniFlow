@@ -3,10 +3,11 @@
   "short_name": "ViDrop",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f5f3",
-  "theme_color": "#0d9585",
+  "background_color": "#fafaf7",
+  "theme_color": "#ffd60a",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
