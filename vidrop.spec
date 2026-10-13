@@ -12,9 +12,9 @@ import shutil
 
 from PyInstaller.utils.hooks import collect_all
 
-# Two vendored ffmpeg binaries live at the repo root: `ffmpeg` (arm64-native,
+# Two vendored ffmpeg binaries live in vendor/ffmpeg/: `ffmpeg` (arm64-native,
 # built with dylibbundler from Homebrew's own ffmpeg so it's self-contained
-# via its sibling ffmpeg-libs/ dylibs - no Homebrew needed at runtime; see
+# via its sibling libs/ dylibs - no Homebrew needed at runtime; see
 # MISTAKES.md 2026-08-29) for Apple Silicon, and `ffmpeg-x86_64` (statically
 # linked codecs, zero external dylib deps) for Intel. Build on the machine
 # matching the target architecture - this spec picks the matching source
@@ -29,7 +29,8 @@ with open("frontend/package.json") as _package_file:
     VERSION = json.load(_package_file)["version"]
 
 _IS_ARM64 = platform.machine() == "arm64"
-_FFMPEG_SOURCE = "ffmpeg" if _IS_ARM64 else "ffmpeg-x86_64"
+_FFMPEG_DIR = "vendor/ffmpeg"
+_FFMPEG_SOURCE = os.path.join(_FFMPEG_DIR, "ffmpeg" if _IS_ARM64 else "ffmpeg-x86_64")
 _STAGE_DIR = ".ffmpeg_stage"
 _STAGED_FFMPEG = os.path.join(_STAGE_DIR, "ffmpeg")
 os.makedirs(_STAGE_DIR, exist_ok=True)
@@ -48,7 +49,7 @@ if _IS_ARM64:
     # MISTAKES.md - a folder-name mismatch reproduced exactly this). The
     # x86_64 binary needs no equivalent - confirmed via `otool -L` it only
     # links system frameworks (its codecs are statically linked in).
-    datas.append(("libs/*.dylib", "libs"))
+    datas.append((_FFMPEG_DIR + "/libs/*.dylib", "libs"))  # lands next to the bundled ffmpeg
 binaries = []
 hiddenimports = []
 

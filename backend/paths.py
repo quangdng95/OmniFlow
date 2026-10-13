@@ -53,8 +53,8 @@ os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 os.environ["YTDLP_NO_PLUGINS"] = "1"
 
 PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
-# The repo root — where server.py, config.json (dev), frontend/ and the
-# vendored ffmpeg live. This file sits one level down (backend/), so anchor
+# The repo root — where server.py, config.json (dev) and frontend/ live
+# (the vendored ffmpeg is in vendor/ffmpeg/). This file sits one level down (backend/), so anchor
 # one directory up; a unit test pins this to server.py's own directory.
 BASE_DIR = os.path.dirname(PACKAGE_DIR)
 # When packaged with PyInstaller, bundled read-only resources (the built
@@ -79,7 +79,16 @@ else:
     LOG_DIR = os.path.join(BASE_DIR, ".logs")
 
 
+# The vendored ffmpeg binaries live in vendor/ffmpeg/ (ffmpeg = arm64, ffmpeg-x86_64 = Intel,
+# libs/ = the arm64 binary's dylibs; libs must stay a sibling of ffmpeg because the binary's
+# Mach-O load commands say @executable_path/libs/*.dylib). vidrop.spec flattens the chosen binary to
+# <bundle>/ffmpeg + <bundle>/libs, so only the unfrozen (dev / cloud) case needs this folder.
+VENDOR_FFMPEG_DIR = os.path.join(BASE_DIR, "vendor", "ffmpeg")
+
+
 def resource_path(relative_path):
+    if relative_path == "ffmpeg" and not getattr(sys, "frozen", False):
+        return os.path.join(VENDOR_FFMPEG_DIR, "ffmpeg")
     return os.path.join(RESOURCE_BASE, relative_path)
 
 

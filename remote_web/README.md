@@ -61,8 +61,7 @@ deployment gets pushed up from a Mac (see below).
    python3 -c "from remote_web.ffmpeg_locator import resolve_ffmpeg_binary; print(resolve_ffmpeg_binary())"
    ```
    This must print a real path, not `None`. If it prints `None`, re-check
-   that both `./ffmpeg` (arm64) and `./ffmpeg-x86_64` (Intel) are present at
-   the repo root and executable — see
+   that both `vendor/ffmpeg/ffmpeg` (arm64) and `vendor/ffmpeg/ffmpeg-x86_64` (Intel) are present and executable — see
    `.claude/rules/packaging.md`'s "Two-architecture ffmpeg" section.
 6. Confirm this Mac has a live, logged-in Instagram/Threads session in an
    installed browser (Chrome/Brave/Edge/Vivaldi/Opera — **not** Safari, see

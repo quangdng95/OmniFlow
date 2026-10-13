@@ -292,7 +292,7 @@ def detect_video_codec(path, ffmpeg_bin):
     # Returns the video stream's codec name (lowercased) for `path`, or None if
     # it can't be determined. Uses the bundled ffmpeg itself (`-i` prints stream
     # info to stderr) so we never depend on a separate ffprobe binary being
-    # present - only ./ffmpeg is vendored.
+    # present - only vendor/ffmpeg/ffmpeg is vendored.
     try:
         result = subprocess.run(
             [ffmpeg_bin, "-hide_banner", "-i", path],

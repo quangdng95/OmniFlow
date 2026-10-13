@@ -10,7 +10,8 @@ from remote_web import ffmpeg_locator
 
 
 def _make_fake_binary(tmp_path, name):
-    fake = tmp_path / name
+    (tmp_path / "vendor" / "ffmpeg").mkdir(parents=True, exist_ok=True)
+    fake = tmp_path / "vendor" / "ffmpeg" / name
     fake.write_text("#!/bin/sh\necho fake\n")
     fake.chmod(0o755)
     return str(fake)
@@ -22,7 +23,7 @@ def test_resolve_ffmpeg_binary_picks_arm64_binary_on_arm64(tmp_path, monkeypatch
     monkeypatch.setattr(ffmpeg_locator.platform, "machine", lambda: "arm64")
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: None)
     resolved = ffmpeg_locator.resolve_ffmpeg_binary()
-    assert resolved == str(tmp_path / "ffmpeg")
+    assert resolved == str(tmp_path / "vendor" / "ffmpeg" / "ffmpeg")
 
 
 def test_resolve_ffmpeg_binary_picks_x86_64_binary_on_intel(tmp_path, monkeypatch):
@@ -31,7 +32,7 @@ def test_resolve_ffmpeg_binary_picks_x86_64_binary_on_intel(tmp_path, monkeypatc
     monkeypatch.setattr(ffmpeg_locator.platform, "machine", lambda: "x86_64")
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: None)
     resolved = ffmpeg_locator.resolve_ffmpeg_binary()
-    assert resolved == str(tmp_path / "ffmpeg-x86_64")
+    assert resolved == str(tmp_path / "vendor" / "ffmpeg" / "ffmpeg-x86_64")
 
 
 def test_resolve_ffmpeg_binary_returns_none_when_missing(tmp_path, monkeypatch):

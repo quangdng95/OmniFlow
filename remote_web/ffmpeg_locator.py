@@ -4,7 +4,7 @@
 for the Linux branch added here).
 
 backend.paths.get_ffmpeg_path() always looks for a file literally named
-`ffmpeg` at the repo root - correct only because vidrop.spec already staged
+`ffmpeg` (vendor/ffmpeg/ffmpeg when unfrozen) - correct only because vidrop.spec already staged
 the matching-architecture binary under that exact name at BUILD time.
 remote_web runs unfrozen (`python3 -m remote_web.app`, no PyInstaller step),
 so nothing performs that selection - this module does its own resolution
@@ -12,8 +12,8 @@ instead, entirely inside remote_web/, and never calls
 backend.paths.get_ffmpeg_path().
 
 Two platforms are supported:
-- macOS (Darwin): the vendored, Git-LFS-tracked binaries at the repo root -
-  ./ffmpeg (arm64) and ./ffmpeg-x86_64 (Intel), picked by platform.machine().
+- macOS (Darwin): the vendored, Git-LFS-tracked binaries in vendor/ffmpeg/ -
+  vendor/ffmpeg/ffmpeg (arm64) and vendor/ffmpeg/ffmpeg-x86_64 (Intel), picked by platform.machine().
 - Linux: no vendoring at all - a cloud VPS deployment installs ffmpeg via its
   system package manager (`apt install ffmpeg`), which puts a working binary
   on PATH. remote_web always runs from a source checkout on Linux too (never
@@ -49,7 +49,7 @@ def resolve_ffmpeg_binary():
         return None
 
     name = "ffmpeg" if platform.machine() == "arm64" else "ffmpeg-x86_64"
-    candidate = os.path.join(paths.BASE_DIR, name)
+    candidate = os.path.join(paths.BASE_DIR, "vendor", "ffmpeg", name)
     if not os.path.exists(candidate):
         return None
     if not os.access(candidate, os.X_OK):
