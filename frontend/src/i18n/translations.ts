@@ -573,6 +573,7 @@ const en: Translations = {
           "On iPhone and iPad, \"Save to Photos\" now opens the share sheet so you can add the video straight to Photos. The button shows \"Preparing…\" with a percentage first. Files over 400 MB go to the Files app instead, and the message tells you how to move them to Photos.",
           "On Android and on a computer, the file downloads directly, with a message that says where to find it.",
           "ViDrop has one icon everywhere: the browser tab, the Home Screen and link previews.",
+          "After you save a video on a phone, the page now confirms it (\"Saved to your device\"). On a phone, tapping the empty link field pastes the link you just copied.",
         ],
       },
       {
@@ -1083,6 +1084,7 @@ const vi: Translations = {
           "Trên iPhone và iPad, nút \"Lưu vào Ảnh\" giờ mở bảng chia sẻ để bạn thêm video thẳng vào Ảnh. Nút hiện \"Đang chuẩn bị…\" kèm phần trăm trước. Tệp trên 400 MB được tải về app Tệp, kèm hướng dẫn chuyển sang Ảnh.",
           "Trên Android và máy tính, tệp được tải thẳng về, kèm thông báo cho biết tìm tệp ở đâu.",
           "ViDrop dùng một biểu tượng duy nhất ở mọi nơi: thẻ trình duyệt, Màn hình chính và bản xem trước liên kết.",
+          "Sau khi lưu video trên điện thoại, trang giờ báo \"Đã lưu về máy của bạn\". Trên điện thoại, chạm vào ô liên kết đang trống sẽ dán liên kết bạn vừa sao chép.",
         ],
       },
       {

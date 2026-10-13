@@ -16,6 +16,8 @@ interface UrlInputCardProps {
   status: UrlInputStatus;
   onPaste: () => void;
   onClear: () => void;
+  // Tapping the empty field is a real user gesture, the one moment a phone lets the page read the clipboard.
+  onInputFocus?: () => void;
   clearDisabled?: boolean;
   pasting?: boolean;
   qualities?: string[];
@@ -51,6 +53,7 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
       status,
       onPaste,
       onClear,
+      onInputFocus,
       clearDisabled = false,
       pasting = false,
       qualities = [],
@@ -79,6 +82,7 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
               ref={ref}
               value={value}
               onChange={(e) => onChange(e.target.value)}
+              onFocus={onInputFocus}
               placeholder={t.urlInput.placeholder}
               disabled={status === "checking"}
               aria-invalid={isError || undefined}

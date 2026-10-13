@@ -339,6 +339,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   const lastAutoPastedRef = useRef<string>("");
   const urlRef = useRef(url);
   urlRef.current = url;
+  const tryAutoPasteRef = useRef<() => Promise<void>>(async () => {});
   useEffect(() => {
     const tryAutoPaste = async () => {
       if (urlRef.current.trim() || document.visibilityState !== "visible") return;
@@ -355,10 +356,14 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
         // Permission denied / no gesture / empty clipboard: leave the input alone.
       }
     };
+    tryAutoPasteRef.current = tryAutoPaste;
     void tryAutoPaste();
+    // A phone often is not "focused" yet at the instant the tab becomes visible, so try once more shortly after.
+    const retry = setTimeout(() => void tryAutoPaste(), 600);
     window.addEventListener("focus", tryAutoPaste);
     document.addEventListener("visibilitychange", tryAutoPaste);
     return () => {
+      clearTimeout(retry);
       window.removeEventListener("focus", tryAutoPaste);
       document.removeEventListener("visibilitychange", tryAutoPaste);
     };
@@ -476,6 +481,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
               status={inputStatus}
               onPaste={handlePaste}
               onClear={handleClear}
+              onInputFocus={() => void tryAutoPasteRef.current()}
               clearDisabled={downloadState === "downloading" || busy}
               pasting={pasting}
               qualities={currentQualities}
