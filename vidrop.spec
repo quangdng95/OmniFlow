@@ -118,7 +118,8 @@ app = BUNDLE(
         "CFBundleName": "ViDrop",
         "CFBundleDisplayName": "ViDrop",
         "NSHighResolutionCapable": True,
-        "CFBundleShortVersionString": "1.0.0",
+        "CFBundleShortVersionString": "2.0.0",
+        "CFBundleVersion": "2.0.0",
         "LSMinimumSystemVersion": "11.0",
     },
 )

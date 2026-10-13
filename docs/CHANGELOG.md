@@ -5,6 +5,56 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-13 · ViDrop 2.0.0
+
+### Added
+
+- [x] **Mac app, new identity** — bundle ID `com.vidrop.app`, `ViDrop.app`, a new square yellow
+  icon (`Assets/Logo/ViDrop.icns`; the older logo files stay), DMGs named per chip:
+  `ViDrop-AppleSilicon.dmg` and `ViDrop-Intel.dmg` (`scripts/build.sh` names them by architecture
+  and can build the Intel app via `PYTHON_BIN` / `ARCH_PREFIX` / `DIST_DIR`).
+- [x] **Data moved to `~/Library/Application Support/ViDrop`** (logs in `~/Library/Logs/ViDrop`).
+  On the first launch `backend/migration.py` COPIES the old `OmniFlow` directory: built in a temp
+  directory and renamed into place, skips temp cookie jars and caches, writes
+  `.migrated-from-omniflow`, never raises, never touches the old directory.
+- [x] **Settings → YouTube sign-in** (Mac app, off by default) — choose the Chrome profile whose
+  YouTube login is used when YouTube answers "Sign in to confirm you're not a bot".
+  `/api/settings` validates `chrome:Default` / `chrome:Profile N`, lists the profiles (display
+  names only, never the email) and refuses the setting for a remote visitor.
+- [x] `docs/PLATFORM_SUPPORT.md` — what works on each of the 8 platforms, from real-link checks.
+- [x] Cloud canary covers more content types (YouTube Mix, TikTok photo slideshow, Instagram
+  carousel, Threads image, LinkedIn video, Facebook `share/r/`), with optional `kind` / `min_items`
+  expectations. Check-only; RedNote stays out because its links expire.
+
+### Fixed
+
+- [x] **History and the language choice were never kept in the Mac app.** pywebview's macOS default
+  (`private_mode=True`) wipes the web view's saved data at every launch; the app now starts with
+  `private_mode=False`. (`storage_path` is ignored by the macOS backend, so no old store existed to
+  migrate.)
+- [x] A pasted YouTube channel link (`/@name`, `/channel/UC…`, `/c/…`, `/user/…`) listed three empty
+  tabs (Videos / Live / Shorts); it is now listed through `<channel>/videos`
+  (`classify.normalize_youtube_channel_url`). Downloads still use the pasted link.
+- [x] A failed or cancelled batch item left its video-only `.f137.mp4` / `.part` file in the save
+  folder. `cleanup_partial_download` now runs there too and removes only this download's own
+  temporary files and its exact final file; it used to delete by name prefix, which could remove
+  other files such as `Title 2.mp4`.
+- [x] RedNote share links with an expired `xsec_token` land on `/404?source=/404/sec_…`; the message
+  now says the link expired (EN/VI, desktop and cloud).
+- [x] "Audio Only" on a video with no sound track (a silent X clip) said "could not process this
+  link"; it now says there is no audio.
+- [x] The YouTube sign-in error told people to sign in to Chrome and retry although nothing could
+  read Chrome unless `youtube_cookie_source` was added to `config.json` by hand; it now points at
+  the new setting.
+- [x] The Settings text for the playlist limit says what the code does (a Mix lists 50, an Instagram
+  profile at most 30).
+
+### Known limits
+
+- Instagram profile / Reels lists can be refused with `429`; single posts, Reels and carousels work.
+- YouTube may need the Chrome sign-in above; an occasional `403` on a download goes away on retry.
+- TikTok depends on tikwm.com for Photo Mode and as the fallback for videos.
+
 ## 2026-10-13
 
 ### Changed
