@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import sys
 
 from backend import paths
@@ -62,9 +63,44 @@ def load_session():
     return {"path": path_val, "cookies_path": cookies_path_val, "browser": browser_val, "playlist_limit": playlist_limit_val}
 
 
+_MANAGED_KEYS = ("path", "cookies_path", "browser", "playlist_limit")
+
+# "chrome:<profile folder>", e.g. "chrome:Default" / "chrome:Profile 1". Empty
+# (the default) means: never read browser cookies for YouTube. Only Chrome and
+# only an exact profile folder name - never a path, never a scan.
+YOUTUBE_COOKIE_SOURCE_KEY = "youtube_cookie_source"
+_YOUTUBE_SOURCE_RE = re.compile(r"^chrome:(Default|Profile \d+)$")
+
+
+def get_youtube_cookie_source():
+    # Returns (browser, profile) or None. Reads the raw file rather than
+    # load_session() so a lookup never has the side effects load_session has.
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            raw = json.load(f).get(YOUTUBE_COOKIE_SOURCE_KEY, "")
+    except (OSError, ValueError, AttributeError):
+        return None
+    if not isinstance(raw, str) or not _YOUTUBE_SOURCE_RE.match(raw):
+        return None
+    browser, profile = raw.split(":", 1)
+    return browser, profile
+
+
 def save_session(path_val, cookies_path_val="", browser_val="chrome", playlist_limit_val=100):
+    # Keys this function does not own (e.g. youtube_cookie_source) are carried
+    # over: rewriting the file from only the four managed keys silently dropped
+    # them.
+    extra = {}
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            existing = json.load(f)
+        if isinstance(existing, dict):
+            extra = {k: v for k, v in existing.items() if k not in _MANAGED_KEYS}
+    except (OSError, ValueError):
+        pass
     with open(CONFIG_FILE, "w") as f:
         json.dump({
+            **extra,
             "path": path_val,
             "cookies_path": cookies_path_val,
             "browser": browser_val,

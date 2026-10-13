@@ -7,7 +7,9 @@ it never deletes the user's own manually-configured file).
 
 import http.cookiejar
 import os
+import shutil
 import tempfile
+import time
 
 from backend import config, paths
 
@@ -276,3 +278,156 @@ def instagram_cookiefile_candidates():
         candidates.append(manual)
     candidates.extend(cookiefiles_from_browsers("instagram.com"))
     return candidates
+
+
+# ---------------------------------------------------------------------------
+# YouTube: browser cookies as a last resort (local backend only)
+# ---------------------------------------------------------------------------
+
+# Off unless backend/app.py (the local server) turns it on. remote_web never
+# imports backend.app, so the cloud VM can never read a browser's cookies, even
+# if a youtube_cookie_source is present in its config.
+BROWSER_COOKIES_ALLOWED = False
+
+# Only youtube.com is read: it carries the login cookies yt-dlp needs (verified
+# live); no other domain is ever touched.
+YOUTUBE_COOKIE_DOMAIN = "youtube.com"
+_STALE_TEMP_SECONDS = 3600
+_YOUTUBE_AUTH_MARKERS = ("not a bot", "sign in to confirm", "login required")
+
+
+class YouTubeCookieAccessError(Exception):
+    """Reading the browser's YouTube cookies failed (typically macOS Keychain
+    access was denied). Carries no cookie data, only a fixed explanation."""
+
+
+def is_youtube_url(url):
+    lower = (url or "").lower()
+    return "youtube.com" in lower or "youtu.be" in lower
+
+
+def is_youtube_auth_error(error):
+    # The login / anti-bot group only. Private, members-only, region-blocked or
+    # deleted videos are NOT here: a login would not change the outcome.
+    lower = str(error).lower()
+    return any(marker in lower for marker in _YOUTUBE_AUTH_MARKERS)
+
+
+def sweep_stale_temp_cookiefiles():
+    # Remove cookie temp files a crashed/killed earlier run left behind. Only our
+    # own prefixes, only in the temp dir, only when older than an hour (so a file
+    # a concurrent request is using right now is never touched). Returns paths.
+    removed = []
+    tmp = tempfile.gettempdir()
+    try:
+        names = os.listdir(tmp)
+    except OSError:
+        return removed
+    now = time.time()
+    for name in names:
+        if not (name.startswith("omniflow-cookies-") or name.startswith("omniflow-raw-chrome-")):
+            continue
+        path = os.path.join(tmp, name)
+        try:
+            if os.path.isfile(path) and now - os.path.getmtime(path) > _STALE_TEMP_SECONDS:
+                os.remove(path)
+                removed.append(path)
+        except OSError:
+            pass
+    return removed
+
+
+def _write_youtube_cookies_txt(jar_cookies):
+    # Netscape file with each cookie's own domain/path/secure/expiry (mkstemp is
+    # 0600). Only cookies whose domain is youtube.com or a subdomain are written.
+    fd, path = tempfile.mkstemp(prefix="omniflow-cookies-", suffix=".txt")
+    far_future = "2147483647"
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write("# Netscape HTTP Cookie File\n")
+            for c in jar_cookies:
+                domain = (c.domain or "").lstrip(".")
+                if domain != YOUTUBE_COOKIE_DOMAIN and not domain.endswith("." + YOUTUBE_COOKIE_DOMAIN):
+                    continue
+                f.write("\t".join([
+                    "." + domain,
+                    "TRUE",
+                    c.path or "/",
+                    "TRUE" if c.secure else "FALSE",
+                    str(int(c.expires)) if c.expires else far_future,
+                    c.name,
+                    c.value,
+                ]) + "\n")
+    except BaseException:
+        _cleanup_temp_cookiefiles([path])
+        raise
+    return path
+
+
+def youtube_browser_cookiefile():
+    # Returns a temp cookies.txt with the configured Chrome profile's YouTube
+    # cookies (caller deletes it), or None when nothing is configured, the
+    # profile has no YouTube login, or the guard is off. Raises
+    # YouTubeCookieAccessError when the read itself fails.
+    if not BROWSER_COOKIES_ALLOWED:
+        return None
+    source = config.get_youtube_cookie_source()
+    if not source:
+        return None
+    browser, profile = source
+    sweep_stale_temp_cookiefiles()
+    profile_dir = os.path.join(os.path.expanduser(CHROMIUM_BROWSER_DIRS[browser]), profile)
+    db_file = _profile_cookie_db(profile_dir)
+    if not db_file:
+        return None
+    temp_db = None
+    try:
+        import browser_cookie3
+
+        fd, temp_db = tempfile.mkstemp(prefix="omniflow-raw-chrome-", suffix=".db")
+        os.close(fd)
+        shutil.copy2(db_file, temp_db)
+        for suffix in ("-wal", "-shm"):
+            if os.path.isfile(db_file + suffix):
+                shutil.copy2(db_file + suffix, temp_db + suffix)
+        jar = browser_cookie3.chrome(cookie_file=temp_db, domain_name=YOUTUBE_COOKIE_DOMAIN)
+        found = list(jar)
+        if not found:
+            return None
+        return _write_youtube_cookies_txt(found)
+    except Exception as e:
+        # Deliberately drops the original message: it can name keychain items and
+        # must never reach logs or the UI. The type alone is enough to debug.
+        raise YouTubeCookieAccessError(type(e).__name__) from None
+    finally:
+        for suffix in ("", "-wal", "-shm"):
+            if temp_db and os.path.exists(temp_db + suffix):
+                try:
+                    os.remove(temp_db + suffix)
+                except OSError:
+                    pass
+
+
+def run_with_youtube_cookie_fallback(url, manual_path, attempt):
+    # attempt(cookiefile_or_None) does one extraction/download. Order: the manual
+    # cookies file when there is one (used as-is, never second-guessed); else no
+    # cookies; and only if YouTube answers with a login / anti-bot error, ONE
+    # retry with the configured browser profile's cookies.
+    try:
+        return attempt(manual_path)
+    except Exception as first_error:
+        if (
+            manual_path
+            or not BROWSER_COOKIES_ALLOWED
+            or not is_youtube_url(url)
+            or not is_youtube_auth_error(first_error)
+        ):
+            raise
+        error = first_error
+    cookiefile = youtube_browser_cookiefile()
+    if not cookiefile:
+        raise error
+    try:
+        return attempt(cookiefile)
+    finally:
+        _cleanup_temp_cookiefiles([cookiefile])

@@ -34,7 +34,6 @@ export interface Translations {
     checking: string;
     clearUrl: string;
     removeUrl: string;
-    checkFailedRetryHint: string; // appended to a failed check's error message
   };
   checkingStatus: { checkingLink: string; cancel: string; keychainHint: string };
   playlist: {
@@ -220,7 +219,6 @@ const en: Translations = {
     checking: "Checking",
     clearUrl: "Clear URL",
     removeUrl: "Remove URL",
-    checkFailedRetryHint: "Please clear the URL and paste the link again to try once more.",
   },
   checkingStatus: {
     checkingLink: "Checking Link…",
@@ -673,7 +671,6 @@ const vi: Translations = {
     checking: "Đang kiểm tra",
     clearUrl: "Xoá đường dẫn",
     removeUrl: "Gỡ đường dẫn",
-    checkFailedRetryHint: "Vui lòng xoá đường dẫn và dán lại link để thử lại.",
   },
   checkingStatus: {
     checkingLink: "Đang kiểm tra đường dẫn…",

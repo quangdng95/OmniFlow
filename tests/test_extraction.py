@@ -97,7 +97,9 @@ def test_describe_extraction_error_trims_to_first_sentence():
         "ERROR: Video unavailable. This video has been removed by the uploader. Confirm you are on the latest version."
     )
     # strips the CLI-style "ERROR: " prefix and keeps just the first sentence
-    assert describe_extraction_error("https://youtube.com/watch?v=abc", error) == "Video unavailable"
+    # (a non-YouTube host: YouTube's own "Video unavailable" now maps to the
+    # dedicated youtube_restricted message, covered in test_youtube_cookies.py)
+    assert describe_extraction_error("https://example.com/watch?v=abc", error) == "Video unavailable"
 
 
 def test_describe_extraction_error_special_cases_instagram_login_message():
