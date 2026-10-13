@@ -96,7 +96,7 @@ def extract_video_info(cls):
                 # Primary method: Instagram's own private feed API (2026-07-07).
                 # web_profile_info/GraphQL/instaloader all now return a post
                 # *count* with no *edges* for a profile the session doesn't
-                # own - confirmed live, see MISTAKES.md - so this must go
+                # own - confirmed live, see docs/internal/MISTAKES.md - so this must go
                 # first, not last.
                 entries = instagram.fetch_instagram_profile_reel_media(username, cookies_path, limit=limit)
             except Exception as e_primary:

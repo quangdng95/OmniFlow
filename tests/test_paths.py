@@ -25,7 +25,7 @@ def test_paths_anchor_to_repo_root():
 # to an Apple Silicon Mac with no Rosetta 2 installed) passes both existence
 # and +x checks but can't actually exec at all - macOS raises OSError errno
 # 86 ("Bad CPU type in executable") the moment a process tries to run it.
-# Confirmed live 2026-08-29 (MISTAKES.md) while building the arm64-native
+# Confirmed live 2026-08-29 (docs/internal/MISTAKES.md) while building the arm64-native
 # ffmpeg: this is a real, distinct failure mode from "ffmpeg not installed".
 
 

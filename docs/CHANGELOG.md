@@ -163,7 +163,7 @@ keep both updated together when shipping a user-visible change.
   `download.AVOID_REENCODE`, which puts native H.264 first in the format selector (Facebook's muxed
   `hd`/`sd` files, named by format id since yt-dlp reports their codec as unknown). Desktop app
   unchanged. Trade-off: a Facebook video with only an AV1 1080p tier downloads at 720p H.264 on the
-  cloud. See MISTAKES.md 2026-09-25.
+  cloud. See docs/internal/MISTAKES.md 2026-09-25.
 - [x] The single-video progress label shows "Processing video…" at 100% instead of a frozen
   "100% Downloading…".
 

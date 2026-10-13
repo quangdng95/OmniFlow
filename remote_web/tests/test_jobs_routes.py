@@ -103,7 +103,7 @@ def test_download_file_can_be_fetched_a_second_time(client, tmp_path):
     # A client backing out of the OS share sheet (or wanting to save it
     # somewhere else too) taps Download again for the same finished job -
     # this used to 404 because the first successful stream deleted the file
-    # immediately (regression pin, MISTAKES.md 2026-09-17).
+    # immediately (regression pin, docs/internal/MISTAKES.md 2026-09-17).
     job_dir = tmp_path / "omniflow-remote-abc123"
     job_dir.mkdir()
     file_path = job_dir / "video.mp4"

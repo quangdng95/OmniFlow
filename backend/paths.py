@@ -23,7 +23,7 @@ from backend import messages
 # bare urllib/ssl HTTPS connection (the Instagram/Threads/LinkedIn resolvers
 # all use raw urllib.request, not requests) fails with
 # "CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate"
-# (confirmed live 2026-07-10, MISTAKES.md - reproduced on both the arm64 and
+# (confirmed live 2026-07-10, docs/internal/MISTAKES.md - reproduced on both the arm64 and
 # Intel builds via ssl.get_default_verify_paths()). certifi is already
 # bundled in the frozen app (a yt-dlp dependency, auto-collected by
 # PyInstaller's own certifi hook), so point Python's global SSL default there
@@ -39,7 +39,7 @@ os.environ["REQUESTS_CA_BUNDLE"] = certifi.where()
 # That path calls platform.mac_ver()[0] to decide between a "legacy" and
 # normal executable-path naming scheme (yt_dlp/update.py), then feeds
 # whatever it gets straight into int() with no guard for an empty result.
-# Confirmed live 2026-07-11 (MISTAKES.md) on a real M1 Air: platform.mac_ver()
+# Confirmed live 2026-07-11 (docs/internal/MISTAKES.md) on a real M1 Air: platform.mac_ver()
 # returns ('', ('', '', ''), 'arm64') on that specific machine (it returns a
 # real version string like ('26.5.2', ...) on this dev machine, which is
 # exactly why this was never reproducible here) - splitting '' on '[-.]'
@@ -112,7 +112,7 @@ def log_exception(context, error):
 # macOS's kernel-level "wrong CPU architecture for this binary" errno - what
 # a wrong-architecture ffmpeg (e.g. the Intel build's binary on an Apple
 # Silicon Mac with no Rosetta 2 installed) fails with the moment anything
-# tries to exec it. Confirmed live 2026-08-29 (MISTAKES.md) while building
+# tries to exec it. Confirmed live 2026-08-29 (docs/internal/MISTAKES.md) while building
 # the arm64-native ffmpeg. Existence and the +x bit both pass fine for a
 # wrong-architecture binary - only an actual exec attempt reveals this.
 _BAD_CPU_TYPE_ERRNO = 86

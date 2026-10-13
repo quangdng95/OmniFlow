@@ -194,7 +194,7 @@ def test_download_always_stages_into_a_temp_dir_not_a_configured_folder(client, 
 def test_download_tiktok_resolver_audio_only_saves_the_soundtrack_as_mp3(client, monkeypatch, tmp_path):
     # Mirrors tests/test_api.py: a TikTok video that falls back to tikwm.com
     # must honor "Audio Only" by saving the soundtrack, not the mp4
-    # (MISTAKES.md 2026-09-30).
+    # (docs/internal/MISTAKES.md 2026-09-30).
     from backend import tiktok as tiktok_module
 
     monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")

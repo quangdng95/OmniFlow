@@ -14,7 +14,7 @@ from backend import classify, config, cookies, extraction, instagram, jobs
 
 # True only in the remote_web (cloud) process. A 1 GB / shared-vCPU VM can't
 # afford libx264-re-encoding a 1080p AV1/VP9 source (minutes at 100% CPU that
-# starve every other request - MISTAKES.md 2026-09-25), so there we take a
+# starve every other request - docs/internal/MISTAKES.md 2026-09-25), so there we take a
 # native H.264 stream even at a lower resolution. The desktop app leaves this
 # False: resolution first, ensure_h264() re-encodes the rare straggler.
 AVOID_REENCODE = False
@@ -22,7 +22,7 @@ AVOID_REENCODE = False
 
 # macOS (APFS/HFS+) caps a single path component at 255 UTF-8 bytes. A video
 # title is usually short, but a caption-as-title source (TikTok Photo Mode's
-# item title is its full post caption - confirmed live, MISTAKES.md
+# item title is its full post caption - confirmed live, docs/internal/MISTAKES.md
 # 2026-08-28) can run to 1000+ characters, and get_unique_filename's own
 # collision check (os.path.exists) does NOT error on an over-long name -
 # only the actual write does, so this must be enforced here, at the source,
@@ -34,7 +34,7 @@ _MAX_FILENAME_BYTES = 200
 # "{caption} (2)", ...) - truncating from the head alone collapses every
 # item to the same name once the shared prefix alone exceeds the byte cap,
 # which silently clobbers files in a parallel batch download (confirmed
-# live, MISTAKES.md 2026-08-28: 4 images saved as 2 files). Keeping the tail
+# live, docs/internal/MISTAKES.md 2026-08-28: 4 images saved as 2 files). Keeping the tail
 # too preserves that differentiator.
 _TAIL_BYTES = 24
 

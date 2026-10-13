@@ -928,7 +928,7 @@ def test_check_link_linkedin_video_post_unaffected(client, monkeypatch):
 
 def test_check_link_linkedin_document_post_gets_a_specific_friendly_message(client, monkeypatch):
     # LinkedIn's native document/slide-deck (PDF) post type has no known
-    # resolver (MISTAKES.md) - this must surface as its own specific
+    # resolver (docs/internal/MISTAKES.md) - this must surface as its own specific
     # message, not whatever unrelated error yt-dlp happens to raise.
     def fake_extract(cls):
         raise yt_dlp.utils.DownloadError("Unable to extract video")
@@ -1052,7 +1052,7 @@ def test_check_link_tiktok_real_video_failure_uses_the_resolver_when_it_succeeds
 
 def test_check_link_tiktok_resolver_video_offers_audio_only(client, monkeypatch):
     # A TikTok video resolved through the tikwm fallback used to report only
-    # ["Video"], so there was no way to download its sound (MISTAKES.md
+    # ["Video"], so there was no way to download its sound (docs/internal/MISTAKES.md
     # 2026-09-30). The yt-dlp path already offers "Audio Only"; keep parity.
     def fake_extract(cls):
         raise yt_dlp.utils.DownloadError("Unable to extract universal data for rehydration")
@@ -1194,7 +1194,7 @@ def test_start_download_linkedin_image_saves_as_jpg(client, monkeypatch, tmp_pat
 
 
 def test_start_download_linkedin_video_post_is_unaffected_by_the_image_fallback(client, monkeypatch, tmp_path):
-    # Regression test for a real bug found live 2026-08-29 (MISTAKES.md): a
+    # Regression test for a real bug found live 2026-08-29 (docs/internal/MISTAKES.md): a
     # real LinkedIn video post's page ALSO serves an og:image tag (the
     # video's thumbnail) - trying the image resolver before yt-dlp used to
     # silently download that thumbnail instead of the actual video. yt-dlp

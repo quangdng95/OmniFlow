@@ -50,7 +50,7 @@ _CATALOG = {
         EN: "❌ Error: Couldn't extract data from this link. Please check the link, or whether the content is public.",
     },
     # LinkedIn's native document/slide-deck (PDF) post type has no known
-    # resolver (see MISTAKES.md), so it gets its own specific message rather
+    # resolver (see docs/internal/MISTAKES.md), so it gets its own specific message rather
     # than whatever unrelated error yt-dlp raises for the same URL.
     "linkedin_document": {
         VI: "❌ Lỗi: Không đọc được nội dung bài đăng LinkedIn này. Bài có thể đã bị xoá hoặc ở chế độ riêng tư, hoặc là tài liệu/slide (PDF) mà các trang không đọc được. ViDrop hỗ trợ bài LinkedIn công khai dạng video, ảnh và tài liệu.",

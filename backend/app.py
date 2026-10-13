@@ -241,7 +241,7 @@ def check_link():
         finally:
             cookies._cleanup_temp_cookiefiles(candidates)
 
-    # Threads has no yt-dlp/gallery-dl support at all (MISTAKES.md, 2026-07-07),
+    # Threads has no yt-dlp/gallery-dl support at all (docs/internal/MISTAKES.md, 2026-07-07),
     # so unlike Instagram there is no fallback path to fall through to - a
     # resolver failure here goes straight to a friendly error.
     if cls.kind == classify.LinkKind.THREADS_POST:
@@ -583,7 +583,7 @@ def start_download():
             # a real video post's page, so trying the image resolver before
             # yt-dlp (the original ordering here) could silently download a
             # video post's thumbnail instead of the actual video (found live
-            # 2026-08-29, MISTAKES.md, while adding LinkedIn document-post
+            # 2026-08-29, docs/internal/MISTAKES.md, while adding LinkedIn document-post
             # detection - fixed by matching /api/check's already-safe order).
             if cls.platform == "LinkedIn":
                 try:
@@ -947,7 +947,7 @@ def open_logs():
 def reset_settings():
     # A stale saved value (most concretely: cookies_path pointing at a long-
     # dead manually-configured cookies.txt from early testing - see
-    # MISTAKES.md, 2026-07-10) can silently keep overriding fresh state with
+    # docs/internal/MISTAKES.md, 2026-07-10) can silently keep overriding fresh state with
     # zero UI to inspect or clear it, since that field's own Settings row was
     # removed at some point. Deleting config.json and letting load_session()
     # regenerate its defaults is the fix a user was told to do by hand

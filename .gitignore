@@ -24,13 +24,12 @@ dist-*/
 bin/
 envs/
 
-# Internal working notes for AI coding agents / local runtime state —
+# Internal working notes for AI coding agents (docs/internal/: MISTAKES.md, session.md) / local runtime state —
 # not needed by end users of the published app, kept local-only.
 .claude/
 .antigravity/
 CLAUDE.md
-MISTAKES.md
-session.md
+docs/internal/
 config.json
 .logs/
 

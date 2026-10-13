@@ -220,7 +220,7 @@ there).
    far more RAM — but Oracle flagged/locked the free account during setup.
    GCP has been steadier for this.)
    - **SSH access is IAP-only, not public** (hardened 2026-09-16 — see
-     MISTAKES.md). `default-allow-ssh` (port 22 open to `0.0.0.0/0`) is
+     docs/internal/MISTAKES.md). `default-allow-ssh` (port 22 open to `0.0.0.0/0`) is
      deleted; the only firewall rule for port 22 is `allow-ssh-iap`, scoped
      to Google's fixed IAP range `35.235.240.0/20`. Connect via:
      ```bash

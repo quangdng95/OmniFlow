@@ -14,7 +14,7 @@ Two distinct, unrelated yt-dlp gaps land here:
    auth"). This is a known, currently open upstream issue
    (yt-dlp/yt-dlp#16199), unresolved since it was first reported in March
    2026 - part of an ongoing pattern of TikTok changing its page structure
-   faster than yt-dlp's extractor catches up (see the repo's own MISTAKES.md
+   faster than yt-dlp's extractor catches up (see the repo's own docs/internal/MISTAKES.md
    entries on this file's history for the same pattern recurring over time).
 
 Scraping TikTok's own post page doesn't work as a DIY fallback for either
@@ -33,7 +33,7 @@ Confirmed live against a real TikTok Photo Mode post (4 images) and 4
 distinct real video posts (4/4 succeeded, real watermark-free CDN URLs that
 download real playable files).
 
-**Design decision reversed 2026-08-30** (see MISTAKES.md): this module was
+**Design decision reversed 2026-08-30** (see docs/internal/MISTAKES.md): this module was
 originally scoped to Photo Mode only, on the explicit assumption that "the
 yt-dlp video path is completely unaffected... a tikwm.com outage never slows
 down a normal video download" - that assumption held when this module was
@@ -112,13 +112,13 @@ def fetch_tiktok_post(url):
         # Each slide's own image IS its thumbnail - tikwm.com's "cover" is a
         # single post-level poster frame (always the first slide), so using
         # it here made every row in a multi-image carousel show the same
-        # picture instead of that row's actual slide (MISTAKES.md 2026-09-17).
+        # picture instead of that row's actual slide (docs/internal/MISTAKES.md 2026-09-17).
         items = [{"kind": "image", "url": image_url, "thumbnail": image_url} for image_url in images]
     else:
         items = [{"kind": "video", "url": play_url, "thumbnail": cover}]
     # The post's original sound, as its own mp3 link. Surfaced so a video that
     # resolves through this fallback can still offer "Audio Only" like the
-    # yt-dlp path does (MISTAKES.md 2026-09-30). Deliberately NOT appended to a
+    # yt-dlp path does (docs/internal/MISTAKES.md 2026-09-30). Deliberately NOT appended to a
     # Photo Mode post's `items`: a mixed image+mp3 batch stops iOS's share
     # sheet offering "Save to Photos" for the slides.
     music_info = data.get("music_info") or {}

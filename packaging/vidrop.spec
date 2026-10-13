@@ -19,7 +19,7 @@ ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))  # SPECPATH is injected by 
 # Two vendored ffmpeg binaries live in vendor/ffmpeg/: `ffmpeg` (arm64-native,
 # built with dylibbundler from Homebrew's own ffmpeg so it's self-contained
 # via its sibling libs/ dylibs - no Homebrew needed at runtime; see
-# MISTAKES.md 2026-08-29) for Apple Silicon, and `ffmpeg-x86_64` (statically
+# docs/internal/MISTAKES.md 2026-08-29) for Apple Silicon, and `ffmpeg-x86_64` (statically
 # linked codecs, zero external dylib deps) for Intel. Build on the machine
 # matching the target architecture - this spec picks the matching source
 # automatically via platform.machine(), so the same spec produces a
@@ -50,7 +50,7 @@ if _IS_ARM64:
     # commands point at @executable_path/libs/*.dylib (dylibbundler output) -
     # without bundling ./libs as a sibling of the executable too, it crashes
     # immediately with "Library not loaded" (confirmed live 2026-08-29,
-    # MISTAKES.md - a folder-name mismatch reproduced exactly this). The
+    # docs/internal/MISTAKES.md - a folder-name mismatch reproduced exactly this). The
     # x86_64 binary needs no equivalent - confirmed via `otool -L` it only
     # links system frameworks (its codecs are statically linked in).
     datas.append((os.path.join(_FFMPEG_DIR, "libs", "*.dylib"), "libs"))  # lands next to the bundled ffmpeg

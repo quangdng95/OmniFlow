@@ -1,7 +1,7 @@
 """Instagram resolvers - the post/carousel media resolver + the profile/reels
 resolver chain. yt-dlp cannot list Instagram profiles (Meta blocks it) or fetch
 photos at all, so both go through Instagram's own private endpoints instead
-(MISTAKES.md blacklist §1). Auth comes from backend.cookies candidates.
+(docs/internal/MISTAKES.md blacklist §1). Auth comes from backend.cookies candidates.
 """
 
 import http.cookiejar
@@ -300,7 +300,7 @@ def fetch_instagram_profile_reel_media(username, cookies_path, limit=30):
     # GraphQL/AJAX surfaces (web_profile_info, ?__a=1, and instaloader's own
     # GraphQL query machinery) now return a post *count* with NO *edges* for
     # a profile the session doesn't own - confirmed live, not assumed (see
-    # MISTAKES.md). This goes through the same private www.instagram.com
+    # docs/internal/MISTAKES.md). This goes through the same private www.instagram.com
     # REST host + X-IG-App-ID/X-CSRFToken header pattern already proven to
     # work for fetch_instagram_media (posts/carousels), which Meta still
     # answers with real items for a logged-in session.

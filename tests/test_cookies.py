@@ -140,7 +140,7 @@ def test_cookiefiles_from_browsers_copies_wal_and_shm_sidecars(no_browser_cookie
     # (e.g. a login done minutes ago) can live only in the "-wal" sidecar
     # until the next checkpoint. Copying only the main file can silently
     # produce a snapshot missing exactly that cookie, with no exception (see
-    # 2026-07-10 MISTAKES.md - this is what a real Intel Mac hit). Pins that
+    # 2026-07-10 docs/internal/MISTAKES.md - this is what a real Intel Mac hit). Pins that
     # the sidecars get copied alongside the main db file when present, and
     # cleaned up afterward same as the main temp file.
     real = no_browser_cookie_scan
