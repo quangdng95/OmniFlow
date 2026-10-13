@@ -5,6 +5,7 @@ must differ from backend/app.py: Instagram/Threads are NOT rejected here."""
 
 import pytest
 
+from backend import config as backend_config
 from backend import cookies as backend_cookies
 from backend import extraction as extraction_module
 from backend import instagram as instagram_module
@@ -476,3 +477,20 @@ def test_download_batch_zip_keeps_the_selected_item_order(client, monkeypatch, t
     assert job["status"] == "done"
     with zipfile.ZipFile(job["filepath"]) as zf:
         assert zf.namelist() == ["A.mp4", "B.mp4", "C.mp4", "D.mp4"]
+
+
+@pytest.mark.parametrize("setting,count,expected", [
+    (30, 30, True), (30, 12, False),
+    (100, 100, True), (100, 99, False),
+    (200, 150, False), (200, 200, True),
+    (500, 150, False), (0, 150, False),
+])
+def test_check_truncated_follows_the_playlist_limit_setting(client, monkeypatch, setting, count, expected):
+    backend_config.save_session("/tmp", playlist_limit_val=setting)
+    entries = [{"id": f"v{i}", "title": f"V{i}", "url": f"https://youtube.com/watch?v=v{i}", "duration": 60}
+               for i in range(count)]
+    monkeypatch.setattr(extraction_module, "extract_video_info",
+                        lambda cls: {"_type": "playlist", "title": "P", "entries": entries})
+    body = client.post("/api/check", json={"url": "https://www.youtube.com/playlist?list=PLxyz"}).get_json()
+    assert body["truncated"] is expected
+    assert len(body["items"]) == count

@@ -32,14 +32,43 @@ def resolve_thumbnail(info):
     return None
 
 
+# "All items" in Settings is stored as 0. yt-dlp still needs a number, and a
+# channel can hold tens of thousands of entries, so "All" is bounded by this
+# safety cap rather than being truly unlimited.
+ALL_ITEMS_SAFETY_CAP = 10000
+# An Instagram profile is paged through its private feed API one request at a
+# time, so listing more than this adds many seconds to /api/check.
+INSTAGRAM_PROFILE_LIST_CAP = 30
+
+
+def effective_item_limit(cls):
+    """How many entries a multi-item check lists for this classification.
+
+    The one place that turns the Settings "Playlist / Channel Loading Limit"
+    (30/50/100/200/500, 0 = All) plus the per-kind technical caps into a
+    number, so extraction and the `truncated` flag in /api/check can never
+    disagree about it.
+    """
+    # A Mix/Radio is endless and only resolves through its seed video.
+    if cls.kind == classify.LinkKind.YOUTUBE_MIX:
+        return cls.playlist_cap or classify.MIX_ITEM_CAP
+    try:
+        limit = int(config.load_session().get("playlist_limit", classify.PLAYLIST_ITEM_CAP))
+    except (TypeError, ValueError):
+        limit = classify.PLAYLIST_ITEM_CAP
+    if cls.kind == classify.LinkKind.INSTAGRAM_PROFILE:
+        return min(limit, INSTAGRAM_PROFILE_LIST_CAP) if limit > 0 else INSTAGRAM_PROFILE_LIST_CAP
+    return limit if limit > 0 else ALL_ITEMS_SAFETY_CAP
+
+
 def extract_video_info(cls):
     # `cls` is a classify.Classification - what the link IS was already decided
     # by classify.classify_url() (owner core capability #4); this function only
     # executes the extraction that classification dictates. It never re-derives
     # platform/kind from the URL string.
     url = cls.extraction_url
-    playlist_limit = config.load_session().get("playlist_limit", 100)
-    
+    item_limit = effective_item_limit(cls)
+
     if cls.kind == classify.LinkKind.INSTAGRAM_PROFILE:
         # Use our Custom Instagram Profile/Reels Resolver to bypass Meta blocks
         username = cls.username
@@ -59,11 +88,10 @@ def extract_video_info(cls):
         try:
             print(f"[debug] Resolving Instagram profile for username: {username} using cookies: {cookies_path}", flush=True)
             entries = []
-            # Cap Instagram profile limit at a sensible default (30) for the
-            # /api/check call - loading 100+ videos via sequential API pages
-            # adds many seconds of latency. The user can refine in Settings.
-            # Never let a playlist_limit of 0 become 500 requests.
-            limit = min(playlist_limit, 30) if playlist_limit > 0 else 30
+            # effective_item_limit() already holds an Instagram profile to
+            # INSTAGRAM_PROFILE_LIST_CAP, and never lets "All" (0) become an
+            # unbounded number of sequential API requests.
+            limit = item_limit
             try:
                 # Primary method: Instagram's own private feed API (2026-07-07).
                 # web_profile_info/GraphQL/instaloader all now return a post
@@ -133,15 +161,10 @@ def extract_video_info(cls):
         # WITHOUT fetching every video's full metadata - a channel with thousands
         # of videos would otherwise hang the app. playlistend caps the count as a
         # second guard on top of the flat (metadata-free) listing; the classifier
-        # already picked the cap (50 for an endless Mix, 100 otherwise).
+        # already picked what the link is; the cap itself comes from effective_item_limit().
         ydl_opts["noplaylist"] = False
         ydl_opts["extract_flat"] = "in_playlist"
-        if cls.kind == classify.LinkKind.YOUTUBE_MIX:
-            ydl_opts["playlistend"] = cls.playlist_cap or 50
-        elif playlist_limit > 0:
-            ydl_opts["playlistend"] = playlist_limit
-        else:
-            ydl_opts["playlistend"] = 10000
+        ydl_opts["playlistend"] = item_limit
         ydl_opts["ignoreerrors"] = True
     else:
         ydl_opts["noplaylist"] = True

@@ -5,6 +5,7 @@ import pytest
 import yt_dlp
 
 from backend import classify
+from backend import config
 from backend import extraction as extraction_module
 from backend import instagram as instagram_module
 from backend import messages
@@ -400,3 +401,65 @@ def test_a_non_instagram_failure_is_not_logged_as_an_instagram_failure(monkeypat
     with pytest.raises(yt_dlp.utils.DownloadError):
         extraction_module.extract_video_info(cls)
     assert "Instagram" not in capsys.readouterr().out
+
+
+# ---- effective_item_limit: Settings "Playlist / Channel Loading Limit" ----
+
+YT_PLAYLIST = "https://www.youtube.com/playlist?list=PLxyz"
+YT_MIX = "https://www.youtube.com/watch?v=dwWOEA00K8s&list=RDKzl6cT_u7RA&index=4"
+IG_PROFILE = "https://www.instagram.com/theqazman/reels/"
+
+
+@pytest.mark.parametrize("setting", [30, 50, 100, 200, 500])
+def test_effective_item_limit_follows_each_settings_level(setting):
+    config.save_session("/tmp", playlist_limit_val=setting)
+    assert extraction_module.effective_item_limit(classify.classify_url(YT_PLAYLIST)) == setting
+
+
+def test_effective_item_limit_all_is_bounded_by_the_safety_cap():
+    config.save_session("/tmp", playlist_limit_val=0)
+    assert extraction_module.effective_item_limit(classify.classify_url(YT_PLAYLIST)) == extraction_module.ALL_ITEMS_SAFETY_CAP
+
+
+def test_effective_item_limit_defaults_to_100_when_nothing_is_saved():
+    assert extraction_module.effective_item_limit(classify.classify_url(YT_PLAYLIST)) == classify.PLAYLIST_ITEM_CAP
+
+
+def test_effective_item_limit_survives_a_garbage_setting(monkeypatch):
+    monkeypatch.setattr(config, "load_session", lambda: {"playlist_limit": "lots"})
+    assert extraction_module.effective_item_limit(classify.classify_url(YT_PLAYLIST)) == classify.PLAYLIST_ITEM_CAP
+
+
+@pytest.mark.parametrize("setting", [30, 100, 500, 0])
+def test_effective_item_limit_keeps_a_mix_at_50_whatever_settings_say(setting):
+    config.save_session("/tmp", playlist_limit_val=setting)
+    assert extraction_module.effective_item_limit(classify.classify_url(YT_MIX)) == classify.MIX_ITEM_CAP
+
+
+@pytest.mark.parametrize("setting,expected", [(30, 30), (50, 30), (200, 30), (0, 30)])
+def test_effective_item_limit_keeps_an_instagram_profile_at_30_or_less(setting, expected):
+    config.save_session("/tmp", playlist_limit_val=setting)
+    assert extraction_module.effective_item_limit(classify.classify_url(IG_PROFILE)) == expected
+
+
+@pytest.mark.parametrize("setting,expected", [(30, 30), (50, 50), (100, 100), (200, 200), (500, 500), (0, 10000)])
+def test_extract_video_info_passes_the_setting_to_yt_dlp_as_playlistend(monkeypatch, setting, expected):
+    captured = {}
+
+    class FakeYoutubeDL:
+        def __init__(self, opts):
+            captured["opts"] = opts
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def extract_info(self, url, download):
+            return {"_type": "playlist", "entries": []}
+
+    config.save_session("/tmp", playlist_limit_val=setting)
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", FakeYoutubeDL)
+    extraction_module.extract_video_info(classify.classify_url(YT_PLAYLIST))
+    assert captured["opts"]["playlistend"] == expected

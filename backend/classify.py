@@ -15,8 +15,10 @@ import enum
 import re
 import urllib.parse
 
-# Cap how many entries we pull from a playlist/channel. A channel can have
-# thousands of videos; listing them all would make yt-dlp slow and the UI heavy.
+# Default for how many entries we pull from a playlist/channel when Settings has
+# no playlist_limit. A channel can have thousands of videos; listing them all
+# would make yt-dlp slow and the UI heavy. The limit actually applied (Settings
+# choice + per-kind caps) is extraction.effective_item_limit().
 PLAYLIST_ITEM_CAP = 100
 # A YouTube Mix/Radio (list=RD…) is auto-generated and endless — cap it harder
 # so extraction can't hang the app (MISTAKES.md blacklist §3).
@@ -53,7 +55,7 @@ class Classification:
     extraction_url: str  # additionally playlist-canonicalized — what yt-dlp extraction uses
     shortcode: str | None = None  # set iff INSTAGRAM_POST_OR_CAROUSEL
     username: str | None = None  # set iff INSTAGRAM_PROFILE
-    playlist_cap: int | None = None  # 50 (Mix) / 200 (playlist/channel/profile) / None
+    playlist_cap: int | None = None  # 50 (Mix) / 100 default (playlist/channel/profile) / None
 
     @property
     def is_multi(self) -> bool:

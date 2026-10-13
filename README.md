@@ -9,7 +9,7 @@
 
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#installation)
-  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/Vidrop)](../../releases/latest)
+  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/ViDrop)](../../releases/latest)
 
   **🇬🇧 English&nbsp;&nbsp;|&nbsp;&nbsp;[🇻🇳 Tiếng Việt](README.vi.md)**
 </div>
@@ -21,8 +21,8 @@
 Not sure which chip your Mac has? Apple menu (top-left) → **About This Mac**.
 
 <p align="center">
-  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Download-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Download for Apple Silicon (M1/M2/M3/M4)" /></a>
-  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Download-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Download for Intel Mac" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Download-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Download for Apple Silicon (M1/M2/M3/M4)" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Download-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Download for Intel Mac" /></a>
 </p>
 
 These links always point at the latest release. See [Installation](#installation) below for what to do after downloading — including the one-time macOS security prompts on first launch.
@@ -52,7 +52,7 @@ platforms creators, designers, and researchers actually pull reference material 
 | YouTube | ✅ Video, audio-only | ✅ Playlist, channel, Mix/Radio | |
 | TikTok | ✅ Video, Photo Mode slideshow | — | |
 | Instagram | ✅ Post, Reel, photo | ✅ Carousel, Story, profile/Reels | Private content needs a logged-in browser session |
-| Facebook | ✅ Reel | — | |
+| Facebook | ✅ Video, Reel | — | |
 | RedNote (Xiaohongshu) | ✅ Video, image | — | Needs a logged-in RedNote session (RedNote now requires a login to show any post) |
 | LinkedIn | ✅ Video post, image post | ✅ Document / slide-deck (PDF) — every page as an image | `lnkd.in` share links work |
 | Threads | ✅ Video post, image post | — | Needs a logged-in browser session |
@@ -66,11 +66,13 @@ platforms creators, designers, and researchers actually pull reference material 
   multi-item source; you never have to declare it.
 - **Per-item control** — in a playlist or carousel, download everything at once, hand-pick a
   subset, or retry a single failed item.
-- **Real quality, no re-encoding tax** — H.264/AAC MP4 output that plays natively in QuickLook
-  and QuickTime, with fast parallel fragment downloads and a stream-copy merge (not a full
-  transcode) so exports finish quickly.
+- **Plays everywhere on your Mac** — H.264/AAC MP4 output that plays natively in QuickLook
+  and QuickTime. Up to 1080p it uses fast parallel fragment downloads and a stream-copy merge
+  (not a full transcode). 1440p and 4K are converted to H.264 after the download, which takes
+  longer.
 - **Live progress** — per-item and overall download progress, with cancel support.
-- **Runs entirely on your Mac** — no central server, no upload of your links or cookies anywhere.
+- **Runs on your Mac** — your links and cookies stay on your machine (one exception for TikTok,
+  see [Privacy](#privacy)).
 
 ## Installation
 
@@ -80,7 +82,7 @@ platforms creators, designers, and researchers actually pull reference material 
    - **OmniFlow-Intel.dmg** — for Intel Macs
 2. Open the `.dmg` and drag **ViDrop** into `Applications`.
 3. On first launch, macOS will show one or two security prompts (an "unidentified developer"
-   warning, and — only if you plan to download private Instagram/Threads content — a Keychain
+   warning, and — only if you plan to download from Instagram, Threads or RedNote — a Keychain
    permission request). Both are normal, one-time, and explained step-by-step in
    [First Launch & macOS Security Warnings](docs/FIRST_LAUNCH.md).
 
@@ -95,7 +97,7 @@ Prefer to build it yourself? See [Building from source](#building-from-source) b
 4. Hit **Download** and watch progress in real time.
 5. The finished file lands in your configured download folder (defaults to `~/Downloads`).
 
-Some platforms (Instagram, Threads) need a logged-in browser session to resolve private/gated
+Some platforms (Instagram, Threads, RedNote) need a logged-in browser session to resolve private/gated
 content — ViDrop reads this automatically from your local browser cookies; no manual export
 needed.
 
@@ -116,7 +118,7 @@ example per supported platform.
 
 ```bash
 # clone and enter the repo
-git clone https://github.com/quangdng95/OmniFlow.git
+git clone https://github.com/quangdng95/ViDrop.git
 cd ViDrop
 
 # one-time setup
@@ -152,8 +154,12 @@ ViDrop runs entirely on your Mac. It does **not**:
 - Track or log your download history
 - Collect or transmit personal data anywhere
 
-Browser cookies (used to resolve private Instagram/Threads content) are read locally and never
-leave your machine.
+One exception: when a TikTok link can't be read directly, ViDrop sends that link to the
+third-party service tikwm.com to resolve it. This page describes the Mac app. The hosted web
+version processes the links you paste on its own server.
+
+Browser cookies (used to resolve Instagram, Threads and RedNote content) are read locally and
+never leave your machine.
 
 ## Roadmap
 
@@ -180,9 +186,10 @@ Known gaps, tracked honestly rather than hidden.
 - [ ] Native iOS app
 
 > **On the two native mobile app items:** these are early and exploratory, not committed.
-> `yt-dlp` is a Python tool, and this project's whole design deliberately avoids a central server
-> (see [Disclaimer](.github/DISCLAIMER.md)) so each download runs locally, on the user's own
-> machine — that constraint doesn't disappear just because the device is a phone. Both the App
+> `yt-dlp` is a Python tool, so a native phone app would need a server to do the work, as the web
+> version does. ViDrop has two modes today: the Mac app processes every link on the user's own
+> machine, and the web version (`remote_web`) processes links on a server, behind an access token
+> (see [Disclaimer](.github/DISCLAIMER.md)). Both the App
 > Store and Play Store have a well-documented history of rejecting or removing "video downloader"
 > apps over copyright/ToS concerns, so a native mobile app may end up needing to ship outside the
 > official stores (sideloading, TestFlight-style distribution) rather than assuming normal store
@@ -214,7 +221,7 @@ Contributions are welcome:
 ## Support & Issues
 
 Still stuck after checking the [Troubleshooting](#troubleshooting) guides above? Open an issue on
-[GitHub Issues](https://github.com/quangdng95/OmniFlow/issues) — include:
+[GitHub Issues](https://github.com/quangdng95/ViDrop/issues) — include:
 
 - The link you were trying to download (if it's not private/sensitive)
 - Your Mac's chip (Apple Silicon or Intel) and macOS version

@@ -5,7 +5,7 @@
 Chưa biết thử dán link gì trước? Copy bất kỳ link nào bên dưới và dán thẳng vào ViDrop để xem
 app hoạt động ra sao — một ví dụ cho mỗi nền tảng được hỗ trợ.
 
-> Các ví dụ Instagram và Threads cần bạn đang đăng nhập nền tảng đó trên một trình duyệt của máy
+> Các ví dụ Instagram, Threads và RedNote cần bạn đang đăng nhập nền tảng đó trên một trình duyệt của máy
 > Mac (Chrome, Brave, Edge, Vivaldi, Opera, hoặc Safari — xem
 > [Cảnh báo bảo mật macOS khi mở app lần đầu](FIRST_LAUNCH.vi.md) nếu bạn chưa từng thấy hộp thoại
 > xin quyền Keychain). Mọi nền tảng khác đều hoạt động mà không cần đăng nhập gì cả.

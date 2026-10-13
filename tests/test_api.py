@@ -1939,3 +1939,45 @@ def test_start_batch_download_tiktok_photo_carousel_picks_each_slide(client, mon
     assert job["status"] == "done"
     assert job["saved_count"] == 2
     assert set(downloaded) == {"http://cdn/1.jpg", "http://cdn/2.jpg"}
+
+
+def _flat_entries(n):
+    return [{"id": f"v{i}", "title": f"V{i}", "url": f"https://youtube.com/watch?v=v{i}", "duration": 60}
+            for i in range(n)]
+
+
+@pytest.mark.parametrize("setting,count,expected", [
+    (30, 30, True), (30, 12, False),
+    (50, 50, True), (50, 49, False),
+    (100, 100, True), (100, 99, False),
+    # A bigger setting must not report "truncated" just because the list passed 100.
+    (200, 150, False), (200, 200, True),
+    (500, 150, False), (500, 500, True),
+    (0, 150, False),
+])
+def test_check_link_truncated_follows_the_playlist_limit_setting(client, monkeypatch, setting, count, expected):
+    save_session("/tmp", playlist_limit_val=setting)
+    entries = _flat_entries(count)
+    monkeypatch.setattr(extraction_module, "extract_video_info",
+                        lambda url: {"_type": "playlist", "title": "P", "entries": entries})
+    body = client.post("/api/check", json={"url": "https://www.youtube.com/playlist?list=PLxyz"}).get_json()
+    assert body["truncated"] is expected
+    assert len(body["items"]) == count
+
+
+def test_check_link_truncated_for_all_only_trips_at_the_safety_cap(client, monkeypatch):
+    save_session("/tmp", playlist_limit_val=0)
+    entries = _flat_entries(extraction_module.ALL_ITEMS_SAFETY_CAP)
+    monkeypatch.setattr(extraction_module, "extract_video_info",
+                        lambda url: {"_type": "playlist", "title": "Huge", "entries": entries})
+    body = client.post("/api/check", json={"url": "https://www.youtube.com/@somechannel"}).get_json()
+    assert body["truncated"] is True
+
+
+def test_check_link_truncated_for_a_mix_uses_its_own_cap_of_50(client, monkeypatch):
+    save_session("/tmp", playlist_limit_val=500)
+    entries = _flat_entries(50)
+    monkeypatch.setattr(extraction_module, "extract_video_info",
+                        lambda url: {"_type": "playlist", "title": "Mix", "entries": entries})
+    mix = "https://www.youtube.com/watch?v=dwWOEA00K8s&list=RDKzl6cT_u7RA&index=4"
+    assert client.post("/api/check", json={"url": mix}).get_json()["truncated"] is True

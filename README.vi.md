@@ -9,7 +9,7 @@
 
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#cài-đặt)
-  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/Vidrop)](../../releases/latest)
+  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/ViDrop)](../../releases/latest)
 
   **[🇬🇧 English](README.md)&nbsp;&nbsp;|&nbsp;&nbsp;🇻🇳 Tiếng Việt**
 </div>
@@ -22,8 +22,8 @@ Không chắc máy Mac của bạn dùng chip gì? Menu Apple (góc trên bên t
 Mac này** (About This Mac).
 
 <p align="center">
-  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Tải_về-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Tải cho Apple Silicon (M1/M2/M3/M4)" /></a>
-  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Tải_về-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Tải cho Mac Intel" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Tải_về-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Tải cho Apple Silicon (M1/M2/M3/M4)" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Tải_về-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Tải cho Mac Intel" /></a>
 </p>
 
 Hai link trên luôn trỏ tới bản phát hành mới nhất. Xem [Cài đặt](#cài-đặt) bên dưới để biết việc
@@ -54,7 +54,7 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
 | YouTube | ✅ Video, chỉ âm thanh | ✅ Playlist, kênh, Mix/Radio | |
 | TikTok | ✅ Video, slideshow Photo Mode | — | |
 | Instagram | ✅ Post, Reel, ảnh | ✅ Carousel, Story, profile/Reels | Nội dung riêng tư cần đăng nhập trên trình duyệt |
-| Facebook | ✅ Reel | — | |
+| Facebook | ✅ Video, Reel | — | |
 | RedNote (Xiaohongshu) | ✅ Video, ảnh | — | Cần phiên đăng nhập RedNote (RedNote giờ yêu cầu đăng nhập để xem bài) |
 | LinkedIn | ✅ Bài video, bài ảnh | ✅ Tài liệu/slide (PDF) — mỗi trang là một ảnh | Link rút gọn `lnkd.in` dùng được |
 | Threads | ✅ Bài video, bài ảnh | — | Cần đăng nhập trên trình duyệt |
@@ -68,13 +68,13 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
   bạn không cần khai báo gì cả.
 - **Điều khiển từng item** — trong playlist hay carousel, tải hết một lượt, chọn riêng từng cái,
   hoặc thử lại một item bị lỗi.
-- **Chất lượng thật, không mất thời gian re-encode** — xuất file H.264/AAC MP4 phát được ngay
-  trong QuickLook và QuickTime, tải song song nhiều fragment và merge kiểu stream-copy (không
-  transcode toàn bộ) nên xuất file rất nhanh.
+- **Phát được mọi nơi trên Mac** — xuất file H.264/AAC MP4 phát được ngay trong QuickLook và
+  QuickTime. Đến 1080p, app tải song song nhiều fragment và merge kiểu stream-copy (không
+  transcode toàn bộ). Bản 1440p và 4K được chuyển sang H.264 sau khi tải nên mất thêm thời gian.
 - **Theo dõi tiến trình trực tiếp** — tiến trình tải từng item và tổng thể, có thể hủy bất cứ lúc
   nào.
-- **Chạy hoàn toàn trên máy bạn** — không có server trung tâm, không upload link hay cookie của
-  bạn đi bất cứ đâu.
+- **Chạy trên máy bạn** — link và cookie của bạn ở lại trên máy (riêng TikTok có một ngoại lệ, xem
+  [Quyền riêng tư](#quyền-riêng-tư)).
 
 ## Cài đặt
 
@@ -84,7 +84,7 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
    - **OmniFlow-Intel.dmg** — cho Mac dùng chip Intel
 2. Mở file `.dmg` và kéo **ViDrop** vào thư mục `Applications`.
 3. Lần đầu mở app, macOS sẽ hiện một hoặc hai cảnh báo bảo mật (cảnh báo "nhà phát triển không
-   xác định", và — chỉ khi bạn định tải nội dung riêng tư từ Instagram/Threads — yêu cầu quyền
+   xác định", và — chỉ khi bạn định tải từ Instagram, Threads hoặc RedNote — yêu cầu quyền
    truy cập Keychain). Cả hai đều bình thường, chỉ xuất hiện một lần, và được giải thích từng bước
    trong [Cảnh báo bảo mật macOS khi mở app lần đầu](docs/FIRST_LAUNCH.vi.md).
 
@@ -99,7 +99,7 @@ Muốn tự build app? Xem [Build từ mã nguồn](#build-từ-mã-nguồn) bê
 4. Bấm **Download** và theo dõi tiến trình theo thời gian thực.
 5. File hoàn tất sẽ nằm trong thư mục tải đã cấu hình (mặc định là `~/Downloads`).
 
-Một số nền tảng (Instagram, Threads) cần một phiên đăng nhập trên trình duyệt để lấy được nội
+Một số nền tảng (Instagram, Threads, RedNote) cần một phiên đăng nhập trên trình duyệt để lấy được nội
 dung riêng tư/bị giới hạn — ViDrop tự đọc thông tin này từ cookie trình duyệt trên máy bạn;
 không cần export thủ công.
 
@@ -120,7 +120,7 @@ dán-là-chạy cho mỗi nền tảng được hỗ trợ.
 
 ```bash
 # clone và vào thư mục repo
-git clone https://github.com/quangdng95/OmniFlow.git
+git clone https://github.com/quangdng95/ViDrop.git
 cd ViDrop
 
 # cài đặt một lần
@@ -156,7 +156,11 @@ ViDrop chạy hoàn toàn trên máy Mac của bạn. Ứng dụng **không**:
 - Theo dõi hay ghi log lịch sử tải của bạn
 - Thu thập hay truyền đi bất kỳ dữ liệu cá nhân nào
 
-Cookie trình duyệt (dùng để lấy nội dung riêng tư từ Instagram/Threads) được đọc cục bộ trên máy
+Có một ngoại lệ: khi không đọc trực tiếp được link TikTok, ViDrop gửi link đó tới dịch vụ bên thứ
+ba tikwm.com để phân giải. Mục này nói về app Mac. Bản web được lưu trữ sẽ xử lý các link bạn dán
+trên server của nó.
+
+Cookie trình duyệt (dùng để lấy nội dung Instagram, Threads và RedNote) được đọc cục bộ trên máy
 bạn và không bao giờ rời khỏi máy.
 
 ## Roadmap
@@ -184,9 +188,10 @@ Những gap còn tồn đọng, được ghi nhận trung thực thay vì giấu
 - [ ] App iOS native
 
 > **Về 2 mục app di động native ở trên:** đây vẫn là ý tưởng sớm, mang tính khám phá, chưa cam
-> kết thực hiện. `yt-dlp` là một công cụ Python, và toàn bộ thiết kế của dự án này chủ đích tránh
-> dùng server trung tâm (xem [Disclaimer](.github/DISCLAIMER.md)) nên mỗi lượt tải chạy cục bộ,
-> trên chính máy của người dùng — ràng buộc đó không biến mất chỉ vì thiết bị là điện thoại. Cả
+> kết thực hiện. `yt-dlp` là một công cụ Python, nên app di động native sẽ cần một server làm phần xử
+> lý, như bản web. Hiện ViDrop có hai chế độ: app Mac xử lý mọi link ngay trên máy của người dùng,
+> còn bản web (`remote_web`) xử lý link trên server, có access token (xem
+> [Disclaimer](.github/DISCLAIMER.md)). Cả
 > App Store lẫn Play Store đều có lịch sử rõ ràng về việc từ chối hoặc gỡ bỏ các app "tải video"
 > vì lo ngại bản quyền/ToS, nên một app di động native có thể sẽ phải phân phối ngoài store chính
 > thức (sideloading, kiểu phân phối như TestFlight) thay vì mặc định có sẵn trên store thông
@@ -218,7 +223,7 @@ Rất hoan nghênh mọi đóng góp:
 ## Hỗ trợ & Báo lỗi
 
 Vẫn bị kẹt sau khi đã xem hướng dẫn [Xử lý sự cố](#xử-lý-sự-cố) ở trên? Mở một issue trên
-[GitHub Issues](https://github.com/quangdng95/OmniFlow/issues) — kèm theo:
+[GitHub Issues](https://github.com/quangdng95/ViDrop/issues) — kèm theo:
 
 - Link bạn đang cố tải (nếu không phải nội dung riêng tư/nhạy cảm)
 - Chip máy Mac của bạn (Apple Silicon hay Intel) và phiên bản macOS

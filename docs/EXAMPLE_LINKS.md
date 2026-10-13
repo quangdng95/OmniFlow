@@ -5,7 +5,7 @@
 Not sure what to paste first? Copy any link below straight into ViDrop to see it in action —
 one example per supported platform.
 
-> Instagram and Threads examples need you to be logged into that platform in a browser on your
+> Instagram, Threads and RedNote examples need you to be logged into that platform in a browser on your
 > Mac (Chrome, Brave, Edge, Vivaldi, Opera, or Safari — see
 > [First Launch & macOS Security Warnings](FIRST_LAUNCH.md) if you haven't seen the Keychain
 > permission prompt yet). Every other platform works with no login at all.
