@@ -38,7 +38,7 @@ def test_sanitize_filename_trims_whitespace():
 def test_sanitize_filename_truncates_extremely_long_names_to_stay_within_filesystem_limits():
     # A TikTok Photo Mode caption (used as the item title - and thus the
     # saved filename) can run to 1000+ characters (confirmed live,
-    # MISTAKES.md 2026-08-28). Used as-is, the resulting filename exceeds
+    # docs/internal/MISTAKES.md 2026-08-28). Used as-is, the resulting filename exceeds
     # macOS's 255-byte-per-path-component limit and the download fails with
     # OSError: [Errno 63] File name too long - not platform-specific, any
     # title this long from any resolver would hit the same wall.
@@ -61,7 +61,7 @@ def test_sanitize_filename_keeps_a_trailing_differentiator_distinct_after_trunca
     # naive prefix-only truncation of a long shared caption (TikTok Photo
     # Mode) collapses every item to the SAME truncated name, so
     # get_unique_filename can no longer tell them apart and parallel batch
-    # downloads silently clobber each other (confirmed live, MISTAKES.md
+    # downloads silently clobber each other (confirmed live, docs/internal/MISTAKES.md
     # 2026-08-28: a 4-image post saved only 2 files). The tail must survive
     # truncation so distinct titles stay distinct.
     caption = "Từ những ngày đầu thai kỳ, mình đã tập thói quen đọc thai giáo " * 15
@@ -327,7 +327,7 @@ def test_desktop_policy_never_names_native_h264_formats():
 
 
 def test_avoid_reencode_tries_native_h264_then_facebook_hd_sd_before_the_normal_ladder(monkeypatch):
-    # Regression (MISTAKES.md 2026-09-25): a Facebook reel's DASH tiers are all
+    # Regression (docs/internal/MISTAKES.md 2026-09-25): a Facebook reel's DASH tiers are all
     # AV1, so the res-first ladder picked 1080p AV1 and ensure_h264() then
     # re-encoded it on the 1 GB cloud VM for minutes. `hd`/`sd` are muxed H.264.
     monkeypatch.setattr(download_module, "AVOID_REENCODE", True)
@@ -544,7 +544,7 @@ def test_ensure_apple_audio_keeps_the_original_when_ffmpeg_fails(monkeypatch, tm
 # rather than the urllib call inside it, so a real bug (backend/download.py
 # never imported urllib.request at all, despite calling
 # urllib.request.Request/urlopen) went unnoticed until a live download was
-# actually attempted (see MISTAKES.md). This exercises the REAL function body.
+# actually attempted (see docs/internal/MISTAKES.md). This exercises the REAL function body.
 
 
 class _FakeCdnResponse:

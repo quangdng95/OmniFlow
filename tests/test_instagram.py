@@ -115,7 +115,7 @@ def test_fetch_instagram_media_any_raises_auth_error_when_all_unauthorized(monke
 # instaloader all answer with a post *count* but no *edges* for a profile the
 # session doesn't own. https://www.instagram.com/api/v1/feed/user/<id>/ (the
 # same private-API host+header pattern already proven for fetch_instagram_media)
-# still returns real items, so it is now the PRIMARY resolver - see MISTAKES.md.
+# still returns real items, so it is now the PRIMARY resolver - see docs/internal/MISTAKES.md.
 
 
 class _FakeResponse:

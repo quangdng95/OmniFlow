@@ -56,7 +56,7 @@ def test_fetch_tiktok_post_parses_a_photo_mode_slideshow(monkeypatch):
     assert media["title"] == "A slideshow post"
     # Each item's thumbnail must be its OWN image, not the post-level cover -
     # using a shared cover made every row show slide 1's picture (regression
-    # pin, MISTAKES.md 2026-09-17).
+    # pin, docs/internal/MISTAKES.md 2026-09-17).
     assert media["items"] == [
         {"kind": "image", "url": "https://p16-sign.tiktokcdn.com/img1.jpeg", "thumbnail": "https://p16-sign.tiktokcdn.com/img1.jpeg"},
         {"kind": "image", "url": "https://p16-sign.tiktokcdn.com/img2.jpeg", "thumbnail": "https://p16-sign.tiktokcdn.com/img2.jpeg"},
@@ -176,7 +176,7 @@ def test_fetch_tiktok_post_gives_up_after_repeated_rate_limiting(monkeypatch):
 def test_fetch_tiktok_post_exposes_the_soundtrack_for_a_video(monkeypatch):
     # tikwm returns the post's original sound as `music` (an mp3 link). Without
     # surfacing it, a TikTok video resolved through this fallback had no way to
-    # download the audio (MISTAKES.md 2026-09-30).
+    # download the audio (docs/internal/MISTAKES.md 2026-09-30).
     payload = {
         "code": 0,
         "msg": "success",

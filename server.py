@@ -1,6 +1,6 @@
 """Entry-point facade. All application code lives in backend/ - see
 backend/app.py (routes), backend/classify.py (URL classification) and friends.
-desktop_app.py and vidrop.spec rely on `server.app` staying importable here.
+desktop_app.py and packaging/vidrop.spec rely on `server.app` staying importable here.
 """
 
 import os

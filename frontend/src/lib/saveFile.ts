@@ -91,7 +91,7 @@ export interface PreparedSave {
 // agent or the platform in the current context…") once the tap that
 // triggered it is more than a moment old. Fetching + unzipping a multi-MB
 // batch between the tap and share() routinely burns through that window
-// (MISTAKES.md 2026-09-27) - so callers prepare the files *ahead* of the tap
+// (docs/internal/MISTAKES.md 2026-09-27) - so callers prepare the files *ahead* of the tap
 // (preparePlainFile / prepareZipFiles) and this function calls share()
 // before any await.
 export async function sharePreparedSave(prepared: PreparedSave): Promise<"shared" | "downloaded"> {

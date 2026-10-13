@@ -10,7 +10,7 @@ keep both updated together when shipping a user-visible change.
 ### Added
 
 - [x] **Mac app, new identity** — bundle ID `com.vidrop.app`, `ViDrop.app`, a new square yellow
-  icon (`Assets/Logo/ViDrop.icns`; the older logo files stay), DMGs named per chip:
+  icon (`Assets/Logo/ViDrop.icns`; the older logo files were removed from the tree and remain in git history), DMGs named per chip:
   `ViDrop-AppleSilicon.dmg` and `ViDrop-Intel.dmg` (`scripts/build.sh` names them by architecture
   and can build the Intel app via `PYTHON_BIN` / `ARCH_PREFIX` / `DIST_DIR`).
 - [x] **Data moved to `~/Library/Application Support/ViDrop`** (logs in `~/Library/Logs/ViDrop`).
@@ -163,7 +163,7 @@ keep both updated together when shipping a user-visible change.
   `download.AVOID_REENCODE`, which puts native H.264 first in the format selector (Facebook's muxed
   `hd`/`sd` files, named by format id since yt-dlp reports their codec as unknown). Desktop app
   unchanged. Trade-off: a Facebook video with only an AV1 1080p tier downloads at 720p H.264 on the
-  cloud. See MISTAKES.md 2026-09-25.
+  cloud. See docs/internal/MISTAKES.md 2026-09-25.
 - [x] The single-video progress label shows "Processing video…" at 100% instead of a frozen
   "100% Downloading…".
 

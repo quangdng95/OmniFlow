@@ -1,7 +1,7 @@
 """Threads (threads.net / threads.com) post resolver.
 
 Neither yt-dlp nor gallery-dl support Threads at all (verified live 2026-07-07 -
-see MISTAKES.md, "Master Router spec asked for tools that don't exist"). Threads
+see docs/internal/MISTAKES.md, "Master Router spec asked for tools that don't exist"). Threads
 shares Instagram's private REST API infrastructure under its own app id, so a
 Threads post resolves through the exact same
 https://www.threads.net/api/v1/media/<id>/info/ shape Instagram's post resolver

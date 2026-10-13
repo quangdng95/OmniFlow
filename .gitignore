@@ -9,7 +9,7 @@ node_modules/
 # scripts/build.sh publishes to release/v<VERSION>/; its PyInstaller output goes to build/ (temporary).
 release/
 
-# PyInstaller packaging artifacts (see vidrop.spec / rules/packaging.md). build/ is the temporary
+# PyInstaller packaging artifacts (see packaging/vidrop.spec / rules/packaging.md). build/ is the temporary
 # output of scripts/build.sh; dist/ and dist-*/ are the old output folders (kept ignored for safety).
 build/
 .ffmpeg_stage/
@@ -24,13 +24,12 @@ dist-*/
 bin/
 envs/
 
-# Internal working notes for AI coding agents / local runtime state —
+# Internal working notes for AI coding agents (docs/internal/: MISTAKES.md, session.md) / local runtime state —
 # not needed by end users of the published app, kept local-only.
 .claude/
 .antigravity/
 CLAUDE.md
-MISTAKES.md
-session.md
+docs/internal/
 config.json
 .logs/
 

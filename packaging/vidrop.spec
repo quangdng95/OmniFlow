@@ -3,7 +3,9 @@
 # frontend + vendored ffmpeg into a standalone macOS .app that each end user
 # installs and runs 100% on their own machine (no owner server involved).
 #
-# Build:  pyinstaller vidrop.spec --noconfirm
+# Build:  pyinstaller packaging/vidrop.spec --noconfirm   (run from the repo root; scripts/build.sh does)
+# PyInstaller resolves relative paths against THIS file's folder (SPECPATH), so every path below is
+# anchored to ROOT, the repo root, one level up.
 # Output: <distpath>/ViDrop.app (scripts/build.sh publishes it under release/v<VERSION>/)
 import json
 import os
@@ -12,10 +14,12 @@ import shutil
 
 from PyInstaller.utils.hooks import collect_all
 
-# Two vendored ffmpeg binaries live at the repo root: `ffmpeg` (arm64-native,
+ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))  # SPECPATH is injected by PyInstaller
+
+# Two vendored ffmpeg binaries live in vendor/ffmpeg/: `ffmpeg` (arm64-native,
 # built with dylibbundler from Homebrew's own ffmpeg so it's self-contained
-# via its sibling ffmpeg-libs/ dylibs - no Homebrew needed at runtime; see
-# MISTAKES.md 2026-08-29) for Apple Silicon, and `ffmpeg-x86_64` (statically
+# via its sibling libs/ dylibs - no Homebrew needed at runtime; see
+# docs/internal/MISTAKES.md 2026-08-29) for Apple Silicon, and `ffmpeg-x86_64` (statically
 # linked codecs, zero external dylib deps) for Intel. Build on the machine
 # matching the target architecture - this spec picks the matching source
 # automatically via platform.machine(), so the same spec produces a
@@ -25,19 +29,20 @@ from PyInstaller.utils.hooks import collect_all
 # source is staged under that name before PyInstaller ever sees it.
 # The version number lives in ONE place, frontend/package.json (and its lock file, kept equal
 # by tests/test_release_version.py). The app's Info.plist and scripts/build.sh read it from there.
-with open("frontend/package.json") as _package_file:
+with open(os.path.join(ROOT, "frontend", "package.json")) as _package_file:
     VERSION = json.load(_package_file)["version"]
 
 _IS_ARM64 = platform.machine() == "arm64"
-_FFMPEG_SOURCE = "ffmpeg" if _IS_ARM64 else "ffmpeg-x86_64"
-_STAGE_DIR = ".ffmpeg_stage"
+_FFMPEG_DIR = os.path.join(ROOT, "vendor", "ffmpeg")
+_FFMPEG_SOURCE = os.path.join(_FFMPEG_DIR, "ffmpeg" if _IS_ARM64 else "ffmpeg-x86_64")
+_STAGE_DIR = os.path.join(ROOT, ".ffmpeg_stage")
 _STAGED_FFMPEG = os.path.join(_STAGE_DIR, "ffmpeg")
 os.makedirs(_STAGE_DIR, exist_ok=True)
 shutil.copy2(_FFMPEG_SOURCE, _STAGED_FFMPEG)
 os.chmod(_STAGED_FFMPEG, 0o755)
 
 datas = [
-    ("frontend/dist", "frontend/dist"),  # the built UI server.py serves
+    (os.path.join(ROOT, "frontend", "dist"), "frontend/dist"),  # the built UI server.py serves
     (_STAGED_FFMPEG, "."),               # vendored ffmpeg (get_ffmpeg_path restores +x)
 ]
 if _IS_ARM64:
@@ -45,10 +50,10 @@ if _IS_ARM64:
     # commands point at @executable_path/libs/*.dylib (dylibbundler output) -
     # without bundling ./libs as a sibling of the executable too, it crashes
     # immediately with "Library not loaded" (confirmed live 2026-08-29,
-    # MISTAKES.md - a folder-name mismatch reproduced exactly this). The
+    # docs/internal/MISTAKES.md - a folder-name mismatch reproduced exactly this). The
     # x86_64 binary needs no equivalent - confirmed via `otool -L` it only
     # links system frameworks (its codecs are statically linked in).
-    datas.append(("libs/*.dylib", "libs"))
+    datas.append((os.path.join(_FFMPEG_DIR, "libs", "*.dylib"), "libs"))  # lands next to the bundled ffmpeg
 binaries = []
 hiddenimports = []
 
@@ -68,8 +73,8 @@ for pkg in ("yt_dlp", "webview", "browser_cookie3", "curl_cffi"):
     hiddenimports += pkg_hidden
 
 a = Analysis(
-    ["desktop_app.py"],
-    pathex=[],
+    [os.path.join(ROOT, "desktop_app.py")],
+    pathex=[ROOT],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
@@ -81,10 +86,8 @@ a = Analysis(
 pyz = PYZ(a.pure)
 
 # App icon (macOS). A multi-resolution .icns (16px→1024px) of the square yellow
-# V3 logo (824px artwork centred on a 1024 canvas, transparent margin), so it stays
-# crisp at every Finder/Dock size. The older Assets/Logo/Logo-White.* files are kept
-# but no longer used here.
-APP_ICON = "Assets/Logo/ViDrop.icns"
+# V3 logo, full-bleed (scripts/make-icon.sh), so it stays crisp at every Finder/Dock size.
+APP_ICON = os.path.join(ROOT, "Assets", "Logo", "ViDrop.icns")
 
 exe = EXE(
     pyz,

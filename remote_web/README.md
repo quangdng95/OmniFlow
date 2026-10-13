@@ -19,7 +19,7 @@ install required on that device.
 > Start at [Free-tier cloud deployment](#free-tier-cloud-deployment-linux--the-primary-deployment).
 
 This is a *separate deployment* from the native `.app` — it does not touch
-`backend/`, `server.py`, `desktop_app.py`, or `vidrop.spec` at all. The
+`backend/`, `server.py`, `desktop_app.py`, or `packaging/vidrop.spec` at all. The
 original design ran it on a dedicated, always-on Mac (an older machine,
 **not** the one used for day-to-day development) behind a free Cloudflare
 Tunnel, because a residential IP matters for platforms (TikTok especially)
@@ -61,8 +61,7 @@ deployment gets pushed up from a Mac (see below).
    python3 -c "from remote_web.ffmpeg_locator import resolve_ffmpeg_binary; print(resolve_ffmpeg_binary())"
    ```
    This must print a real path, not `None`. If it prints `None`, re-check
-   that both `./ffmpeg` (arm64) and `./ffmpeg-x86_64` (Intel) are present at
-   the repo root and executable — see
+   that both `vendor/ffmpeg/ffmpeg` (arm64) and `vendor/ffmpeg/ffmpeg-x86_64` (Intel) are present and executable — see
    `.claude/rules/packaging.md`'s "Two-architecture ffmpeg" section.
 6. Confirm this Mac has a live, logged-in Instagram/Threads session in an
    installed browser (Chrome/Brave/Edge/Vivaldi/Opera — **not** Safari, see
@@ -221,7 +220,7 @@ there).
    far more RAM — but Oracle flagged/locked the free account during setup.
    GCP has been steadier for this.)
    - **SSH access is IAP-only, not public** (hardened 2026-09-16 — see
-     MISTAKES.md). `default-allow-ssh` (port 22 open to `0.0.0.0/0`) is
+     docs/internal/MISTAKES.md). `default-allow-ssh` (port 22 open to `0.0.0.0/0`) is
      deleted; the only firewall rule for port 22 is `allow-ssh-iap`, scoped
      to Google's fixed IAP range `35.235.240.0/20`. Connect via:
      ```bash

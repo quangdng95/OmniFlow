@@ -21,7 +21,7 @@ import urllib.parse
 # choice + per-kind caps) is extraction.effective_item_limit().
 PLAYLIST_ITEM_CAP = 100
 # A YouTube Mix/Radio (list=RD…) is auto-generated and endless — cap it harder
-# so extraction can't hang the app (MISTAKES.md blacklist §3).
+# so extraction can't hang the app (docs/internal/MISTAKES.md blacklist §3).
 MIX_ITEM_CAP = 50
 
 # Flat playlist extraction can't know each entry's real available formats without
@@ -95,7 +95,7 @@ def extract_url_from_text(raw):
 
 def normalize_rednote_url(url):
     # yt-dlp mishandles the rednote.com domain (no thumbnail, only "Best");
-    # its xiaohongshu.com equivalent works fully (MISTAKES.md blacklist §4).
+    # its xiaohongshu.com equivalent works fully (docs/internal/MISTAKES.md blacklist §4).
     if not url:
         return url
     if "rednote.com/explore/" in url:
@@ -301,7 +301,7 @@ def classify_url(raw_url):
         list_id = _youtube_list_id(url)
         if list_id and list_id.upper().startswith("RD"):
             # Mix/Radio: keep the seed watch URL (the Mix only resolves through
-            # it) and cap the endless list (MISTAKES.md blacklist §3).
+            # it) and cap the endless list (docs/internal/MISTAKES.md blacklist §3).
             kind = LinkKind.YOUTUBE_MIX
             playlist_cap = MIX_ITEM_CAP
         elif list_id:

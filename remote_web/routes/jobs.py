@@ -52,7 +52,7 @@ def download_file(job_id):
     # to 404 a client retrying the same job - e.g. the user backed out of the
     # OS share sheet, or picked "Save to Files" and wants to also AirDrop it,
     # and tapping Download again just got "File not found" with no recovery
-    # but re-pasting the link - MISTAKES.md 2026-09-17). reaper.py's
+    # but re-pasting the link - docs/internal/MISTAKES.md 2026-09-17). reaper.py's
     # mtime-based sweep already exists to clean up a finished-but-unfetched
     # job after REAPER_STALE_MINUTES; it cleans up an already-fetched one on
     # the same schedule now too, giving a real retry window instead of none.

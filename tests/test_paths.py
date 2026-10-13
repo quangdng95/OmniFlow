@@ -12,10 +12,11 @@ from backend import paths
 def test_paths_anchor_to_repo_root():
     # backend/paths.py sits one level below the repo root, so its BASE_DIR must
     # resolve to server.py's own directory - config.json (dev), frontend/dist
-    # and the vendored ffmpeg are all found relative to it.
+    # and vendor/ffmpeg are all found relative to it.
     assert paths.BASE_DIR == os.path.dirname(os.path.abspath(server.__file__))
     assert paths.WEB_DIR.endswith(os.path.join("frontend", "dist"))
-    assert paths.resource_path("ffmpeg") == os.path.join(paths.RESOURCE_BASE, "ffmpeg")
+    assert paths.resource_path("ffmpeg") == os.path.join(paths.BASE_DIR, "vendor", "ffmpeg", "ffmpeg")
+    assert paths.resource_path("frontend") == os.path.join(paths.RESOURCE_BASE, "frontend")
 
 
 # ---- get_ffmpeg_path / architecture-mismatch detection ----
@@ -24,7 +25,7 @@ def test_paths_anchor_to_repo_root():
 # to an Apple Silicon Mac with no Rosetta 2 installed) passes both existence
 # and +x checks but can't actually exec at all - macOS raises OSError errno
 # 86 ("Bad CPU type in executable") the moment a process tries to run it.
-# Confirmed live 2026-08-29 (MISTAKES.md) while building the arm64-native
+# Confirmed live 2026-08-29 (docs/internal/MISTAKES.md) while building the arm64-native
 # ffmpeg: this is a real, distinct failure mode from "ffmpeg not installed".
 
 

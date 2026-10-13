@@ -340,7 +340,7 @@ def _no_instagram_cookies(monkeypatch):
 def test_extract_video_info_profile_tries_private_feed_api_first(monkeypatch):
     # 2026-07-07: web_profile_info/GraphQL/instaloader all now answer a
     # profile's post *count* with no *edges* for a session that doesn't own
-    # it (confirmed live, MISTAKES.md) - the private feed API must be tried
+    # it (confirmed live, docs/internal/MISTAKES.md) - the private feed API must be tried
     # BEFORE any of those, not after.
     _no_instagram_cookies(monkeypatch)
     from backend import instagram as instagram_module
