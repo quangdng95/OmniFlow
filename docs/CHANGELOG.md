@@ -5,6 +5,22 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-13 · Web update (after 2.0.1)
+
+### Fixed
+
+- [x] **Save to device per platform** (`frontend/src/lib/saveFile.ts`, `hooks/usePreparedSave.ts`).
+  iPhone/iPad (incl. iPadOS with a desktop user agent): the finished file is fetched ahead of the tap
+  (progress, abortable, 400 MB cap) so the tap calls `navigator.share({files})` at once ("Save to
+  Photos"); a file that is too big or cannot be shared is streamed to the Files app with an iOS
+  message. Android and desktop: plain download of the server URL. Cause of the old behaviour: after the
+  streaming fix every file over 100 MB (or with a missing size probe) went to the anchor download, whose
+  toast talks about a "download bar" that iOS does not have.
+- [x] **One icon everywhere**: `frontend/public/brand/logo.svg` is the single source;
+  `scripts/gen-icons.sh` regenerates the favicons, apple-touch-icon, PWA/maskable icons, `og-image.png`,
+  the header logo and `docs/logo.png`. `?v=3` on the icon links, iOS' alternative apple-touch-icon names
+  answered, tests that the icons and manifest load without the access token while `/api/*` stays gated.
+
 ## 2026-10-13 · ViDrop 2.0.1
 
 ### Changed
