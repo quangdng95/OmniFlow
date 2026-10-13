@@ -143,7 +143,7 @@ cd frontend && npm install && cd ..
 ./scripts/dev.sh
 ```
 
-**Build app macOS độc lập** (tạo ra `dist/ViDrop.app` và `dist/ViDrop-AppleSilicon.dmg`, hoặc `dist/ViDrop-Intel.dmg` trên Mac Intel):
+**Build app macOS độc lập** (tạo ra `release/v<phiên bản>/ViDrop-AppleSilicon.dmg`, hoặc `ViDrop-Intel.dmg` trên Mac Intel, cùng app đã ký trong `release/v<phiên bản>/_build/`):
 
 ```bash
 ./scripts/build.sh

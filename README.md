@@ -142,7 +142,7 @@ cd frontend && npm install && cd ..
 ./scripts/dev.sh
 ```
 
-**Build the standalone macOS app** (produces `dist/ViDrop.app` and `dist/ViDrop-AppleSilicon.dmg`, or `dist/ViDrop-Intel.dmg` on an Intel Mac):
+**Build the standalone macOS app** (produces `release/v<version>/ViDrop-AppleSilicon.dmg`, or `ViDrop-Intel.dmg` on an Intel Mac, plus the signed app under `release/v<version>/_build/`):
 
 ```bash
 ./scripts/build.sh
