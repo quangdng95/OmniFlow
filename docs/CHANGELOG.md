@@ -10,7 +10,7 @@ keep both updated together when shipping a user-visible change.
 ### Added
 
 - [x] **Mac app, new identity** — bundle ID `com.vidrop.app`, `ViDrop.app`, a new square yellow
-  icon (`Assets/Logo/ViDrop.icns`; the older logo files stay), DMGs named per chip:
+  icon (`Assets/Logo/ViDrop.icns`; the older logo files were removed from the tree and remain in git history), DMGs named per chip:
   `ViDrop-AppleSilicon.dmg` and `ViDrop-Intel.dmg` (`scripts/build.sh` names them by architecture
   and can build the Intel app via `PYTHON_BIN` / `ARCH_PREFIX` / `DIST_DIR`).
 - [x] **Data moved to `~/Library/Application Support/ViDrop`** (logs in `~/Library/Logs/ViDrop`).
