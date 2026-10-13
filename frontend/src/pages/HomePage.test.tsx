@@ -752,7 +752,7 @@ describe("HomePage save-to-device notification (remote mode)", () => {
     expect(await screen.findByText("Saved to your device")).toBeInTheDocument();
   });
 
-  it("tells the user a download started when it fell back to a plain download link", async () => {
+  it("tells the user a download started (not saved) on desktop, where the plain download link is used", async () => {
     vi.mocked(sharePreparedSave).mockResolvedValueOnce("downloaded");
     await finishDownloadAndPressSave();
     expect(await screen.findByText(/download started/i)).toBeInTheDocument();

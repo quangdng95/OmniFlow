@@ -2,15 +2,41 @@ import { unzipSync } from "fflate";
 import { translations } from "../i18n/translations";
 import { detectLanguage } from "../i18n/storage";
 
+// Characters Windows/macOS/Linux filesystems or browsers reject in a file
+// name. Unicode letters (Korean, Vietnamese, ...) are kept as they are.
+// eslint-disable-next-line no-control-regex
+const FORBIDDEN_FILENAME_CHARS = /[\\/:*?"<>|\u0000-\u001f]/g;
+
+export const sanitizeFilename = (filename: string): string => {
+  const cleaned = filename.replace(FORBIDDEN_FILENAME_CHARS, "_").replace(/^[\s.]+|[\s.]+$/g, "");
+  return cleaned || "download";
+};
+
+// Revoking in the same tick as click() can cancel the download in some
+// browsers, so give it a moment to start first.
+const REVOKE_DELAY_MS = 10_000;
+
 const downloadBlob = (blob: Blob, filename: string): void => {
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = objectUrl;
-  link.download = filename;
+  link.download = sanitizeFilename(filename);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(objectUrl);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), REVOKE_DELAY_MS);
+};
+
+// The share sheet is a phone/tablet affordance. On a desktop browser (Chrome
+// on macOS exposes navigator.share too) it opens AirDrop/Messages/Notes, which
+// is not what "Save to device" means there - a normal download is.
+export const shouldUseShareSheet = (files: File[]): boolean => {
+  if (typeof navigator === "undefined") return false;
+  const coarsePointer =
+    typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+  const mobileUa = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent ?? "");
+  if (!coarsePointer && !mobileUa) return false;
+  return files.length > 0 && typeof navigator.share === "function" && !!navigator.canShare?.({ files });
 };
 
 // A save that's already been fetched (and, for a batch, unzipped) and only
@@ -30,7 +56,7 @@ export interface PreparedSave {
 // which offers "Save Video"/"Save Image" (saving directly into Photos) as
 // its top suggestion for image/video content - one tap, no Files app detour.
 // Falls back to a plain download link wherever share-with-files isn't
-// supported (desktop browsers, older WebKit, non-Apple platforms), and
+// supported or the device is a desktop (see shouldUseShareSheet) (desktop browsers, older WebKit, non-Apple platforms), and
 // whenever `files` is empty - navigator.canShare's handling of an empty
 // file list isn't consistent enough across engines to trust.
 //
@@ -44,7 +70,7 @@ export interface PreparedSave {
 // before any await.
 export async function sharePreparedSave(prepared: PreparedSave): Promise<"shared" | "downloaded"> {
   const { files, fallbackBlob, fallbackFilename } = prepared;
-  if (files.length > 0 && navigator.canShare?.({ files })) {
+  if (shouldUseShareSheet(files)) {
     await navigator.share({ files });
     return "shared";
   }
