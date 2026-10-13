@@ -768,4 +768,12 @@ describe("HomePage save-to-device notification (remote mode)", () => {
     expect(screen.queryByText("Saved to your device")).not.toBeInTheDocument();
     expect(screen.queryByText(/download started/i)).not.toBeInTheDocument();
   });
+
+  it("never leaves Save to device spinning: a failed save shows an error and re-enables the button", async () => {
+    vi.mocked(sharePreparedSave).mockRejectedValueOnce(new Error("Failed to fetch file (500)"));
+    await finishDownloadAndPressSave();
+    expect(await screen.findByText("Failed to fetch file (500)")).toBeInTheDocument();
+    const retry = await screen.findByRole("button", { name: "Try download again" });
+    expect(retry).toBeEnabled();
+  });
 });

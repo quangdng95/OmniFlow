@@ -30,21 +30,47 @@ const downloadBlob = (blob: Blob, filename: string): void => {
 // The share sheet is a phone/tablet affordance. On a desktop browser (Chrome
 // on macOS exposes navigator.share too) it opens AirDrop/Messages/Notes, which
 // is not what "Save to device" means there - a normal download is.
-export const shouldUseShareSheet = (files: File[]): boolean => {
+// Above this a blob held in RAM (and handed to a share sheet) is not worth it:
+// the file is streamed straight to disk by the browser instead.
+export const SHARE_SHEET_MAX_BYTES = 100 * 1024 * 1024;
+
+// How long we wait for the size probe / the blob before giving up on the
+// share-sheet route, so a stuck request can never leave "Save" spinning.
+const SHARE_PREPARE_TIMEOUT_MS = 120_000;
+const SIZE_PROBE_TIMEOUT_MS = 8_000;
+
+const isShareCapableDevice = (): boolean => {
   if (typeof navigator === "undefined") return false;
   const coarsePointer =
     typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
   const mobileUa = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent ?? "");
-  if (!coarsePointer && !mobileUa) return false;
-  return files.length > 0 && typeof navigator.share === "function" && !!navigator.canShare?.({ files });
+  return (coarsePointer || mobileUa) && typeof navigator.share === "function";
+};
+
+export const shouldUseShareSheet = (files: File[]): boolean =>
+  files.length > 0 && isShareCapableDevice() && !!navigator.canShare?.({ files });
+
+// Lets the browser stream the file to disk itself: it shows up in the download
+// bar at once and nothing is held in the page's memory. Same-origin, so the
+// trust cookie rides along; no token ever goes into the URL.
+const directDownload = (url: string, filename: string): void => {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = sanitizeFilename(filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
 // A save that's already been fetched (and, for a batch, unzipped) and only
 // needs handing to the share sheet / a download link.
 export interface PreparedSave {
   files: File[];
-  fallbackBlob: Blob;
+  // Absent when the file is too big (or the device not suited) to hold in
+  // memory: `directUrl` is then streamed by the browser instead.
+  fallbackBlob?: Blob;
   fallbackFilename: string;
+  directUrl?: string;
 }
 
 // Saving a finished download on mobile Safari via a plain <a href download>
@@ -69,12 +95,16 @@ export interface PreparedSave {
 // (preparePlainFile / prepareZipFiles) and this function calls share()
 // before any await.
 export async function sharePreparedSave(prepared: PreparedSave): Promise<"shared" | "downloaded"> {
-  const { files, fallbackBlob, fallbackFilename } = prepared;
+  const { files, fallbackBlob, fallbackFilename, directUrl } = prepared;
+  if (directUrl) {
+    directDownload(directUrl, fallbackFilename);
+    return "downloaded";
+  }
   if (shouldUseShareSheet(files)) {
     await navigator.share({ files });
     return "shared";
   }
-  downloadBlob(fallbackBlob, fallbackFilename);
+  if (fallbackBlob) downloadBlob(fallbackBlob, fallbackFilename);
   return "downloaded";
 }
 
@@ -82,14 +112,49 @@ export const isNotAllowedError = (error: unknown): boolean =>
   error instanceof Error && error.name === "NotAllowedError";
 
 const fetchBlob = async (url: string): Promise<Blob> => {
-  const response = await fetch(url, { credentials: "include" });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SHARE_PREPARE_TIMEOUT_MS);
+  try {
+    return await fetchBlobOnce(url, controller.signal);
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const fetchBlobOnce = async (url: string, signal: AbortSignal): Promise<Blob> => {
+  const response = await fetch(url, { credentials: "include", signal });
   if (!response.ok) {
     throw new Error(translations[detectLanguage()].apiErrors.fileFetchFailed.replace("{status}", String(response.status)));
   }
   return response.blob();
 };
 
+// True only on a phone/tablet with the share sheet AND a file small enough to
+// hold in memory. Everything else (every desktop, any big file, an unknown or
+// unreachable size) is streamed straight to disk instead.
+const shouldBufferForShare = async (url: string): Promise<boolean> => {
+  if (!isShareCapableDevice()) return false;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SIZE_PROBE_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { method: "HEAD", credentials: "include", signal: controller.signal });
+    const length = Number(response.headers?.get("Content-Length"));
+    return response.ok && Number.isFinite(length) && length > 0 && length <= SHARE_SHEET_MAX_BYTES;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const directSave = (url: string, filename: string): PreparedSave => ({
+  files: [],
+  fallbackFilename: filename,
+  directUrl: url,
+});
+
 export async function preparePlainFile(url: string, filename: string): Promise<PreparedSave> {
+  if (!(await shouldBufferForShare(url))) return directSave(url, filename);
   const blob = await fetchBlob(url);
   const file = new File([blob], filename, {
     type: blob.type || "application/octet-stream",
@@ -131,6 +196,7 @@ const mimeTypeFor = (filename: string): string => {
 // wherever share-with-files isn't supported, or if the zip turns out to be
 // empty/corrupt.
 export async function prepareZipFiles(url: string, fallbackFilename: string): Promise<PreparedSave> {
+  if (!(await shouldBufferForShare(url))) return directSave(url, fallbackFilename);
   const zipBlob = await fetchBlob(url);
 
   let entries: Record<string, Uint8Array>;
