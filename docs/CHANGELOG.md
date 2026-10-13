@@ -37,6 +37,16 @@ keep both updated together when shipping a user-visible change.
 
 ### Fixed
 
+- [x] **Playlist `truncated` flag follows the Settings limit** — `/api/check` compared the list length with
+  the fixed `PLAYLIST_ITEM_CAP` (100), so a 200/500/All setting flagged a complete list as truncated and a
+  30/50 setting never flagged one. `extraction.effective_item_limit()` is now the single source for both
+  yt-dlp's `playlistend` and the flag, on the desktop and cloud routes. Technical caps stay: "All" (stored as
+  `0`) is bounded at 10000, an Instagram profile at 30, a YouTube Mix at 50.
+- [x] Settings and FAQ wording matches the code: a language change applies immediately (no restart), "no
+  limits" became "no fees" (playlists are capped by the Settings limit).
+- [x] README / `docs/` / `.github/DISCLAIMER.md` describe the two modes (Mac app on your machine, web version
+  on a server behind an access token), the tikwm.com TikTok fallback, 1440p+ re-encoding, and that RedNote
+  also needs a browser login.
 - [x] Raw yt-dlp text is never shown: "Unsupported URL" and "Unable to extract video" map to friendly
   EN/VI messages (`backend/messages.py`, `describe_extraction_error`).
 

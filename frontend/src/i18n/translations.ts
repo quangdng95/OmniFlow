@@ -559,6 +559,8 @@ const en: Translations = {
           "LinkedIn slide-deck posts save every page as an image, not just the cover.",
           "RedNote links work again.",
           "Fixed page sections that didn't line up, and a close button on notifications that was hard to tap on a phone.",
+          "The \"showing the first videos only\" notice now follows your Settings. It no longer appears for a list that fits your loading limit.",
+          "Settings and help text now match what the app does. For example, a language change applies right away, with no restart.",
         ],
       },
       {
@@ -1025,6 +1027,8 @@ const vi: Translations = {
           "Bài LinkedIn dạng slide lưu đủ từng trang thành ảnh, không chỉ trang bìa.",
           "Link RedNote đã dùng lại được.",
           "Sửa lỗi các phần của trang bị lệch hàng, và nút đóng thông báo khó bấm trên điện thoại.",
+          "Thông báo \"chỉ hiện các video đầu tiên\" giờ theo đúng Cài đặt của bạn. Nó không còn hiện với danh sách nằm trong giới hạn bạn đã chọn.",
+          "Chữ trong Cài đặt và phần trợ giúp giờ khớp với cách app hoạt động. Ví dụ, đổi ngôn ngữ có hiệu lực ngay, không cần khởi động lại.",
         ],
       },
       {
