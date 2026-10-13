@@ -373,9 +373,18 @@ def test_detect_video_codec_returns_none_when_ffmpeg_unavailable(monkeypatch):
     assert detect_video_codec("x.mp4", "/ff") is None
 
 
+def _fake_probe(monkeypatch, vcodec, acodec="aac", videotoolbox=False, width=3840, height=2160, fps=30.0):
+    monkeypatch.setattr(
+        download_module, "probe_media",
+        lambda path, ff: {"vcodec": vcodec, "acodec": acodec, "width": width, "height": height, "fps": fps, "duration": 10.0},
+    )
+    monkeypatch.setattr(download_module, "videotoolbox_available", lambda ff: videotoolbox)
+    monkeypatch.setattr(download_module, "prefer_hardware_encoder", lambda *a, **k: True)
+
+
 def test_ensure_h264_is_a_noop_for_already_h264(monkeypatch):
     jobs_module.jobs["j-h264"] = {"cancelled": False, "text": "", "status": "running"}
-    monkeypatch.setattr(download_module, "detect_video_codec", lambda path, ff: "h264")
+    _fake_probe(monkeypatch, "h264")
 
     def fail(*a, **k):
         raise AssertionError("must not re-encode an already-h264 file")
@@ -388,10 +397,11 @@ def test_ensure_h264_reencodes_vp9_in_place(monkeypatch, tmp_path):
     video = tmp_path / "clip.mp4"
     video.write_bytes(b"original-vp9-bytes")
     jobs_module.jobs["j-vp9"] = {"cancelled": False, "text": "", "status": "running"}
-    monkeypatch.setattr(download_module, "detect_video_codec", lambda path, ff: "vp9")
+    _fake_probe(monkeypatch, "vp9")
 
     class FakePopen:
-        def __init__(self, cmd, stdout=None, stderr=None):
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            self.stdout = []
             self.returncode = 0
             # ffmpeg writes to the temp output (last arg); simulate that.
             with open(cmd[-1], "wb") as f:
@@ -410,10 +420,11 @@ def test_ensure_h264_honors_cancel_mid_reencode(monkeypatch, tmp_path):
     video = tmp_path / "clip.mp4"
     video.write_bytes(b"original-vp9-bytes")
     jobs_module.jobs["j-cancel"] = {"cancelled": True, "text": "", "status": "running"}
-    monkeypatch.setattr(download_module, "detect_video_codec", lambda path, ff: "av01")
+    _fake_probe(monkeypatch, "av01")
 
     class FakePopenRunning:
-        def __init__(self, cmd, stdout=None, stderr=None):
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            self.stdout = []
             self.returncode = None
             with open(cmd[-1], "wb") as f:
                 f.write(b"partial")
@@ -494,7 +505,8 @@ def test_ensure_apple_audio_reencodes_only_the_audio_in_place(monkeypatch, tmp_p
     captured = {}
 
     class FakePopen:
-        def __init__(self, cmd, stdout=None, stderr=None):
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            self.stdout = []
             captured["cmd"] = cmd
             self.returncode = 0
             with open(cmd[-1], "wb") as f:
@@ -523,7 +535,8 @@ def test_ensure_apple_audio_keeps_the_original_when_ffmpeg_fails(monkeypatch, tm
     monkeypatch.setattr(download_module, "detect_audio_codec", lambda path, ff: "mp3")
 
     class FailingPopen:
-        def __init__(self, cmd, stdout=None, stderr=None):
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            self.stdout = []
             self.returncode = 1
             with open(cmd[-1], "wb") as f:
                 f.write(b"truncated")
@@ -708,3 +721,192 @@ def test_a_successful_batch_item_keeps_its_file(tmp_path, monkeypatch):
     monkeypatch.setattr(download_module.yt_dlp, "YoutubeDL", FakeYDL)
     out = download_module.download_one_video("https://youtu.be/x", str(tmp_path), "Clip", "Audio Only", "/fake/ffmpeg", "j2")
     assert out == str(tmp_path / "Clip.mp3") and os.listdir(tmp_path) == ["Clip.mp3"]
+
+
+# ---- 4K processing speed: which path a finished download takes ----
+
+
+@pytest.mark.parametrize(
+    "vcodec,can_vt,expected",
+    [
+        ("h264", True, "copy"),
+        ("h264", False, "copy"),
+        (None, True, "copy"),
+        ("hevc", True, "copy"),
+        ("vp9", True, "videotoolbox"),
+        ("av1", True, "videotoolbox"),
+        ("av01", False, "libx264"),
+        ("vp9", False, "libx264"),
+    ],
+)
+def test_choose_video_action(vcodec, can_vt, expected):
+    assert download_module.choose_video_action(vcodec, can_vt) == expected
+
+
+@pytest.mark.parametrize(
+    "w,h,fps,kbps",
+    [(3840, 2160, 30, 25000), (3840, 2160, 60, 35000), (2560, 1440, 30, 16000), (1920, 1080, 30, 10000), (1280, 720, 30, 5000), (None, None, None, 5000)],
+)
+def test_videotoolbox_bitrate_scales_with_resolution_and_fps(w, h, fps, kbps):
+    assert download_module.videotoolbox_bitrate_kbps(w, h, fps) == kbps
+
+
+def test_probe_media_parses_codecs_size_fps_and_duration(monkeypatch):
+    stderr = (
+        "  Duration: 00:04:57.35, start: 0.000000, bitrate: 9750 kb/s\n"
+        "  Stream #0:0: Video: vp9 (Profile 0), yuv420p(tv), 3840x2160, 30 fps, 30 tbr, 1k tbn\n"
+        "  Stream #0:1: Audio: opus, 48000 Hz, stereo, fltp\n"
+    )
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: SimpleNamespace(stderr=stderr))
+    info = download_module.probe_media("x.mp4", "/ff")
+    assert (info["vcodec"], info["acodec"], info["width"], info["height"], info["fps"]) == ("vp9", "opus", 3840, 2160, 30.0)
+    assert info["duration"] == pytest.approx(297.35)
+
+
+def test_videotoolbox_is_only_offered_on_a_mac_whose_ffmpeg_lists_it(monkeypatch):
+    download_module._VT_CACHE.clear()
+    listing = SimpleNamespace(stdout=" V....D h264_videotoolbox    VideoToolbox H.264 Encoder\n")
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: listing)
+    monkeypatch.setattr(download_module.platform, "system", lambda: "Linux")
+    assert download_module.videotoolbox_available("/ff-linux") is False
+    monkeypatch.setattr(download_module.platform, "system", lambda: "Darwin")
+    assert download_module.videotoolbox_available("/ff-mac") is True
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: SimpleNamespace(stdout=" V....D libx264\n"))
+    assert download_module.videotoolbox_available("/ff-mac-without") is False
+    download_module._VT_CACHE.clear()
+
+
+def test_build_h264_command_hardware_vs_software_and_audio_copy():
+    probe = {"width": 3840, "height": 2160, "fps": 30.0, "acodec": "aac"}
+    vt = download_module.build_h264_command("videotoolbox", "/ff", "in.mp4", "out.mp4", probe)
+    assert vt[vt.index("-c:v") + 1] == "h264_videotoolbox"
+    assert vt[vt.index("-b:v") + 1] == "25000k"
+    assert vt[vt.index("-pix_fmt") + 1] == "yuv420p" and "+faststart" in vt and "-crf" not in vt
+    assert vt[vt.index("-c:a") + 1] == "copy"  # already AAC: no audio re-encode
+    sw = download_module.build_h264_command("libx264", "/ff", "in.mp4", "out.mp4", {**probe, "acodec": "opus"})
+    assert sw[sw.index("-c:v") + 1] == "libx264" and sw[sw.index("-preset") + 1] == "veryfast"
+    assert sw[sw.index("-c:a") + 1] == "aac"
+    assert vt[-1] == sw[-1] == "out.mp4"
+
+
+def test_ensure_h264_uses_videotoolbox_when_available(monkeypatch, tmp_path):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"vp9")
+    jobs_module.jobs["j-vt"] = {"cancelled": False, "text": "", "status": "running"}
+    _fake_probe(monkeypatch, "vp9", videotoolbox=True)
+    cmds = []
+
+    class FakePopen:
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            cmds.append(cmd)
+            self.stdout = ["out_time_us=5000000\n"]  # 5 s of a 10 s clip
+            self.returncode = 0
+            with open(cmd[-1], "wb") as f:
+                f.write(b"h264")
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
+    ensure_h264(str(video), "/ff", "j-vt")
+    assert len(cmds) == 1 and "h264_videotoolbox" in cmds[0]
+    assert video.read_bytes() == b"h264"
+    assert jobs_module.jobs["j-vt"]["encode_percent"] == 100
+
+
+def test_ensure_h264_falls_back_to_libx264_when_videotoolbox_fails_and_logs_why(monkeypatch, tmp_path):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"vp9")
+    jobs_module.jobs["j-fb"] = {"cancelled": False, "text": "", "status": "running"}
+    _fake_probe(monkeypatch, "av01", videotoolbox=True)
+    cmds, logged = [], []
+
+    class FakePopen:
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            cmds.append(cmd)
+            self.stdout = []
+            if "h264_videotoolbox" in cmd:
+                self.returncode = 1  # the hardware encoder refuses
+            else:
+                self.returncode = 0
+                with open(cmd[-1], "wb") as f:
+                    f.write(b"software-h264")
+
+        def poll(self):
+            return self.returncode
+
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
+    from backend import paths
+
+    monkeypatch.setattr(paths, "log_exception", lambda ctx, err: logged.append(ctx))
+    ensure_h264(str(video), "/ff", "j-fb")
+    assert [("h264_videotoolbox" in c, "libx264" in c) for c in cmds] == [(True, False), (False, True)]
+    assert video.read_bytes() == b"software-h264"
+    assert logged and "falling back to libx264" in logged[0]
+
+
+def test_ensure_h264_without_hardware_encoder_goes_straight_to_libx264(monkeypatch, tmp_path):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"vp9")
+    jobs_module.jobs["j-sw"] = {"cancelled": False, "text": "", "status": "running"}
+    _fake_probe(monkeypatch, "vp9", videotoolbox=False)
+    seen = []
+
+    class FakePopen:
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            seen.append(cmd)
+            self.stdout = []
+            self.returncode = 0
+            with open(cmd[-1], "wb") as f:
+                f.write(b"x")
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
+    ensure_h264(str(video), "/ff", "j-sw")
+    assert len(seen) == 1 and "libx264" in seen[0] and "veryfast" in seen[0]
+
+
+def test_keep_codec_merges_into_mkv_without_the_mp4_remuxer_or_h264_preference(monkeypatch):
+    monkeypatch.setattr(download_module, "_fetch_formats_for_quality_resolution", lambda *a, **k: [])
+    kept = build_download_options("2160p", "/tmp/x", "/ff", [], [], None, None, "https://youtu.be/x", keep_codec=True)
+    assert kept["merge_output_format"] == "mkv"
+    assert "postprocessors" not in kept or not any(p.get("key") == "FFmpegVideoRemuxer" for p in kept["postprocessors"])
+    normal = build_download_options("2160p", "/tmp/x", "/ff", [], [], None, None, "https://youtu.be/x")
+    assert normal["merge_output_format"] == "mp4"
+    monkeypatch.setattr(download_module, "AVOID_REENCODE", True)
+    cloud_kept = build_download_options("2160p", "/tmp/x", "/ff", [], [], None, None, "https://youtu.be/x", keep_codec=True)
+    assert "avc1" not in cloud_kept["format"]  # the cloud's native-H.264 preference is skipped when keeping the codec
+
+
+@pytest.mark.parametrize(
+    "cpus,override,expected",
+    [(4, "", True), (8, "", True), (10, "", False), (14, "", False), (14, "videotoolbox", True), (2, "libx264", False), (14, "nonsense", False)],
+)
+def test_prefer_hardware_encoder_by_cpu_size_with_override(cpus, override, expected):
+    assert download_module.prefer_hardware_encoder(cpus, override) is expected
+
+
+def test_a_big_cpu_mac_uses_libx264_even_when_videotoolbox_exists(monkeypatch, tmp_path):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"vp9")
+    jobs_module.jobs["j-big"] = {"cancelled": False, "text": "", "status": "running"}
+    _fake_probe(monkeypatch, "vp9", videotoolbox=True)
+    monkeypatch.setattr(download_module, "prefer_hardware_encoder", lambda *a, **k: False)
+    seen = []
+
+    class FakePopen:
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            seen.append(cmd)
+            self.stdout = []
+            self.returncode = 0
+            with open(cmd[-1], "wb") as f:
+                f.write(b"x")
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
+    ensure_h264(str(video), "/ff", "j-big")
+    assert "libx264" in seen[0] and "h264_videotoolbox" not in seen[0]

@@ -495,7 +495,7 @@ describe("HomePage with a playlist result", () => {
 
     await user.click(screen.getByRole("button", { name: /start download/i }));
     await waitFor(() =>
-      expect(mockedApi.startDownload).toHaveBeenCalledWith("https://youtube.com/watch?v=solo", "Solo Video", "Best", undefined)
+      expect(mockedApi.startDownload).toHaveBeenCalledWith("https://youtube.com/watch?v=solo", "Solo Video", "Best", undefined, false)
     );
   });
 
@@ -588,7 +588,7 @@ describe("HomePage with Instagram photos", () => {
     await user.click(screen.getByRole("button", { name: /start download/i }));
 
     await waitFor(() =>
-      expect(mockedApi.startDownload).toHaveBeenCalledWith("https://www.instagram.com/p/abc/", "A nice photo", "Image", undefined)
+      expect(mockedApi.startDownload).toHaveBeenCalledWith("https://www.instagram.com/p/abc/", "A nice photo", "Image", undefined, false)
     );
   });
 

@@ -3,8 +3,11 @@ filename hygiene, and the two low-level downloaders (yt-dlp + direct CDN).
 """
 
 import os
+import platform
 import re
 import subprocess
+import tempfile
+import threading
 import time
 import urllib.request
 
@@ -173,8 +176,11 @@ def _fetch_formats_for_quality_resolution(url, cookies_path, entry_index):
 
 
 def build_download_options(
-    quality, output_path_no_ext, ffmpeg_bin, progress_hooks, postprocessor_hooks, cookies_path=None, entry_index=None, url=None
+    quality, output_path_no_ext, ffmpeg_bin, progress_hooks, postprocessor_hooks, cookies_path=None, entry_index=None, url=None, keep_codec=False
 ):
+    # keep_codec=True (video only): keep whatever codec the platform serves (VP9/AV1 for 4K)
+    # and just merge it into an .mkv - no re-encode at all, the fastest result. The file may
+    # not open in QuickTime / on an iPhone, which is why it is an explicit opt-in.
     opts = {
         "quiet": True,
         "no_warnings": True,
@@ -260,7 +266,7 @@ def build_download_options(
             f"best{height_filter}/"
             f"best"
         )
-        if AVOID_REENCODE:
+        if AVOID_REENCODE and not keep_codec:
             # Native H.264 first. Facebook serves its 1080p tier as AV1 only,
             # but always also offers muxed H.264 `hd` (720p) / `sd` files whose
             # codec yt-dlp reports as unknown, so they can't be matched by a
@@ -278,8 +284,11 @@ def build_download_options(
         # also normalizes any single-file (non-merged) result to .mp4 so the saved
         # extension is predictable. The rare VP9/AV1 straggler that a copy can't
         # make macOS-playable is caught afterward by ensure_h264() in run().
-        opts["merge_output_format"] = "mp4"
-        opts["postprocessors"] = [{"key": "FFmpegVideoRemuxer", "preferedformat": "mp4"}]
+        if keep_codec:
+            opts["merge_output_format"] = "mkv"
+        else:
+            opts["merge_output_format"] = "mp4"
+            opts["postprocessors"] = [{"key": "FFmpegVideoRemuxer", "preferedformat": "mp4"}]
     return opts
 
 
@@ -288,79 +297,219 @@ def build_download_options(
 MACOS_INCOMPATIBLE_VCODECS = ("vp9", "vp09", "vp8", "av01", "av1")
 
 
-def detect_video_codec(path, ffmpeg_bin):
-    # Returns the video stream's codec name (lowercased) for `path`, or None if
-    # it can't be determined. Uses the bundled ffmpeg itself (`-i` prints stream
-    # info to stderr) so we never depend on a separate ffprobe binary being
-    # present - only vendor/ffmpeg/ffmpeg is vendored.
+# How many H.264 re-encodes may run at once. A 4K encode saturates the CPU (or the
+# hardware encoder), so two at a time is plenty on a Mac; remote_web sets this to 1
+# because its VM has one shared vCPU (see remote_web/app.py).
+ENCODE_SLOTS = threading.BoundedSemaphore(2)
+
+
+def set_encode_concurrency(n):
+    global ENCODE_SLOTS
+    ENCODE_SLOTS = threading.BoundedSemaphore(max(1, int(n)))
+
+
+def probe_media(path, ffmpeg_bin):
+    # Parses `ffmpeg -i` stderr (no ffprobe dependency). Returns a dict with
+    # vcodec, acodec, width, height, fps and duration (seconds); a missing value is None.
+    info = {"vcodec": None, "acodec": None, "width": None, "height": None, "fps": None, "duration": None}
     try:
         result = subprocess.run(
             [ffmpeg_bin, "-hide_banner", "-i", path],
             capture_output=True, text=True, timeout=60,
         )
     except (OSError, subprocess.SubprocessError):
-        return None
+        return info
     for line in result.stderr.splitlines():
-        if "Video:" in line:
+        if "Duration:" in line and info["duration"] is None:
+            m = re.search(r"Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)", line)
+            if m:
+                info["duration"] = int(m.group(1)) * 3600 + int(m.group(2)) * 60 + float(m.group(3))
+        elif "Video:" in line and info["vcodec"] is None:
             m = re.search(r"Video:\s*([A-Za-z0-9_]+)", line)
             if m:
-                return m.group(1).lower()
-    return None
+                info["vcodec"] = m.group(1).lower()
+            m = re.search(r"\b(\d{2,5})x(\d{2,5})\b", line.split("Video:", 1)[1])
+            if m:
+                info["width"], info["height"] = int(m.group(1)), int(m.group(2))
+            m = re.search(r"([\d.]+)\s*fps", line)
+            if m:
+                info["fps"] = float(m.group(1))
+        elif "Audio:" in line and info["acodec"] is None:
+            m = re.search(r"Audio:\s*([A-Za-z0-9_]+)", line)
+            if m:
+                info["acodec"] = m.group(1).lower()
+    return info
+
+
+def detect_video_codec(path, ffmpeg_bin):
+    # Returns the video stream's codec name (lowercased) for `path`, or None if
+    # it can't be determined.
+    return probe_media(path, ffmpeg_bin)["vcodec"]
+
+
+_VT_CACHE = {}
+
+
+def videotoolbox_available(ffmpeg_bin):
+    # True only on macOS, when this very ffmpeg build lists the h264_videotoolbox
+    # encoder. Cached per binary: `ffmpeg -encoders` is cheap but not free.
+    if platform.system() != "Darwin":
+        return False
+    if ffmpeg_bin not in _VT_CACHE:
+        try:
+            out = subprocess.run([ffmpeg_bin, "-hide_banner", "-encoders"], capture_output=True, text=True, timeout=30).stdout
+            _VT_CACHE[ffmpeg_bin] = "h264_videotoolbox" in out
+        except (OSError, subprocess.SubprocessError):
+            _VT_CACHE[ffmpeg_bin] = False
+    return _VT_CACHE[ffmpeg_bin]
+
+
+# Measured 2026-10-13 on a 3:58-5:00 4K VP9 clip (docs/internal/session.md): the Mac hardware encoder
+# runs at a fixed ~60 fps for 4K whatever the options, while libx264 veryfast scales with the
+# cores - 127 fps on a 14-core M4 Pro (faster than hardware), a few times slower on a dual-core
+# 2017 Intel MacBook. So hardware wins on small CPUs and software on big ones; the cut is 8 logical cores.
+HARDWARE_ENCODER_MAX_CPUS = 8
+
+
+def prefer_hardware_encoder(cpu_count=None, override=None):
+    # VIDROP_H264_ENCODER=videotoolbox|libx264 forces one (for testing); otherwise by CPU size.
+    override = (override if override is not None else os.environ.get("VIDROP_H264_ENCODER", "")).strip().lower()
+    if override in ("videotoolbox", "libx264"):
+        return override == "videotoolbox"
+    return (cpu_count if cpu_count is not None else (os.cpu_count() or 1)) <= HARDWARE_ENCODER_MAX_CPUS
+
+
+def choose_video_action(vcodec, can_videotoolbox):
+    # What to do with a finished download's video stream so it plays in QuickTime:
+    #   "copy"         already H.264 (or unknown) - leave the file alone (the remux already happened)
+    #   "videotoolbox" VP9/AV1/... on a Mac whose ffmpeg has the hardware encoder (and the caller
+    #                  judged it worth using - see prefer_hardware_encoder)
+    #   "libx264"      VP9/AV1/... anywhere else (veryfast software encode)
+    if not vcodec or not any(vcodec.startswith(bad) for bad in MACOS_INCOMPATIBLE_VCODECS):
+        return "copy"
+    return "videotoolbox" if can_videotoolbox else "libx264"
+
+
+def videotoolbox_bitrate_kbps(width, height, fps):
+    # Hardware encoders have no CRF, so give them a bitrate that keeps 4K sharp:
+    # about 25 Mbps for 2160p30, 16 for 1440p, 10 for 1080p, 5 below that, x1.4 for 50/60 fps.
+    px = (width or 0) * (height or 0)
+    if px >= 3840 * 2160 * 0.9 or (height or 0) >= 2000 or (width or 0) >= 3600:
+        base = 25000
+    elif px >= 2560 * 1440 * 0.9:
+        base = 16000
+    elif px >= 1920 * 1080 * 0.9:
+        base = 10000
+    else:
+        base = 5000
+    if fps and fps > 35:
+        base = int(base * 1.4)
+    return base
+
+
+def build_h264_command(action, ffmpeg_bin, path, tmp_out, probe):
+    # The full ffmpeg command line for the chosen re-encode. yuv420p 8-bit is the
+    # profile QuickTime decodes (some VP9/AV1 sources are 10-bit). Audio is
+    # copied when it is already AAC, otherwise encoded to AAC.
+    cmd = [ffmpeg_bin, "-y", "-hide_banner", "-nostats", "-progress", "pipe:1", "-i", path, "-map", "0:v:0", "-map", "0:a?"]
+    if action == "videotoolbox":
+        kbps = videotoolbox_bitrate_kbps(probe.get("width"), probe.get("height"), probe.get("fps"))
+        cmd += ["-c:v", "h264_videotoolbox", "-b:v", f"{kbps}k", "-maxrate", f"{int(kbps * 1.5)}k",
+                "-profile:v", "high", "-allow_sw", "1", "-tag:v", "avc1"]
+    else:
+        cmd += ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-profile:v", "high"]
+    cmd += ["-pix_fmt", "yuv420p"]
+    cmd += ["-c:a", "copy"] if probe.get("acodec") == "aac" else ["-c:a", "aac", "-b:a", "192k"]
+    cmd += ["-movflags", "+faststart", "-f", "mp4", tmp_out]
+    return cmd
 
 
 def ensure_h264(path, ffmpeg_bin, job_id):
-    # Guarantees the finished video is macOS-playable H.264. When the format
-    # selector already landed h264 (the common case) this only probes and
-    # returns - no re-encode. It re-encodes ONLY when the file positively
-    # carries a known-incompatible codec (VP9/AV1), which the h264-preferring
-    # selector should make rare (e.g. a 4K-only-in-VP9 source). Honors the same
-    # cooperative cancel flag as the rest of the download.
-    codec = detect_video_codec(path, ffmpeg_bin)
-    if not codec or not any(codec.startswith(bad) for bad in MACOS_INCOMPATIBLE_VCODECS):
+    # Guarantees the finished video is macOS-playable H.264. An already-H.264
+    # file is only probed (no re-encode). A VP9/AV1 file is re-encoded: with the
+    # Mac's hardware encoder when this ffmpeg has it (several times faster than
+    # software, and the only thing that keeps a 4K clip tolerable on an older
+    # Intel Mac), otherwise - or if the hardware encode fails - with libx264
+    # veryfast. Honors the cooperative cancel flag. Progress goes to the job as
+    # `encode_percent` (from ffmpeg's -progress output) and a readable `text`.
+    probe = probe_media(path, ffmpeg_bin)
+    action = choose_video_action(probe["vcodec"], videotoolbox_available(ffmpeg_bin) and prefer_hardware_encoder())
+    if action == "copy":
         return
-    jobs.jobs[job_id]["text"] = "Converting to H.264 for macOS..."
-    tmp_out = path + ".h264.mp4"
-    cmd = [
-        ffmpeg_bin, "-y", "-i", path,
-        # yuv420p 8-bit is the profile QuickTime actually decodes - some VP9/AV1
-        # sources are 10-bit (yuv420p10le), which would stay unplayable if copied
-        # through, so pin it explicitly.
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
-        "-c:a", "aac", "-b:a", "192k",
-        "-movflags", "+faststart", tmp_out,
-    ]
-    _run_ffmpeg_replacing(cmd, tmp_out, path, job_id)
+    job = jobs.jobs[job_id]
+    with ENCODE_SLOTS:
+        for attempt_action in ([action, "libx264"] if action == "videotoolbox" else [action]):
+            tmp_out = path + ".h264.mp4"
+            cmd = build_h264_command(attempt_action, ffmpeg_bin, path, tmp_out, probe)
+            job["stage"] = "encoding"
+            job["encode_percent"] = 0
+            job["text"] = "Converting to H.264 for macOS..."
+            ok, err = _run_ffmpeg_replacing(cmd, tmp_out, path, job_id, probe.get("duration"))
+            if ok:
+                return
+            from backend import paths
+            paths.log_exception(
+                f"ensure_h264: {attempt_action} encode failed"
+                + (", falling back to libx264 veryfast" if attempt_action == "videotoolbox" else ", keeping the original file"),
+                RuntimeError(err or "ffmpeg exited with an error"),
+            )
 
 
-def _run_ffmpeg_replacing(cmd, tmp_out, path, job_id):
-    # Runs an ffmpeg command whose last argument is `tmp_out`, honoring the
-    # cooperative cancel flag, and swaps `tmp_out` over `path` on success. On
-    # failure the original file is kept and the temp output is removed, so a
-    # failed conversion never leaves a truncated file behind.
-    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    while proc.poll() is None:
-        if jobs.jobs[job_id]["cancelled"]:
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-            if os.path.exists(tmp_out):
+def _run_ffmpeg_replacing(cmd, tmp_out, path, job_id, duration=None):
+    # Runs an ffmpeg command whose last argument is `tmp_out` (and which was given
+    # `-progress pipe:1`), honoring the cooperative cancel flag, and swaps `tmp_out`
+    # over `path` on success. Returns (ok, last stderr lines). On failure the
+    # original file is kept and the temp output is removed, so a failed conversion
+    # never leaves a truncated file behind.
+    job = jobs.jobs[job_id]
+    started = time.time()
+    with tempfile.TemporaryFile() as err_file:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=err_file, text=True)
+
+        def read_progress():
+            for line in proc.stdout:
+                if line.startswith("out_time_us=") or line.startswith("out_time_ms="):
+                    try:
+                        done = int(line.split("=", 1)[1]) / 1_000_000
+                    except ValueError:
+                        continue
+                    if duration and done >= 0:
+                        pct = min(99, int(done / duration * 100))
+                        job["encode_percent"] = pct
+                        job["text"] = f"Converting to H.264... ({pct}%)"
+
+        reader = threading.Thread(target=read_progress, daemon=True)
+        reader.start()
+        while proc.poll() is None:
+            if job["cancelled"]:
+                proc.terminate()
                 try:
-                    os.remove(tmp_out)
-                except OSError:
-                    pass
-            raise yt_dlp.utils.DownloadCancelled("cancelled by user")
-        time.sleep(0.3)
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                if os.path.exists(tmp_out):
+                    try:
+                        os.remove(tmp_out)
+                    except OSError:
+                        pass
+                raise yt_dlp.utils.DownloadCancelled("cancelled by user")
+            time.sleep(0.3)
+        reader.join(timeout=2)
+        err_file.seek(0)
+        err_tail = " | ".join(err_file.read().decode("utf-8", "replace").strip().splitlines()[-3:])
+    job["encode_seconds"] = round(time.time() - started, 1)
     if proc.returncode == 0 and os.path.exists(tmp_out):
         os.replace(tmp_out, path)
-    elif os.path.exists(tmp_out):
+        job["encode_percent"] = 100
+        return True, ""
+    if os.path.exists(tmp_out):
         # Conversion failed - keep the original (still-playable-elsewhere) file
         # rather than leaving a truncated temp output behind.
         try:
             os.remove(tmp_out)
         except OSError:
             pass
+    return False, err_tail
 
 
 # Audio codecs iOS / QuickTime can't decode inside an .mp4. MP3-in-MP4 is the
@@ -401,9 +550,9 @@ def ensure_apple_audio(path, ffmpeg_bin, job_id):
     jobs.jobs[job_id]["text"] = "Converting audio for iPhone/macOS..."
     tmp_out = path + ".aac.mp4"
     cmd = [
-        ffmpeg_bin, "-y", "-i", path,
+        ffmpeg_bin, "-y", "-hide_banner", "-nostats", "-progress", "pipe:1", "-i", path,
         "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
-        "-movflags", "+faststart", tmp_out,
+        "-movflags", "+faststart", "-f", "mp4", tmp_out,
     ]
     _run_ffmpeg_replacing(cmd, tmp_out, path, job_id)
 

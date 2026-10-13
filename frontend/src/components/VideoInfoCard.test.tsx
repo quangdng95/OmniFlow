@@ -127,3 +127,15 @@ describe("VideoInfoCard", () => {
     expect(screen.getByRole("progressbar")).toBeInTheDocument();
   });
 });
+
+describe("VideoInfoCard conversion progress", () => {
+  it("shows the real percent while the video is converted", () => {
+    setup({ actionState: "downloading", percent: 100, encodePercent: 42 });
+    expect(screen.getByText(/Converting to H\.264… 42%/)).toBeInTheDocument();
+  });
+
+  it("falls back to the generic processing line when there is no conversion percent", () => {
+    setup({ actionState: "downloading", percent: 100, encodePercent: null });
+    expect(screen.getByText(/Processing video…/)).toBeInTheDocument();
+  });
+});

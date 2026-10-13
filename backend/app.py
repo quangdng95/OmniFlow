@@ -508,7 +508,9 @@ def start_download():
     if not ffmpeg_bin:
         return jsonify({"error": paths.ffmpeg_unavailable_message(lang)}), 400
 
-    ext = "mp3" if "Audio" in quality else "mp4"
+    # "Keep original codec": remux only (no re-encode), saved as .mkv. Video downloads only.
+    keep_codec = bool(data.get("keep_codec")) and "Audio" not in quality
+    ext = "mp3" if "Audio" in quality else ("mkv" if keep_codec else "mp4")
     final_output_path = download.get_unique_filename(save_dir, title, ext)
     final_filename = os.path.basename(final_output_path)
     output_path_no_ext = os.path.splitext(final_output_path)[0]
@@ -549,7 +551,7 @@ def start_download():
 
         def attempt(cookiefile):
             ydl_opts = download.build_download_options(
-                quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookiefile, entry_index, url
+                quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookiefile, entry_index, url, keep_codec
             )
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
@@ -562,7 +564,7 @@ def start_download():
             # despite the h264-preferring selector, re-encode it to H.264 so the
             # file is actually playable on macOS. No-op (a fast probe only) for
             # the common already-h264 case and for audio-only jobs.
-            if "Audio" not in quality:
+            if "Audio" not in quality and not keep_codec:
                 download.ensure_h264(final_output_path, ffmpeg_bin, job_id)
                 download.ensure_apple_audio(final_output_path, ffmpeg_bin, job_id)
         except yt_dlp.utils.DownloadCancelled:
@@ -879,6 +881,9 @@ def progress(job_id):
     return jsonify({
         "status": job["status"], "percent": job["percent"], "text": job["text"],
         "filename": job["filename"],
+        # Re-encode stage (VP9/AV1 -> H.264): `stage` is "encoding" and `encode_percent` 0-100
+        # while it runs, so the UI can show real progress instead of a frozen 100%.
+        "stage": job.get("stage"), "encode_percent": job.get("encode_percent"),
         # Present only for batch jobs; the frontend renders a localized
         # "item X of N" line and a batch-aware success message from these.
         "item": job.get("item"), "total": job.get("total"),

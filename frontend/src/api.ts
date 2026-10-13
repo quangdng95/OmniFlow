@@ -77,10 +77,10 @@ export const api = {
   checkLink: (url: string) =>
     request<CheckResult>("/api/check", { method: "POST", body: JSON.stringify({ url }) }),
 
-  startDownload: (url: string, title: string, quality: string, entryIndex?: number) =>
+  startDownload: (url: string, title: string, quality: string, entryIndex?: number, keepCodec?: boolean) =>
     request<{ job_id: string }>("/api/download", {
       method: "POST",
-      body: JSON.stringify({ url, title, quality, entry_index: entryIndex }),
+      body: JSON.stringify({ url, title, quality, entry_index: entryIndex, keep_codec: keepCodec ? true : undefined }),
     }),
 
   // Batch-download several selected playlist/carousel items in one job.

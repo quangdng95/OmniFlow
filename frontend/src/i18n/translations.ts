@@ -78,6 +78,9 @@ export interface Translations {
     finalizing: string; // shown once the transfer hits 100% but the job is still merging/converting
     elapsedLabel: string; // accessible name of the counter next to the processing line
     slowHint: string; // under the quality picker when a 1440p+ option is selected
+    keepCodec: string; // checkbox label: skip the H.264 conversion (fastest)
+    keepCodecNote: string; // one line under it: the file may not open in QuickTime / on an iPhone
+    converting: string; // processing line while the video is converted; {percent} is 0-100
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
@@ -275,6 +278,9 @@ const en: Translations = {
     finalizing: "Processing video…",
     elapsedLabel: "Time elapsed",
     slowHint: "High resolutions can take longer to process after the download.",
+    keepCodec: "Keep original codec (fastest)",
+    keepCodecNote: "Skips the conversion and saves a .mkv. It may not open in QuickTime or on an iPhone.",
+    converting: "Converting to H.264… {percent}%",
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
@@ -766,6 +772,9 @@ const vi: Translations = {
     finalizing: "Đang xử lý video…",
     elapsedLabel: "Thời gian đã trôi qua",
     slowHint: "Độ phân giải cao có thể mất nhiều thời gian xử lý hơn sau khi tải.",
+    keepCodec: "Giữ codec gốc (nhanh nhất)",
+    keepCodecNote: "Bỏ qua bước chuyển đổi và lưu thành file .mkv. File có thể không mở được bằng QuickTime hoặc trên iPhone.",
+    converting: "Đang chuyển sang H.264… {percent}%",
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },

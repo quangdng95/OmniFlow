@@ -55,6 +55,8 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   // Single-video flow
   const [downloadState, setDownloadState] = useState<DownloadState>("idle");
   const [progressPercent, setProgressPercent] = useState(0);
+  const [encodePercent, setEncodePercent] = useState<number | null>(null);
+  const [keepCodec, setKeepCodec] = useState(false);
   const [progressFilename, setProgressFilename] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [pasting, setPasting] = useState(false);
@@ -79,6 +81,8 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     setBatchSummary(null);
     setFinishedBatchJobId(null);
     setSelectedQuality("Best");
+    setKeepCodec(false);
+    setEncodePercent(null);
   };
 
   useEffect(() => {
@@ -115,6 +119,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
       try {
         const progress = await api.getProgress(jobId);
         setProgressPercent(progress.percent);
+        setEncodePercent(progress.stage === "encoding" ? (progress.encode_percent ?? 0) : null);
         if (progress.status === "done") {
           setDownloadState("done");
           setProgressFilename(progress.filename);
@@ -374,11 +379,12 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     if (!selectedItem) return;
     setDownloadState("downloading");
     setProgressPercent(0);
+    setEncodePercent(null);
     setProgressFilename(null);
     try {
       const dlUrl = playlistSingle?.url ?? url.trim();
       const dlEntry = playlistSingle?.url ? undefined : playlistSingle?.entry_index;
-      const { job_id } = await api.startDownload(dlUrl, selectedItem.title, selectedQuality, dlEntry);
+      const { job_id } = await api.startDownload(dlUrl, selectedItem.title, selectedQuality, dlEntry, keepCodec);
       setJobId(job_id);
     } catch (e) {
       toast.error((e as Error).message);
@@ -476,6 +482,8 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
               qualityValue={selectedQuality}
               onQualityChange={setSelectedQuality}
               qualityDisabled={checking || downloadState === "downloading" || busy}
+              keepCodec={keepCodec}
+              onKeepCodecChange={checkResult?.type === "video" || playlistSingle ? setKeepCodec : undefined}
             />
           </div>
 
@@ -580,6 +588,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
               info={selectedItem}
               actionState={downloadState}
               percent={progressPercent}
+              encodePercent={encodePercent}
               filename={progressFilename}
               onDownload={handleStartClick}
               onCancel={handleCancelDownload}

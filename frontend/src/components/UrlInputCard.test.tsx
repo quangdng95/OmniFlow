@@ -34,6 +34,35 @@ describe("UrlInputCard slow-processing hint", () => {
   });
 });
 
+describe("UrlInputCard keep-original-codec option", () => {
+  const Q = ["2160p", "1080p", "Audio Only"];
+
+  it("offers the option for 2160p, unchecked, with the QuickTime warning only once ticked", async () => {
+    const onKeepCodecChange = vi.fn();
+    setup({ qualities: Q, qualityValue: "2160p", onKeepCodecChange });
+    const box = screen.getByRole("checkbox", { name: /keep original codec/i });
+    expect(box).not.toBeChecked();
+    expect(screen.queryByText(/may not open in QuickTime/i)).not.toBeInTheDocument();
+    await userEvent.click(box);
+    expect(onKeepCodecChange).toHaveBeenCalledWith(true);
+  });
+
+  it("shows the warning when keepCodec is on", () => {
+    setup({ qualities: Q, qualityValue: "2160p", keepCodec: true, onKeepCodecChange: vi.fn() });
+    expect(screen.getByText(/may not open in QuickTime/i)).toBeInTheDocument();
+  });
+
+  it.each(["1080p", "Audio Only"])("hides the option for %s", (q) => {
+    setup({ qualities: Q, qualityValue: q, onKeepCodecChange: vi.fn() });
+    expect(screen.queryByRole("checkbox", { name: /keep original codec/i })).not.toBeInTheDocument();
+  });
+
+  it("hides the option when the page does not offer it (playlists)", () => {
+    setup({ qualities: Q, qualityValue: "2160p" });
+    expect(screen.queryByRole("checkbox", { name: /keep original codec/i })).not.toBeInTheDocument();
+  });
+});
+
 describe("UrlInputCard", () => {
   it("has a visible label tied to the field", () => {
     setup();
