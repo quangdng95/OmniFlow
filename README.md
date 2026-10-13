@@ -71,8 +71,9 @@ Every row was checked with real links. The full table, with what was and wasn't 
   subset, or retry a single failed item.
 - **Plays everywhere on your Mac** — H.264/AAC MP4 output that plays natively in QuickLook
   and QuickTime. Up to 1080p it uses fast parallel fragment downloads and a stream-copy merge
-  (not a full transcode). 1440p and 4K are converted to H.264 after the download, which takes
-  longer.
+  (not a full transcode). 1440p and 4K are converted to H.264 after the download, using the Mac's hardware encoder
+  when that is faster; tick **Keep original codec** to skip the conversion and save a `.mkv`
+  (it may not open in QuickTime or on an iPhone).
 - **Live progress** — per-item and overall download progress, with cancel support.
 - **Runs on your Mac** — your links and cookies stay on your machine (one exception for TikTok,
   see [Privacy](#privacy)).

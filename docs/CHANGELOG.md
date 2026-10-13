@@ -5,6 +5,29 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-13 · ViDrop 2.0.1
+
+### Changed
+
+- [x] **Faster 4K / 1440p processing.** VP9/AV1 downloads are converted to H.264 by
+  `backend/download.py` `ensure_h264`, which now probes the file once and picks `copy` (already
+  H.264), `h264_videotoolbox` or `libx264 -preset veryfast`. Measured on a 4:57 4K clip: the
+  conversion is ~85% of the time (libx264 78 s of 97 s on an M4 Pro; hardware encoder 120 s, because it
+  runs at a fixed ~60 fps at 4K while libx264 scales with cores; Intel build under Rosetta 178 s
+  libx264 vs 135 s hardware). Rule: x86_64 process -> VideoToolbox, Apple Silicon with <= 8
+  logical cores -> VideoToolbox, otherwise libx264. `VIDROP_H264_ENCODER=videotoolbox|libx264`
+  overrides. A failed hardware encode falls back to libx264 and logs why. AAC audio is copied.
+  The rule was measured on an M4 Pro and Rosetta only; a real 2017 Intel Mac has not been timed yet.
+- [x] **Real conversion progress**: `/api/progress` returns `stage` and `encode_percent` (from
+  `ffmpeg -progress`); the UI shows "Converting to H.264… N%".
+- [x] **Keep original codec (fastest)**: for 1440p+ single videos, `keep_codec` merges the VP9/AV1
+  stream into a `.mkv` with no conversion (9 s instead of 97 s on the clip above).
+- [x] **Web**: a 4K warning before the download starts (1440p+, without keep-codec), a
+  15-minute limit on a conversion (friendly error suggesting keep-codec or a lower quality) and one
+  conversion at a time.
+- [x] `perf.log` (`~/Library/Logs/ViDrop/perf.log`): one line per download with the stage times, the encoder chosen and why.
+  No query strings, cookies or tokens.
+
 ## 2026-10-13 · ViDrop 2.0.0
 
 ### Added

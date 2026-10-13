@@ -73,7 +73,7 @@ Mọi dòng đều được kiểm tra bằng link thật. Bảng đầy đủ, 
   hoặc thử lại một item bị lỗi.
 - **Phát được mọi nơi trên Mac** — xuất file H.264/AAC MP4 phát được ngay trong QuickLook và
   QuickTime. Đến 1080p, app tải song song nhiều fragment và merge kiểu stream-copy (không
-  transcode toàn bộ). Bản 1440p và 4K được chuyển sang H.264 sau khi tải nên mất thêm thời gian.
+  transcode toàn bộ). Bản 1440p và 4K được chuyển sang H.264 sau khi tải (dùng bộ mã hoá phần cứng của Mac khi nhanh hơn); chọn **Giữ codec gốc** để bỏ qua bước chuyển đổi và lưu thành file `.mkv` (có thể không mở được bằng QuickTime hoặc trên iPhone).
 - **Theo dõi tiến trình trực tiếp** — tiến trình tải từng item và tổng thể, có thể hủy bất cứ lúc
   nào.
 - **Chạy trên máy bạn** — link và cookie của bạn ở lại trên máy (riêng TikTok có một ngoại lệ, xem
