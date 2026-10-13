@@ -6,11 +6,14 @@ import yt_dlp
 
 from backend import classify
 from backend import extraction as extraction_module
+from backend import instagram as instagram_module
+from backend import messages
 from backend.extraction import (
     describe_extraction_error,
     format_duration,
     qualities_for,
     resolve_thumbnail,
+    strip_ansi,
 )
 
 
@@ -93,13 +96,51 @@ def test_format_duration_returns_none_for_non_numeric():
 
 
 def test_describe_extraction_error_trims_to_first_sentence():
-    error = yt_dlp.utils.DownloadError(
-        "ERROR: Video unavailable. This video has been removed by the uploader. Confirm you are on the latest version."
+    # A trusted non-yt-dlp error: strips the CLI-style "ERROR: " prefix and keeps
+    # just the first sentence. (yt-dlp's own text is never shown - see below.)
+    error = instagram_module.InstagramAuthError(
+        "ERROR: Session expired. Log in again in your browser. More detail here."
     )
-    # strips the CLI-style "ERROR: " prefix and keeps just the first sentence
-    # (a non-YouTube host: YouTube's own "Video unavailable" now maps to the
-    # dedicated youtube_restricted message, covered in test_youtube_cookies.py)
-    assert describe_extraction_error("https://example.com/watch?v=abc", error) == "Video unavailable"
+    assert describe_extraction_error("https://example.com/watch?v=abc", error) == "Session expired"
+
+
+def test_describe_extraction_error_never_shows_raw_ytdlp_text():
+    error = yt_dlp.utils.DownloadError("ERROR: Video unavailable. This video has been removed by the uploader.")
+    message = describe_extraction_error("https://example.com/watch?v=abc", error, lang="en")
+    assert "unavailable" not in message.lower()
+    assert message == messages.text("process_failed", "en")
+
+
+def test_strip_ansi_removes_real_and_lost_escape_codes():
+    assert strip_ansi("\x1b[0;31mERROR:\x1b[0m Unsupported URL") == "ERROR: Unsupported URL"
+    assert strip_ansi("[0;31mERROR: [0m Unsupported URL: https://x") == "ERROR:  Unsupported URL: https://x"
+    assert strip_ansi("plain [text] stays") == "plain [text] stays"
+
+
+@pytest.mark.parametrize("lang", ["en", "vi"])
+def test_unsupported_url_with_ansi_names_the_platform(lang):
+    error = yt_dlp.utils.DownloadError("[0;31mERROR: [0m Unsupported URL: https://www.threads.com/share/D6of7LwSj/")
+    message = describe_extraction_error("https://www.threads.com/share/D6of7LwSj/", error, lang=lang)
+    assert message == messages.text("unsupported_platform", lang, platform="Threads")
+    assert "Threads" in message and "[0" not in message and "Unsupported" not in message
+
+
+def test_unsupported_url_on_an_unknown_site_uses_the_generic_unsupported_message():
+    error = yt_dlp.utils.DownloadError("ERROR: Unsupported URL: https://example.com/x")
+    assert describe_extraction_error("https://example.com/x", error, lang="en") == messages.text("unsupported_site", "en")
+
+
+@pytest.mark.parametrize("lang", ["en", "vi"])
+def test_unable_to_extract_video_maps_to_the_page_changed_message(lang):
+    error = yt_dlp.utils.DownloadError("ERROR: Unable to extract video")
+    message = describe_extraction_error("https://www.linkedin.com/posts/x", error, lang=lang)
+    assert message == messages.text("page_changed", lang)
+
+
+def test_new_error_messages_have_both_languages():
+    for key in ("unsupported_site", "page_changed"):
+        assert messages.text(key, "en") != messages.text(key, "vi")
+    assert "{platform}" not in messages.text("unsupported_platform", "en", platform="X")
 
 
 def test_describe_extraction_error_special_cases_instagram_login_message():

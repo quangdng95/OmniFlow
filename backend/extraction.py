@@ -200,8 +200,18 @@ _YOUTUBE_RESTRICTED_MARKERS = (
 )
 
 
+_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
+# yt-dlp colours "ERROR:" with ANSI codes; somewhere between yt-dlp and the UI
+# the ESC byte gets dropped, leaving a literal "[0;31m" in the text.
+_ANSI_ESCAPE_LOST_RE = re.compile(r"\[[0-9;]+m")
+
+
+def strip_ansi(text):
+    return _ANSI_ESCAPE_LOST_RE.sub("", _ANSI_ESCAPE_RE.sub("", text))
+
+
 def describe_extraction_error(url, error, cookies_path=None, lang=None):
-    message = str(error)
+    message = strip_ansi(str(error))
     lower = message.lower()
 
     # A failure to even reach the network (no internet, DNS lookup failed,
@@ -225,6 +235,16 @@ def describe_extraction_error(url, error, cookies_path=None, lang=None):
             return messages.text("youtube_signin_required", lang)
         if any(marker in lower for marker in _YOUTUBE_RESTRICTED_MARKERS):
             return messages.text("youtube_restricted", lang)
+
+    # A site yt-dlp has no extractor for, and a site whose video player changed
+    # under yt-dlp's feet: both get a mapped message, never yt-dlp's own text.
+    if "unsupported url" in lower:
+        platform = classify.get_platform_info(url)
+        if platform and platform != "Link":
+            return messages.text("unsupported_platform", lang, platform=platform)
+        return messages.text("unsupported_site", lang)
+    if "unable to extract video" in lower:
+        return messages.text("page_changed", lang)
 
     # A bare builtin exception (ValueError, KeyError, TypeError, ...) means
     # something broke unexpectedly deep inside an extractor (e.g. a yt-dlp
@@ -278,6 +298,11 @@ def describe_extraction_error(url, error, cookies_path=None, lang=None):
         
     generic_fallback = messages.text("process_failed", lang)
     if not is_trusted_message:
+        return generic_fallback
+    # yt-dlp's own wording is never shown to the user - only messages mapped
+    # above. (Errors this codebase raises itself, e.g. InstagramAuthError, carry
+    # a written explanation and still pass through below.)
+    if type(error).__module__.startswith("yt_dlp"):
         return generic_fallback
 
     message = message.removeprefix("ERROR: ")

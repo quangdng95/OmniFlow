@@ -151,8 +151,9 @@ def test_check_link_invalid_link(client, monkeypatch):
     monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
     resp = client.post("/api/check", json={"url": "https://example.com/dead"})
     assert resp.status_code == 400
-    # surfaces yt-dlp's real (trimmed) message instead of a generic one
-    assert resp.get_json()["error"] == "no such video"
+    # yt-dlp's own wording is never shown: an unmapped DownloadError gets the generic message
+    assert "no such video" not in resp.get_json()["error"]
+    assert "Không thể xử lý liên kết" in resp.get_json()["error"]
 
 
 def test_check_link_bare_builtin_exception_never_leaks_raw_message(client, monkeypatch):
@@ -175,11 +176,11 @@ def test_check_link_bare_builtin_exception_never_leaks_raw_message(client, monke
 
 
 def test_check_link_trusted_exception_message_is_described_not_hidden(client, monkeypatch):
-    # A yt-dlp DownloadError (or other trusted type) is deliberately raised
-    # with a real explanation, so it still surfaces instead of being
+    # An error type this codebase raises itself (not yt-dlp, not a builtin)
+    # carries a written explanation, so it still surfaces instead of being
     # swallowed into a generic dead end.
     def raise_error(url):
-        raise yt_dlp.utils.DownloadError("ERROR: something specific and real broke")
+        raise instagram_module.InstagramAuthError("something specific and real broke")
 
     monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
     resp = client.post("/api/check", json={"url": "https://example.com/dead"})

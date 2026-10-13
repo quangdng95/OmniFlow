@@ -82,6 +82,20 @@ _CATALOG = {
         VI: "❌ Không đọc được phiên đăng nhập YouTube từ Chrome. Khi macOS hỏi quyền Keychain, hãy chọn \"Luôn cho phép\", rồi bấm Thử lại.",
         EN: "❌ Couldn't read your YouTube sign-in from Chrome. When macOS asks for Keychain access, choose \"Always Allow\", then press Retry.",
     },
+    # A platform yt-dlp has no extractor for (e.g. a Threads /share/ link).
+    # Two variants: with the platform name when classify recognised it.
+    "unsupported_platform": {
+        VI: "❌ Vidrop chưa tải được link {platform} dạng này. Hãy thử link video từ nền tảng khác được hỗ trợ.",
+        EN: "❌ Vidrop can't download {platform} links like this one yet. Try a video link from another supported site.",
+    },
+    "unsupported_site": {
+        VI: "❌ Vidrop chưa hỗ trợ trang này. Hãy thử link từ YouTube, TikTok, Instagram, Facebook, X, LinkedIn hoặc RedNote.",
+        EN: "❌ Vidrop doesn't support this site yet. Try a link from YouTube, TikTok, Instagram, Facebook, X, LinkedIn or RedNote.",
+    },
+    "page_changed": {
+        VI: "❌ Trang này đã đổi cách phát video nên Vidrop chưa đọc được. Hãy thử lại sau hoặc dùng link khác.",
+        EN: "❌ This site changed how it plays video, so Vidrop couldn't read it. Try again later or use another link.",
+    },
     "load_failed": {
         VI: "❌ Lỗi: Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau.",
         EN: "❌ Error: Something went wrong while loading the content. Please try again later.",
