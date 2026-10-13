@@ -179,3 +179,30 @@ describe("PlaylistItemsCard row selection", () => {
     expect(rowBox).toHaveAttribute("aria-checked", "false");
   });
 });
+
+describe("PlaylistItemsCard header", () => {
+  const longTitle = "【PLAYLIST】直到拿鐵的冰塊融化，一起聽點輕鬆的西洋音樂吧 🧋 | COZY | CHILL | 工作讀書BGM";
+
+  it("keeps the full title in a title attribute and as real text, and still renders Download All", () => {
+    render(
+      <LanguageProvider>
+        <PlaylistItemsCard
+          title={longTitle}
+          platform="YouTube"
+          items={[makeItem(1), makeItem(2)]}
+          busy={false}
+          rowStatus={{}}
+          batchSummary={null}
+          quality="Best"
+          onDownloadItems={vi.fn()}
+        />
+      </LanguageProvider>
+    );
+
+    const heading = screen.getByRole("heading", { level: 2 });
+    expect(heading).toHaveAttribute("title", longTitle);
+    // Clamped visually, but the whole title stays in the DOM for screen readers.
+    expect(heading).toHaveTextContent(longTitle);
+    expect(screen.getByRole("button", { name: "Download All" })).toBeInTheDocument();
+  });
+});

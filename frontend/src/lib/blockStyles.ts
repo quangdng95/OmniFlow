@@ -23,6 +23,12 @@ export const rowButton =
 export const bigStatus =
   "m-0 font-display text-[clamp(2.5rem,12vw,7.5rem)] leading-[0.95] font-bold tracking-[-0.05em] uppercase [:lang(vi)_&]:leading-[1.05]";
 
+// Playlist title: same display face/weight as bigStatus but a fixed, smaller
+// clamp (24px mobile -> 40px desktop), full width, at most 3 lines on mobile and
+// 2 on desktop; overflow-wrap:anywhere keeps CJK, URLs and emoji from overflowing.
+export const playlistTitle =
+  "m-0 min-w-0 w-full font-display text-[clamp(1.5rem,0.9rem+2.2vw,2.5rem)] leading-[1.15] font-bold tracking-[-0.04em] uppercase [overflow-wrap:anywhere] line-clamp-3 md:line-clamp-2";
+
 // Progress bar: a bordered slab filled with the block's text colour.
 export const progressSlab =
   "w-full select-none flex-nowrap gap-0 [&_[data-slot=progress-track]]:h-7 [&_[data-slot=progress-track]]:rounded-none [&_[data-slot=progress-track]]:border-[3px] [&_[data-slot=progress-track]]:border-current [&_[data-slot=progress-track]]:bg-transparent [&_[data-slot=progress-indicator]]:bg-current";
