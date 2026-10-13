@@ -9,7 +9,7 @@
 
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#installation)
-  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/Vidrop)](../../releases/latest)
+  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/ViDrop)](../../releases/latest)
 
   **🇬🇧 English&nbsp;&nbsp;|&nbsp;&nbsp;[🇻🇳 Tiếng Việt](README.vi.md)**
 </div>
@@ -21,8 +21,8 @@
 Not sure which chip your Mac has? Apple menu (top-left) → **About This Mac**.
 
 <p align="center">
-  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Download-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Download for Apple Silicon (M1/M2/M3/M4)" /></a>
-  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Download-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Download for Intel Mac" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Download-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Download for Apple Silicon (M1/M2/M3/M4)" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Download-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Download for Intel Mac" /></a>
 </p>
 
 These links always point at the latest release. See [Installation](#installation) below for what to do after downloading — including the one-time macOS security prompts on first launch.
@@ -116,7 +116,7 @@ example per supported platform.
 
 ```bash
 # clone and enter the repo
-git clone https://github.com/quangdng95/OmniFlow.git
+git clone https://github.com/quangdng95/ViDrop.git
 cd ViDrop
 
 # one-time setup
@@ -214,7 +214,7 @@ Contributions are welcome:
 ## Support & Issues
 
 Still stuck after checking the [Troubleshooting](#troubleshooting) guides above? Open an issue on
-[GitHub Issues](https://github.com/quangdng95/OmniFlow/issues) — include:
+[GitHub Issues](https://github.com/quangdng95/ViDrop/issues) — include:
 
 - The link you were trying to download (if it's not private/sensitive)
 - Your Mac's chip (Apple Silicon or Intel) and macOS version

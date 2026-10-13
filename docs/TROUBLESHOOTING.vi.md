@@ -40,7 +40,7 @@ native cho Intel — vì công cụ `ffmpeg` đi kèm chỉ chạy được trê
 cho. Thông báo này nghĩa là bạn đã cài nhầm bản không đúng với máy Mac của mình.
 
 **Cách sửa:** tải lại từ [mục Tải xuống trong README](../README.vi.md#tải-xuống) hoặc từ
-[Releases](https://github.com/quangdng95/OmniFlow/releases/latest), chọn
+[Releases](https://github.com/quangdng95/ViDrop/releases/latest), chọn
 **Vidrop-AppleSilicon.dmg** cho Mac M1/M2/M3/M4 hoặc **Vidrop-Intel.dmg** cho Mac Intel.
 Không chắc máy mình dùng chip gì? Menu Apple (góc trên bên trái) → **About This Mac** — sẽ ghi rõ
 tên chip.
@@ -80,7 +80,7 @@ công. Thông báo này nghĩa là nó không tìm thấy phiên nào. Kiểm tr
 - Bạn có thực sự đang đăng nhập Instagram hoặc Threads trên một trong các trình duyệt đó, trên
   **chính máy này** không.
 - Bạn đã bấm **Allow** hoặc **Always Allow** ở hộp thoại xin quyền Keychain chưa — xem
-  [Cảnh báo bảo mật macOS khi mở app lần đầu](FIRST_LAUNCH.vi.md#2-omniflow-wants-to-use-your-confidential-information-stored-in-chrome-safe-storage-in-your-keychain)
+  [Cảnh báo bảo mật macOS khi mở app lần đầu](FIRST_LAUNCH.vi.md#2-vidrop-wants-to-use-your-confidential-information-stored-in-chrome-safe-storage-in-your-keychain)
   nếu bạn chưa chắc đó là gì.
 
 Cookie của Safari được macOS bảo vệ theo cách mà ViDrop hiện tại hoàn toàn không đọc được (đây
@@ -140,6 +140,6 @@ này, hãy đính kèm toàn bộ nội dung mục đó.
 2. Thoát và mở lại ViDrop.
 3. Kiểm tra `errors.log` (Cài đặt → Nhật ký chẩn đoán) để xem lỗi cụ thể.
 4. Nếu vẫn không giải quyết được, mở một
-   [GitHub Issue](https://github.com/quangdng95/OmniFlow/issues) kèm link đó (nếu không phải nội
+   [GitHub Issue](https://github.com/quangdng95/ViDrop/issues) kèm link đó (nếu không phải nội
    dung riêng tư/nhạy cảm), chip máy Mac và phiên bản macOS của bạn, và mục `errors.log` liên
    quan — xem [Hỗ trợ & Báo lỗi](../README.vi.md#hỗ-trợ--báo-lỗi) trong README chính.

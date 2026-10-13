@@ -9,7 +9,7 @@
 
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
   [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](#cài-đặt)
-  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/Vidrop)](../../releases/latest)
+  [![Latest Release](https://img.shields.io/github/v/release/quangdng95/ViDrop)](../../releases/latest)
 
   **[🇬🇧 English](README.md)&nbsp;&nbsp;|&nbsp;&nbsp;🇻🇳 Tiếng Việt**
 </div>
@@ -22,8 +22,8 @@ Không chắc máy Mac của bạn dùng chip gì? Menu Apple (góc trên bên t
 Mac này** (About This Mac).
 
 <p align="center">
-  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Tải_về-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Tải cho Apple Silicon (M1/M2/M3/M4)" /></a>
-  <a href="https://github.com/quangdng95/OmniFlow/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Tải_về-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Tải cho Mac Intel" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-AppleSilicon.dmg"><img src="https://img.shields.io/badge/Tải_về-Apple_Silicon-black?style=for-the-badge&logo=apple" alt="Tải cho Apple Silicon (M1/M2/M3/M4)" /></a>
+  <a href="https://github.com/quangdng95/ViDrop/releases/latest/download/OmniFlow-Intel.dmg"><img src="https://img.shields.io/badge/Tải_về-Intel_Mac-black?style=for-the-badge&logo=apple" alt="Tải cho Mac Intel" /></a>
 </p>
 
 Hai link trên luôn trỏ tới bản phát hành mới nhất. Xem [Cài đặt](#cài-đặt) bên dưới để biết việc
@@ -120,7 +120,7 @@ dán-là-chạy cho mỗi nền tảng được hỗ trợ.
 
 ```bash
 # clone và vào thư mục repo
-git clone https://github.com/quangdng95/OmniFlow.git
+git clone https://github.com/quangdng95/ViDrop.git
 cd ViDrop
 
 # cài đặt một lần
@@ -218,7 +218,7 @@ Rất hoan nghênh mọi đóng góp:
 ## Hỗ trợ & Báo lỗi
 
 Vẫn bị kẹt sau khi đã xem hướng dẫn [Xử lý sự cố](#xử-lý-sự-cố) ở trên? Mở một issue trên
-[GitHub Issues](https://github.com/quangdng95/OmniFlow/issues) — kèm theo:
+[GitHub Issues](https://github.com/quangdng95/ViDrop/issues) — kèm theo:
 
 - Link bạn đang cố tải (nếu không phải nội dung riêng tư/nhạy cảm)
 - Chip máy Mac của bạn (Apple Silicon hay Intel) và phiên bản macOS

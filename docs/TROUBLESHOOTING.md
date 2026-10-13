@@ -41,7 +41,7 @@ Intel — because the bundled `ffmpeg` tool only runs on the chip it was built f
 means you installed the wrong one for your Mac.
 
 **Fix:** re-download from [the Download section of the README](../README.md#download) or
-[Releases](https://github.com/quangdng95/OmniFlow/releases/latest), picking
+[Releases](https://github.com/quangdng95/ViDrop/releases/latest), picking
 **Vidrop-AppleSilicon.dmg** for an M1/M2/M3/M4 Mac or **Vidrop-Intel.dmg** for an Intel Mac.
 Not sure which you have? Apple menu (top-left) → **About This Mac** — it names the chip directly.
 
@@ -78,7 +78,7 @@ This message means it didn't find one. Make sure:
 
 - You're actually logged into Instagram or Threads in one of those browsers on **this** Mac.
 - You clicked **Allow** or **Always Allow** on the Keychain permission prompt — see
-  [First Launch & macOS Security Warnings](FIRST_LAUNCH.md#2-omniflow-wants-to-use-your-confidential-information-stored-in-chrome-safe-storage-in-your-keychain)
+  [First Launch & macOS Security Warnings](FIRST_LAUNCH.md#2-vidrop-wants-to-use-your-confidential-information-stored-in-chrome-safe-storage-in-your-keychain)
   if you're not sure what that was.
 
 Safari's cookies are protected by macOS in a way ViDrop currently can't read at all (a
@@ -137,6 +137,6 @@ this as a bug, include that entry's full text.
 2. Quit and reopen ViDrop.
 3. Check `errors.log` (Settings → Diagnostic Logs) for the specific error.
 4. If none of that resolves it, open a
-   [GitHub Issue](https://github.com/quangdng95/OmniFlow/issues) with the link (if not
+   [GitHub Issue](https://github.com/quangdng95/ViDrop/issues) with the link (if not
    private/sensitive), your Mac's chip and macOS version, and the relevant `errors.log` entry —
    see [Support & Issues](../README.md#support--issues) in the main README.
