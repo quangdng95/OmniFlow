@@ -150,7 +150,7 @@ def check_link():
             "platform": cls.platform,
             "title": info.get("title") or ("Playlist" if is_flat else "Story"),
             "items": items,
-            "truncated": is_flat and len(entries) >= classify.PLAYLIST_ITEM_CAP,
+            "truncated": is_flat and len(entries) >= extraction.effective_item_limit(cls),
         })
 
     return jsonify({
