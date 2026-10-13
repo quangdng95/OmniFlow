@@ -6,7 +6,7 @@ import ElapsedTimer from "./ElapsedTimer";
 import { Progress } from "@/components/ui/progress";
 import { bigStatus, ctaGhost, ctaLight, ctaSignal, progressSlab } from "../lib/blockStyles";
 import { useLanguage } from "../i18n/LanguageContext";
-import { preparePlainFile } from "../lib/saveFile";
+import { preparePlainFile, type PrepareOptions } from "../lib/saveFile";
 import { usePreparedSave } from "../hooks/usePreparedSave";
 import type { VideoInfo } from "../types";
 
@@ -42,12 +42,12 @@ const VideoInfoCard = ({
 }: VideoInfoCardProps) => {
   const { t } = useLanguage();
   const prepareSingleFile = useCallback(
-    (url: string) => preparePlainFile(url, filename || info.title),
+    (url: string, options: PrepareOptions) => preparePlainFile(url, filename || info.title, options),
     [filename, info.title]
   );
   // downloadUrl exists from the moment the job starts - only prefetch once
   // the file is actually finished on the server.
-  const { saving, failed: saveFailed, save: handleSave } = usePreparedSave(
+  const { saving, failed: saveFailed, preparing, progress, shareKind, save: handleSave } = usePreparedSave(
     actionState === "done" ? downloadUrl : undefined,
     prepareSingleFile
   );
@@ -58,8 +58,18 @@ const VideoInfoCard = ({
   // The block changes colour with the state: platform colour while choosing and
   // downloading, lime once saved, ink when it failed.
   const tone = actionState === "done" ? "done" : actionState === "fail" ? "ink" : info.platform;
-  const saveLabel = saveFailed ? t.downloadSuccess.tryAgain : t.downloadSuccess.save;
-  const saveIcon = saving ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden /> : <Save className="h-6 w-6" aria-hidden />;
+  // iOS fetches the file ahead of the tap: "Preparing... N%" (disabled) -> "Save to Photos" (ready).
+  const saveLabel = preparing
+    ? progress === null
+      ? t.downloadSuccess.preparingNoPercent
+      : t.downloadSuccess.preparing.replace("{percent}", String(Math.round(progress)))
+    : saveFailed
+      ? t.downloadSuccess.tryAgain
+      : shareKind === "photos"
+        ? t.downloadSuccess.saveToPhotos
+        : t.downloadSuccess.save;
+  const saveBusy = saving || preparing;
+  const saveIcon = saveBusy ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden /> : <Save className="h-6 w-6" aria-hidden />;
 
   return (
     <PlatformBlock tone={tone}>
@@ -129,7 +139,7 @@ const VideoInfoCard = ({
 
           {actionState === "done" && autoSave && downloadUrl && (
             <div>
-              <button type="button" onClick={handleSave} disabled={saving} className={ctaLight}>
+              <button type="button" onClick={handleSave} disabled={saveBusy} className={ctaLight}>
                 {saveIcon}
                 {saveLabel}
               </button>
@@ -151,7 +161,7 @@ const VideoInfoCard = ({
                   </button>
                 )}
                 {downloadUrl && (
-                  <button type="button" onClick={handleSave} disabled={saving} className={ctaLight}>
+                  <button type="button" onClick={handleSave} disabled={saveBusy} className={ctaLight}>
                     {saveIcon}
                     {saveLabel}
                   </button>

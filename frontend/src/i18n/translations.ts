@@ -85,7 +85,7 @@ export interface Translations {
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
-  downloadSuccess: { saved: string; openFolder: string; save: string; tryAgain: string; tapAgain: string; savedToDevice: string; downloadStarted: string; ready: string; batchSaved: string; batchReady: string; failedSuffix: string };
+  downloadSuccess: { saved: string; openFolder: string; save: string; tryAgain: string; tapAgain: string; savedToDevice: string; downloadStarted: string; preparing: string; preparingNoPercent: string; saveToPhotos: string; iosFiles: string; androidStarted: string; ready: string; batchSaved: string; batchReady: string; failedSuffix: string };
   home: {
     supportedPlatformsHeading: string;
     howToHeading: string;
@@ -286,7 +286,7 @@ const en: Translations = {
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
-  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tryAgain: "Try download again", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your browser's download bar", ready: "Ready to save", batchSaved: "{saved} saved", batchReady: "{saved} ready to save", failedSuffix: ", {failed} failed" },
+  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tryAgain: "Try download again", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your browser's download bar", preparing: "Preparing… {percent}%", preparingNoPercent: "Preparing…", saveToPhotos: "Save to Photos", iosFiles: "Downloaded to the Files app. Open Files › Downloads, press and hold the video › Share › Save Video to add it to Photos.", androidStarted: "Download started - check your notifications or the Downloads folder", ready: "Ready to save", batchSaved: "{saved} saved", batchReady: "{saved} ready to save", failedSuffix: ", {failed} failed" },
   home: {
     supportedPlatformsHeading: "Supported platforms",
     howToHeading: "How it works",
@@ -568,6 +568,15 @@ const en: Translations = {
     releases: [
       {
         date: "2026-10-13",
+        title: "Save to Photos on iPhone, one icon everywhere",
+        items: [
+          "On iPhone and iPad, \"Save to Photos\" now opens the share sheet so you can add the video straight to Photos. The button shows \"Preparing…\" with a percentage first. Files over 400 MB go to the Files app instead, and the message tells you how to move them to Photos.",
+          "On Android and on a computer, the file downloads directly, with a message that says where to find it.",
+          "ViDrop has one icon everywhere: the browser tab, the Home Screen and link previews.",
+        ],
+      },
+      {
+        date: "2026-10-13",
         title: "ViDrop 2.0.1: faster 4K downloads",
         items: [
           "4K and 1440p videos are ready sooner. ViDrop now picks the quickest way to convert the video on your Mac, and the progress bar shows the real percentage while it converts.",
@@ -790,7 +799,7 @@ const vi: Translations = {
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
-  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tryAgain: "Thử tải lại", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - xem thanh tải xuống của trình duyệt", ready: "Sẵn sàng để lưu", batchSaved: "Đã lưu {saved} mục", batchReady: "{saved} mục sẵn sàng để lưu", failedSuffix: ", {failed} mục lỗi" },
+  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tryAgain: "Thử tải lại", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - xem thanh tải xuống của trình duyệt", preparing: "Đang chuẩn bị… {percent}%", preparingNoPercent: "Đang chuẩn bị…", saveToPhotos: "Lưu vào Ảnh", iosFiles: "Đã tải về app Tệp. Mở Tệp › Tải xuống, chạm giữ video › Chia sẻ › Lưu video để thêm vào Ảnh.", androidStarted: "Đã bắt đầu tải, xem trong thông báo hoặc thư mục Tải xuống", ready: "Sẵn sàng để lưu", batchSaved: "Đã lưu {saved} mục", batchReady: "{saved} mục sẵn sàng để lưu", failedSuffix: ", {failed} mục lỗi" },
   home: {
     supportedPlatformsHeading: "Nền tảng được hỗ trợ",
     howToHeading: "Cách dùng",
@@ -1067,6 +1076,15 @@ const vi: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "13-10-2026",
+        title: "Lưu vào Ảnh trên iPhone, một biểu tượng thống nhất",
+        items: [
+          "Trên iPhone và iPad, nút \"Lưu vào Ảnh\" giờ mở bảng chia sẻ để bạn thêm video thẳng vào Ảnh. Nút hiện \"Đang chuẩn bị…\" kèm phần trăm trước. Tệp trên 400 MB được tải về app Tệp, kèm hướng dẫn chuyển sang Ảnh.",
+          "Trên Android và máy tính, tệp được tải thẳng về, kèm thông báo cho biết tìm tệp ở đâu.",
+          "ViDrop dùng một biểu tượng duy nhất ở mọi nơi: thẻ trình duyệt, Màn hình chính và bản xem trước liên kết.",
+        ],
+      },
       {
         date: "13-10-2026",
         title: "ViDrop 2.0.1: tải 4K nhanh hơn",

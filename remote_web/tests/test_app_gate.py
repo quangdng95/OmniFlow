@@ -66,3 +66,75 @@ def test_root_path_serves_index_html_once_trusted(client):
     resp = client.get("/")
     assert resp.status_code == 200
     assert "Location" not in resp.headers
+
+
+# ---- public brand assets: icons and the manifest must load WITHOUT the access token --------------
+#
+# iOS fetches the Home Screen icon (and browsers the favicon) with no cookie. These are the minimum
+# public files; nothing under /api/, the main page and downloaded files stay behind the gate.
+
+PUBLIC_ASSETS = [
+    "/favicon.ico",
+    "/favicon.svg",
+    "/favicon-16.png",
+    "/favicon-32.png",
+    "/apple-touch-icon.png",
+    "/apple-touch-icon-precomposed.png",
+    "/apple-touch-icon-180x180.png",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/icon-maskable-512.png",
+    "/og-image.png",
+    "/manifest.webmanifest",
+]
+
+
+def _dist_has(name):
+    import os
+
+    from backend import paths
+
+    return os.path.isfile(os.path.join(paths.WEB_DIR, name))
+
+
+@pytest.mark.parametrize("path", PUBLIC_ASSETS)
+def test_brand_assets_load_without_a_token(client, path):
+    if not _dist_has(path.lstrip("/").replace("-precomposed", "").replace("-180x180", "")):
+        pytest.skip("frontend/dist is not built on this machine")
+    resp = client.get(path)
+    assert resp.status_code == 200
+    assert "text/html" not in resp.headers["Content-Type"]
+
+
+def test_apple_touch_icon_aliases_serve_the_same_png(client):
+    if not _dist_has("apple-touch-icon.png"):
+        pytest.skip("frontend/dist is not built on this machine")
+    base = client.get("/apple-touch-icon.png").data
+    assert base.startswith(b"\x89PNG")
+    assert client.get("/apple-touch-icon-precomposed.png").data == base
+    assert client.get("/apple-touch-icon-180x180.png").data == base
+
+
+def test_the_open_assets_do_not_open_anything_else(client):
+    assert client.get("/api/settings").status_code == 401
+    assert client.get("/api/download-file/anything").status_code == 401
+    assert client.get("/api/health/detail").status_code == 401
+    resp = client.get("/")
+    assert resp.status_code == 302 and resp.headers["Location"].endswith("/unlock")
+
+
+def test_the_manifest_names_the_app_and_every_icon_it_lists_exists(client):
+    import json
+    import os
+
+    from backend import paths
+
+    if not _dist_has("manifest.webmanifest"):
+        pytest.skip("frontend/dist is not built on this machine")
+    manifest = json.loads(client.get("/manifest.webmanifest").data)
+    assert manifest["name"] == manifest["short_name"] == "ViDrop"
+    assert manifest["display"] == "standalone" and manifest["theme_color"] == "#ffd60a"
+    purposes = {icon["purpose"] for icon in manifest["icons"]}
+    assert purposes == {"any", "maskable"}
+    for icon in manifest["icons"]:
+        assert os.path.isfile(os.path.join(paths.WEB_DIR, icon["src"].split("?")[0].lstrip("/")))

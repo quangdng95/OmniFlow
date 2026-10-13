@@ -42,6 +42,16 @@ def _referrer_policy(response):
     return response
 
 
+def _apple_touch_icon_alias():
+    return send_from_directory(paths.WEB_DIR, "apple-touch-icon.png")
+
+
+# Older iOS versions probe these names on their own when a page does not name an icon; answer them with
+# the same icon instead of a 404 (a cached 404 is what turns the Home Screen tile into a plain letter).
+for _alias in ("/apple-touch-icon-precomposed.png", "/apple-touch-icon-180x180.png"):
+    app.add_url_rule(_alias, endpoint=_alias.strip("/"), view_func=_apple_touch_icon_alias)
+
+
 @app.get("/")
 def index():
     if not trust.is_trusted_request(request):
