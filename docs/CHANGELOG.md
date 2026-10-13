@@ -5,6 +5,41 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-13
+
+### Changed
+
+- [x] **Display name is ViDrop** everywhere a person reads it (UI, i18n EN/VI, `<title>`, manifest, README,
+  docs, error messages, the cloud `/unlock` page). Internal identifiers keep the old `omniflow` names on
+  purpose so production and saved data are not disturbed (service/user/SSH key/GCP names, `OMNIFLOW_*`
+  variables, the `omniflow-language` / `omniflow_remote_trust` cookies, the data directory); renaming
+  those is a separate migration.
+- [x] **V3 UI** — design tokens, self-hosted fonts and one shared page column (`.page-container`) so every
+  section lines up; the toast close button sits inside the toast with a 44px target.
+- [x] **Square yellow logo** — `--signal` background, `--ink` glyph, no rounded corners; new favicon
+  (`.svg`, `-32.png`, `.ico`), apple-touch icon, 192/512 and maskable PWA icons, `theme_color` `#ffd60a`.
+- [x] **Compact playlist header** — the title is a fixed `clamp()` (24px phone → 40px desktop), at most 3
+  lines on a phone and 2 on desktop, with the full text in a `title` attribute; "Total Items" and
+  Download All share one row. The oversized title was two conflicting `text-[clamp(...)]` classes.
+
+### Added
+
+- [x] An elapsed-time counter next to "Processing video…" and a hint that 1440p+ takes longer
+  (`ElapsedTimer`, `slowHint`).
+- [x] A finished download shows a toast, and a system notification when the tab is in the background
+  (`lib/notify.ts`; permission is asked once, from a Download click).
+- [x] Threads `threads.com/share/<id>` links are expanded to the post URL before classification
+  (`backend/shortlinks.py`).
+- [x] **YouTube sign-in fallback (local app only, off by default)** — if YouTube answers a sign-in or
+  anti-bot error and `config.json` has `youtube_cookie_source` (`chrome:Default` / `chrome:Profile N`),
+  the download retries once with that profile's youtube.com cookies. There is no Settings control for it
+  yet; `remote_web` never imports the code that reads browser cookies.
+
+### Fixed
+
+- [x] Raw yt-dlp text is never shown: "Unsupported URL" and "Unable to extract video" map to friendly
+  EN/VI messages (`backend/messages.py`, `describe_extraction_error`).
+
 ## 2026-10-06
 
 ### Added

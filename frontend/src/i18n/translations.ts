@@ -545,6 +545,23 @@ const en: Translations = {
   changelog: {
     releases: [
       {
+        date: "2026-10-13",
+        title: "Meet ViDrop: a new look, clearer messages",
+        items: [
+          "The app is now called ViDrop, with a new square yellow logo.",
+          "A new design on every page: bold type in black and yellow.",
+          "Playlist pages are more compact. The title is shorter, and Total Items sits next to Download All, so you can start without scrolling.",
+          "A timer now runs next to \"Processing video…\", and a note tells you when 1440p or 4K will take longer.",
+          "When a download finishes you get a message on the page, plus a system notification if the tab is in the background.",
+          "Error messages are clearer. You no longer see raw technical errors or GitHub links when a link can't be read.",
+          "Threads share links (threads.com/share/…) now work.",
+          "Short links from LinkedIn (lnkd.in), X (t.co) and Facebook (fb.me) open automatically.",
+          "LinkedIn slide-deck posts save every page as an image, not just the cover.",
+          "RedNote links work again.",
+          "Fixed page sections that didn't line up, and a close button on notifications that was hard to tap on a phone.",
+        ],
+      },
+      {
         date: "2026-09-30",
         title: "History tab, TikTok audio, and saving fixes",
         items: [
@@ -993,6 +1010,23 @@ const vi: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "13-10-2026",
+        title: "Chào ViDrop: giao diện mới, thông báo rõ ràng hơn",
+        items: [
+          "Ứng dụng giờ có tên ViDrop, cùng logo vuông màu vàng mới.",
+          "Giao diện mới trên mọi trang: chữ đậm, hai màu đen và vàng.",
+          "Trang danh sách phát gọn hơn. Tiêu đề ngắn lại, Tổng số mục nằm cạnh nút Tải tất cả nên bạn bắt đầu tải mà không cần cuộn.",
+          "Có đồng hồ đếm giây cạnh dòng \"Đang xử lý video…\", kèm lưu ý khi 1440p hoặc 4K cần nhiều thời gian hơn.",
+          "Tải xong, bạn thấy thông báo ngay trên trang, và có thêm thông báo hệ thống nếu tab đang ở nền.",
+          "Thông báo lỗi dễ hiểu hơn. Bạn không còn thấy lỗi kỹ thuật thô hay liên kết GitHub khi không đọc được một link.",
+          "Link chia sẻ của Threads (threads.com/share/…) đã dùng được.",
+          "Link rút gọn của LinkedIn (lnkd.in), X (t.co) và Facebook (fb.me) được mở tự động.",
+          "Bài LinkedIn dạng slide lưu đủ từng trang thành ảnh, không chỉ trang bìa.",
+          "Link RedNote đã dùng lại được.",
+          "Sửa lỗi các phần của trang bị lệch hàng, và nút đóng thông báo khó bấm trên điện thoại.",
+        ],
+      },
       {
         date: "30-09-2026",
         title: "Tab Lịch sử, âm thanh TikTok và sửa lỗi lưu về máy",

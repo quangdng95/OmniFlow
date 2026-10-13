@@ -60,4 +60,11 @@ describe("ChangelogPage", () => {
       expect(JSON.stringify(translations[lang].changelog)).not.toMatch(/omni ?flow/i);
     }
   });
+
+  it("keeps every release in step between English and Vietnamese (same number of items)", () => {
+    const en = translations.en.changelog.releases;
+    const vi = translations.vi.changelog.releases;
+    expect(vi.map((r) => r.items.length)).toEqual(en.map((r) => r.items.length));
+    expect(en[0].date).toBe("2026-10-13");
+  });
 });
