@@ -885,7 +885,13 @@ def test_keep_codec_merges_into_mkv_without_the_mp4_remuxer_or_h264_preference(m
     [(4, "", True), (8, "", True), (10, "", False), (14, "", False), (14, "videotoolbox", True), (2, "libx264", False), (14, "nonsense", False)],
 )
 def test_prefer_hardware_encoder_by_cpu_size_with_override(cpus, override, expected):
-    assert download_module.prefer_hardware_encoder(cpus, override) is expected
+    assert download_module.prefer_hardware_encoder(cpus, override, machine="arm64") is expected
+
+
+def test_the_intel_build_always_prefers_the_hardware_encoder_unless_forced(monkeypatch):
+    monkeypatch.delenv("VIDROP_H264_ENCODER", raising=False)
+    assert download_module.prefer_hardware_encoder(14, "", machine="x86_64") is True
+    assert download_module.prefer_hardware_encoder(14, "libx264", machine="x86_64") is False
 
 
 def test_a_big_cpu_mac_uses_libx264_even_when_videotoolbox_exists(monkeypatch, tmp_path):

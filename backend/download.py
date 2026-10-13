@@ -371,8 +371,14 @@ def videotoolbox_available(ffmpeg_bin):
 HARDWARE_ENCODER_MAX_CPUS = 8
 
 
-def prefer_hardware_encoder(cpu_count=None, override=None):
-    # VIDROP_H264_ENCODER=videotoolbox|libx264 forces one (for testing); otherwise by CPU size.
+def prefer_hardware_encoder(cpu_count=None, override=None, machine=None):
+    # VIDROP_H264_ENCODER=videotoolbox|libx264 forces one (for testing); otherwise: always on
+    # an x86_64 process (an Intel Mac, or the Intel build under Rosetta where libx264 runs
+    # emulated: 4K took 178 s with libx264 vs 135 s with VideoToolbox on an M4 Pro), and on
+    # Apple Silicon only for small CPUs.
+    if (machine if machine is not None else platform.machine()) == "x86_64" and override in (None, ""):
+        if not os.environ.get("VIDROP_H264_ENCODER", "").strip():
+            return True
     override = (override if override is not None else os.environ.get("VIDROP_H264_ENCODER", "")).strip().lower()
     if override in ("videotoolbox", "libx264"):
         return override == "videotoolbox"
