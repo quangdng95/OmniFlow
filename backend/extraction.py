@@ -179,7 +179,10 @@ def extract_video_info(cls):
         # configured browser profile's cookies (see cookies.run_with_youtube_cookie_fallback).
         return cookies.run_with_youtube_cookie_fallback(url, cookies_path, attempt)
     except Exception as e:
-        print(f"[debug] Instagram check failed for {url}. Error: {e}", flush=True)
+        # Only an Instagram failure is labelled as one - this line used to say
+        # "Instagram" for every platform (it misled a Threads debugging session).
+        if "instagram" in url.lower():
+            print(f"[debug] Instagram check failed for {url}. Error: {strip_ansi(str(e))}", flush=True)
         raise
     finally:
         if auto_cookiefile:

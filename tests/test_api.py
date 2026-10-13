@@ -643,6 +643,43 @@ def test_check_link_threads_succeeds_when_local(client, monkeypatch):
     assert resp.get_json()["type"] == "video"
 
 
+def test_check_link_threads_share_link_is_expanded_then_resolved(client, monkeypatch):
+    from backend import shortlinks as shortlinks_module
+
+    post_url = "https://www.threads.com/@someone/post/abc123"
+    shortlinks_module._cache.clear()
+    monkeypatch.setattr(shortlinks_module, "_fetch_location", lambda url: post_url)
+    monkeypatch.setattr(threads_module, "threads_cookiefile_candidates", lambda: ["/acct.txt"])
+    seen = []
+
+    def fake_fetch(url, cf):
+        seen.append(url)
+        return {"title": "A post", "items": [{"kind": "video", "url": "http://cdn/v.mp4", "thumbnail": None}]}
+
+    monkeypatch.setattr(threads_module, "fetch_threads_media", fake_fetch)
+    resp = client.post("/api/check", json={"url": "https://www.threads.com/share/D6of7LwSj/"})
+    shortlinks_module._cache.clear()
+    assert resp.status_code == 200
+    assert seen == [post_url]  # the resolver got the expanded post URL, never yt-dlp
+
+
+def test_check_link_threads_share_link_that_cannot_expand_says_unsupported_not_raw_error(client, monkeypatch):
+    from backend import shortlinks as shortlinks_module
+
+    shortlinks_module._cache.clear()
+    monkeypatch.setattr(shortlinks_module, "_fetch_location", lambda url: None)
+
+    def raise_error(cls):
+        raise yt_dlp.utils.DownloadError("[0;31mERROR: [0m Unsupported URL: https://www.threads.com/share/x/")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", raise_error)
+    resp = client.post("/api/check", json={"url": "https://www.threads.com/share/x/"})
+    shortlinks_module._cache.clear()
+    assert resp.status_code == 400
+    error = resp.get_json()["error"]
+    assert "Threads" in error and "Unsupported" not in error and "[0" not in error
+
+
 def test_check_link_threads_no_candidates_returns_friendly_auth_error(client, monkeypatch):
     monkeypatch.setattr(threads_module, "threads_cookiefile_candidates", lambda: [])
     resp = client.post("/api/check", json={"url": "https://www.threads.com/@someone/post/abc123"})

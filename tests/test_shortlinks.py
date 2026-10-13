@@ -122,3 +122,66 @@ def test_the_result_is_cached_so_check_then_download_costs_one_lookup():
 def test_whitespace_and_empty_input_are_handled():
     assert shortlinks.expand("", fetch=Fetcher({})) == ""
     assert shortlinks.expand("  https://lnkd.in/p/q  ", fetch=Fetcher({"https://lnkd.in/p/q": LINKEDIN_POST})) == LINKEDIN_POST
+
+
+# ---- Threads share links (threads.com/share/<id>) ----
+
+SHARE = "https://www.threads.com/share/D6of7LwSj/"
+THREADS_POST = "https://www.threads.com/@someone/post/DeZZtk8jUv1?xmt=AQG0"
+
+
+def test_a_threads_share_link_expands_to_the_post_url():
+    fetch = Fetcher({SHARE: THREADS_POST})
+    assert shortlinks.expand(SHARE, fetch=fetch) == THREADS_POST
+    assert fetch.calls == [SHARE]  # the post page itself is never fetched
+
+
+def test_threads_net_share_links_expand_too():
+    share = "https://threads.net/share/AbC123"
+    post = "https://www.threads.net/@someone/post/AbC123"
+    assert shortlinks.expand(share, fetch=Fetcher({share: post})) == post
+
+
+def test_a_failed_threads_share_expand_keeps_the_original_url():
+    assert shortlinks.expand(SHARE, fetch=Fetcher({})) == SHARE  # no redirect (SPA shell)
+
+    def boom(url):
+        raise OSError("network down")
+
+    assert shortlinks.expand(SHARE, fetch=boom) == SHARE
+
+
+def test_a_threads_share_redirect_off_platform_is_refused():
+    assert shortlinks.expand(SHARE, fetch=Fetcher({SHARE: "https://evil.example/x"})) == SHARE
+    assert shortlinks.expand(SHARE, fetch=Fetcher({SHARE: "http://127.0.0.1/admin"})) == SHARE
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.threads.com/@someone/post/DeZZtk8jUv1",  # an existing /post/ link is untouched
+        "https://www.threads.com/share/",  # no id
+        "https://www.threads.com/share/a/b",  # not a share-link shape
+        "https://www.threads.com/@someone",
+        "https://threads.com.evil.example/share/abc",  # lookalike host
+    ],
+)
+def test_only_real_threads_share_links_are_contacted(url):
+    fetch = Fetcher({})
+    assert shortlinks.expand(url, fetch=fetch) == url
+    assert fetch.calls == []
+
+
+def test_share_links_use_the_non_browser_user_agent_and_short_links_keep_theirs(monkeypatch):
+    seen = {}
+
+    class FakeOpener:
+        def open(self, request, timeout=None):
+            seen[request.full_url] = request.get_header("User-agent")
+            raise shortlinks.urllib.error.HTTPError(request.full_url, 302, "Found", {"Location": "https://x/"}, None)
+
+    monkeypatch.setattr(shortlinks, "_opener", FakeOpener())
+    shortlinks._fetch_location(SHARE)
+    shortlinks._fetch_location("https://lnkd.in/p/abc")
+    assert seen[SHARE] == shortlinks._SHARE_UA and "Chrome" not in shortlinks._SHARE_UA
+    assert seen["https://lnkd.in/p/abc"] == shortlinks._UA

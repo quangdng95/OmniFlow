@@ -455,3 +455,12 @@ def test_instagram_username_from_url():
     assert instagram_username_from_url("https://www.instagram.com/thexxlab_/") == "thexxlab_"
     assert instagram_username_from_url("https://www.instagram.com/thexxlab_/reels/") == "thexxlab_"
     assert instagram_username_from_url("https://www.instagram.com/p/C-i9vJ2ST7C/") == "p"
+
+
+def test_a_threads_share_link_is_threads_not_instagram_or_a_generic_link():
+    for url in ("https://www.threads.com/share/D6of7LwSj/", "https://www.threads.net/share/D6of7LwSj"):
+        assert get_platform_info(url) == "Threads"
+        assert classify_url(url).platform == "Threads"
+    # once shortlinks expands it, the post URL classifies as a Threads post
+    post = classify_url("https://www.threads.com/@xemnhaonlinecungthanh/post/DeZZtk8jUv1?xmt=AQG0")
+    assert post.kind == LinkKind.THREADS_POST and post.shortcode == "DeZZtk8jUv1"

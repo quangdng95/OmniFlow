@@ -379,3 +379,24 @@ def test_extract_video_info_profile_raises_instead_of_silent_empty_playlist(monk
     cls = classify.classify_url("https://www.instagram.com/someuser/reels/")
     with pytest.raises(Exception):
         extraction_module.extract_video_info(cls)
+
+
+def test_a_non_instagram_failure_is_not_logged_as_an_instagram_failure(monkeypatch, capsys):
+    class Boom:
+        def __init__(self, opts):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def extract_info(self, url, download=False):
+            raise yt_dlp.utils.DownloadError("[0;31mERROR: [0m Unsupported URL: x")
+
+    monkeypatch.setattr(extraction_module.yt_dlp, "YoutubeDL", Boom)
+    cls = classify.classify_url("https://www.threads.com/share/abc/")
+    with pytest.raises(yt_dlp.utils.DownloadError):
+        extraction_module.extract_video_info(cls)
+    assert "Instagram" not in capsys.readouterr().out
