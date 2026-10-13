@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HomePage from "./HomePage";
 import { api } from "../api";
-import { preparePlainFile, sharePreparedSave } from "../lib/saveFile";
+import { getSavePlatform, preparePlainFile, sharePreparedSave } from "../lib/saveFile";
 import { loadHistory } from "../lib/history";
 import { LanguageProvider } from "../i18n/LanguageContext";
 import type { Page } from "../components/Header";
@@ -37,6 +37,8 @@ vi.mock("../lib/saveFile", () => ({
   prepareZipFiles: vi.fn(() => Promise.resolve(PREPARED)),
   sharePreparedSave: vi.fn().mockResolvedValue("shared"),
   isNotAllowedError: () => false,
+  isAbortError: (e: unknown) => e instanceof Error && e.name === "AbortError",
+  getSavePlatform: vi.fn(() => "desktop"),
 }));
 
 const mockedApi = vi.mocked(api, true);
@@ -367,7 +369,7 @@ describe("HomePage in remote mode (non-local hostname)", () => {
     // The finished file is fetched ahead of the tap (iOS share() needs a fresh
     // user gesture), then the tap hands it straight to the share sheet.
     await waitFor(() =>
-      expect(preparePlainFile).toHaveBeenCalledWith("/api/download-file/job-789", "clip.mp4")
+      expect(preparePlainFile).toHaveBeenCalledWith("/api/download-file/job-789", "clip.mp4", expect.objectContaining({ signal: expect.anything() }))
     );
     await user.click(downloadButton);
     await waitFor(() => expect(sharePreparedSave).toHaveBeenCalledTimes(1));
@@ -746,10 +748,33 @@ describe("HomePage save-to-device notification (remote mode)", () => {
     await user.click(saveButton);
   };
 
-  it("tells the user the file was saved once the share sheet completes", async () => {
+  afterEach(() => {
+    vi.mocked(getSavePlatform).mockReturnValue("desktop");
+  });
+
+  it("stays silent after the iOS share sheet completes (the share sheet itself was the confirmation)", async () => {
+    vi.mocked(getSavePlatform).mockReturnValue("ios");
     vi.mocked(sharePreparedSave).mockResolvedValueOnce("shared");
     await finishDownloadAndPressSave();
-    expect(await screen.findByText("Saved to your device")).toBeInTheDocument();
+    await waitFor(() => expect(sharePreparedSave).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(screen.queryByText(/Saved to your device|download bar/i)).not.toBeInTheDocument();
+  });
+
+  it("iOS fallback to a plain download tells the user where the file went - never 'download bar'", async () => {
+    vi.mocked(getSavePlatform).mockReturnValue("ios");
+    vi.mocked(sharePreparedSave).mockResolvedValueOnce("downloaded");
+    await finishDownloadAndPressSave();
+    expect(await screen.findByText(/Downloaded to the Files app/i)).toBeInTheDocument();
+    expect(screen.queryByText(/download bar/i)).not.toBeInTheDocument();
+  });
+
+  it("Android: points at the notifications / Downloads folder", async () => {
+    vi.mocked(getSavePlatform).mockReturnValue("android");
+    vi.mocked(sharePreparedSave).mockResolvedValueOnce("downloaded");
+    await finishDownloadAndPressSave();
+    expect(await screen.findByText(/notifications or the Downloads folder/i)).toBeInTheDocument();
+    expect(screen.queryByText(/download bar/i)).not.toBeInTheDocument();
   });
 
   it("tells the user a download started (not saved) on desktop, where the plain download link is used", async () => {

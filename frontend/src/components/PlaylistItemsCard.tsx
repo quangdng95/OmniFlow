@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { blockCheckbox, blockSwitch, playlistTitle, ctaGhost, ctaLight, progressSlab } from "../lib/blockStyles";
 import { useLanguage } from "../i18n/LanguageContext";
-import { prepareZipFiles } from "../lib/saveFile";
+import { prepareZipFiles, type PrepareOptions } from "../lib/saveFile";
 import { usePreparedSave } from "../hooks/usePreparedSave";
 import type { Platform, PlaylistItem, RowProgress, RowDownloadStatus } from "../types";
 
@@ -60,10 +60,20 @@ const PlaylistItemsCard = ({
   const [previewRow, setPreviewRow] = useState<number | null>(null);
 
   const prepareBatchZip = useCallback(
-    (url: string) => prepareZipFiles(url, `${title || "ViDrop"}.zip`),
+    (url: string, options: PrepareOptions) => prepareZipFiles(url, `${title || "ViDrop"}.zip`, options),
     [title]
   );
-  const { saving: savingZip, failed: zipFailed, save: handleSaveZip } = usePreparedSave(downloadUrl, prepareBatchZip);
+  const { saving: savingZip, failed: zipFailed, preparing: preparingZip, progress: zipProgress, shareKind: zipShareKind, save: handleSaveZip } = usePreparedSave(downloadUrl, prepareBatchZip);
+  const zipBusy = savingZip || preparingZip;
+  const zipLabel = preparingZip
+    ? zipProgress === null
+      ? t.downloadSuccess.preparingNoPercent
+      : t.downloadSuccess.preparing.replace("{percent}", String(Math.round(zipProgress)))
+    : zipFailed
+      ? t.downloadSuccess.tryAgain
+      : zipShareKind === "photos"
+        ? t.downloadSuccess.saveToPhotos
+        : t.downloadSuccess.save;
 
   // Every available row stays selectable - including already-downloaded ones,
   // so a user can tick several finished rows and grab them again in one go
@@ -149,15 +159,15 @@ const PlaylistItemsCard = ({
   const canSave = !busy && anyDone && (Boolean(downloadUrl) || Boolean(onOpenFolder));
   const renderSaveButton = () =>
     downloadUrl ? (
-      <button type="button" onClick={handleSaveZip} disabled={savingZip} className={ctaLight}>
-        {savingZip ? (
+      <button type="button" onClick={handleSaveZip} disabled={zipBusy} className={ctaLight}>
+        {zipBusy ? (
           <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
         ) : zipFailed ? (
           <RefreshCw className="h-6 w-6" aria-hidden />
         ) : (
           <Save className="h-6 w-6" aria-hidden />
         )}
-        {zipFailed ? t.downloadSuccess.tryAgain : t.downloadSuccess.save}
+        {zipLabel}
       </button>
     ) : onOpenFolder ? (
       <button type="button" onClick={onOpenFolder} className={ctaLight}>

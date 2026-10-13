@@ -24,6 +24,8 @@ vi.mock("../lib/saveFile", () => ({
   prepareZipFiles: vi.fn(),
   sharePreparedSave: vi.fn().mockResolvedValue("shared"),
   isNotAllowedError: () => false,
+  isAbortError: (e: unknown) => e instanceof Error && e.name === "AbortError",
+  getSavePlatform: vi.fn(() => "desktop"),
 }));
 
 const mockedApi = vi.mocked(api, true);

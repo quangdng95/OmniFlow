@@ -10,6 +10,8 @@ vi.mock("../lib/saveFile", () => ({
   prepareZipFiles: vi.fn(() => Promise.resolve({ files: [], fallbackBlob: new Blob(), fallbackFilename: "x" })),
   sharePreparedSave: vi.fn().mockResolvedValue("shared"),
   isNotAllowedError: () => false,
+  isAbortError: (e: unknown) => e instanceof Error && e.name === "AbortError",
+  getSavePlatform: vi.fn(() => "desktop"),
 }));
 
 const makeItem = (n: number): PlaylistItem =>
