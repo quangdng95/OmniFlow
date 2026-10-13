@@ -1,7 +1,7 @@
 <div align="center">
   <img src="Assets/Logo/Logo.png" alt="OmniFlow logo" width="120" />
 
-  # OmniFlow
+  # ViDrop
 
   **All-in-one video, audio & image downloader for macOS.**
 
