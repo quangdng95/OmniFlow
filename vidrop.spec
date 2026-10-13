@@ -4,7 +4,7 @@
 # installs and runs 100% on their own machine (no owner server involved).
 #
 # Build:  pyinstaller vidrop.spec --noconfirm
-# Output: dist/Vidrop.app
+# Output: dist/ViDrop.app
 import os
 import platform
 import shutil
@@ -74,9 +74,11 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
-# App icon (macOS). A multi-resolution .icns (16px→1024px) generated from
-# Assets/Logo/Logo-White.png so it stays crisp at every Finder/Dock size.
-APP_ICON = "Assets/Logo/Logo-White.icns"
+# App icon (macOS). A multi-resolution .icns (16px→1024px) of the square yellow
+# V3 logo (824px artwork centred on a 1024 canvas, transparent margin), so it stays
+# crisp at every Finder/Dock size. The older Assets/Logo/Logo-White.* files are kept
+# but no longer used here.
+APP_ICON = "Assets/Logo/ViDrop.icns"
 
 exe = EXE(
     pyz,
@@ -109,10 +111,12 @@ coll = COLLECT(
 
 app = BUNDLE(
     coll,
-    name="Vidrop.app",
+    name="ViDrop.app",
     icon=APP_ICON,
-    bundle_identifier="com.omniflow.app",
+    bundle_identifier="com.vidrop.app",
     info_plist={
+        "CFBundleName": "ViDrop",
+        "CFBundleDisplayName": "ViDrop",
         "NSHighResolutionCapable": True,
         "CFBundleShortVersionString": "1.0.0",
         "LSMinimumSystemVersion": "11.0",

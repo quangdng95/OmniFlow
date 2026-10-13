@@ -32,7 +32,7 @@ bất kể ngôn ngữ giao diện bạn chọn trong Cài đặt), kèm giải 
 ### Sai bản cài đặt cho chip máy Mac
 
 > ❌ Lỗi: Bản ViDrop này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc ...).
-> Vui lòng tải đúng bản dành cho máy bạn (Vidrop-AppleSilicon.dmg hoặc Vidrop-Intel.dmg) tại
+> Vui lòng tải đúng bản dành cho máy bạn (ViDrop-AppleSilicon.dmg hoặc ViDrop-Intel.dmg) tại
 > trang GitHub Releases của ViDrop.
 
 ViDrop có hai bản build riêng biệt — một bản native cho Apple Silicon (M1/M2/M3/M4) và một bản
@@ -41,7 +41,7 @@ cho. Thông báo này nghĩa là bạn đã cài nhầm bản không đúng vớ
 
 **Cách sửa:** tải lại từ [mục Tải xuống trong README](../README.vi.md#tải-xuống) hoặc từ
 [Releases](https://github.com/quangdng95/ViDrop/releases/latest), chọn
-**Vidrop-AppleSilicon.dmg** cho Mac M1/M2/M3/M4 hoặc **Vidrop-Intel.dmg** cho Mac Intel.
+**ViDrop-AppleSilicon.dmg** cho Mac M1/M2/M3/M4 hoặc **ViDrop-Intel.dmg** cho Mac Intel.
 Không chắc máy mình dùng chip gì? Menu Apple (góc trên bên trái) → **About This Mac** — sẽ ghi rõ
 tên chip.
 

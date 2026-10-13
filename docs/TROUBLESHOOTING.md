@@ -33,7 +33,7 @@ explanation.
 ### Wrong build for your Mac's chip
 
 > ❌ Lỗi: Bản ViDrop này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc ...).
-> Vui lòng tải đúng bản dành cho máy bạn (Vidrop-AppleSilicon.dmg hoặc Vidrop-Intel.dmg) tại
+> Vui lòng tải đúng bản dành cho máy bạn (ViDrop-AppleSilicon.dmg hoặc ViDrop-Intel.dmg) tại
 > trang GitHub Releases của ViDrop.
 
 ViDrop ships two separate builds — one native to Apple Silicon (M1/M2/M3/M4) and one native to
@@ -42,7 +42,7 @@ means you installed the wrong one for your Mac.
 
 **Fix:** re-download from [the Download section of the README](../README.md#download) or
 [Releases](https://github.com/quangdng95/ViDrop/releases/latest), picking
-**Vidrop-AppleSilicon.dmg** for an M1/M2/M3/M4 Mac or **Vidrop-Intel.dmg** for an Intel Mac.
+**ViDrop-AppleSilicon.dmg** for an M1/M2/M3/M4 Mac or **ViDrop-Intel.dmg** for an Intel Mac.
 Not sure which you have? Apple menu (top-left) → **About This Mac** — it names the chip directly.
 
 ### "Cannot download from a Private account"
