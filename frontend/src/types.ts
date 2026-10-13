@@ -56,6 +56,9 @@ export interface Settings {
   cookies_path: string;
   cookies_status: CookiesStatus;
   playlist_limit?: number;
+  // Mac app only (the server leaves them out for a remote visitor).
+  youtube_cookie_source?: string;
+  youtube_profiles?: { id: string; name: string }[];
 }
 
 export type JobStatus = "running" | "done" | "cancelled" | "error";

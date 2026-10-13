@@ -128,6 +128,13 @@ export interface Translations {
       option500: string;
       optionAll: string;
     };
+    youtubeSignIn: {
+      heading: string;
+      description: string;
+      keychainHint: string;
+      off: string;
+      noProfiles: string;
+    };
     exportLogs: {
       heading: string;
       description: string;
@@ -328,13 +335,20 @@ const en: Translations = {
     },
     playlistLimit: {
       heading: "Playlist / Channel Loading Limit",
-      description: "Configure the maximum number of videos to load when parsing a playlist or channel (applies to YouTube, Instagram Reels, etc.). Lower values load faster.",
+      description: "Choose the most videos to list from a YouTube playlist or channel. Lower values load faster. A YouTube Mix always lists 50, and an Instagram profile at most 30.",
       option30: "30 items (Fastest)",
       option50: "50 items",
       option100: "100 items (Recommended)",
       option200: "200 items",
       option500: "500 items",
       optionAll: "All items (Slowest, could hit rate limits)",
+    },
+    youtubeSignIn: {
+      heading: "YouTube sign-in",
+      description: "YouTube sometimes asks for a sign-in before it lets you download. Choose the Chrome profile where you're signed in to YouTube. ViDrop uses that YouTube login only when YouTube asks for it. Off by default.",
+      keychainHint: "macOS may ask for Keychain access. Choose Always Allow, so it asks only once.",
+      off: "Off",
+      noProfiles: "No Chrome profile found on this Mac.",
     },
     exportLogs: {
       heading: "Diagnostic Logs",
@@ -799,13 +813,20 @@ const vi: Translations = {
     },
     playlistLimit: {
       heading: "Giới hạn tải Playlist / Kênh",
-      description: "Cấu hình số lượng video tối đa được tải khi quét playlist hoặc kênh (áp dụng cho YouTube, Instagram Reels, v.v.). Giới hạn nhỏ giúp tải nhanh hơn.",
+      description: "Chọn số video tối đa để liệt kê từ một playlist hoặc kênh YouTube. Giá trị nhỏ tải nhanh hơn. YouTube Mix luôn liệt kê 50 video, và trang Instagram tối đa 30.",
       option30: "30 video (Nhanh nhất)",
       option50: "50 video",
       option100: "100 video (Khuyên dùng)",
       option200: "200 video",
       option500: "500 video",
       optionAll: "Tất cả video (Chậm nhất, có thể bị giới hạn chặn)",
+    },
+    youtubeSignIn: {
+      heading: "Đăng nhập YouTube",
+      description: "Đôi khi YouTube yêu cầu đăng nhập trước khi cho tải. Hãy chọn profile Chrome mà bạn đã đăng nhập YouTube. ViDrop chỉ dùng phiên YouTube đó khi YouTube yêu cầu. Mặc định đang tắt.",
+      keychainHint: "macOS có thể hỏi quyền Keychain. Hãy chọn \"Luôn cho phép\" để chỉ hỏi một lần.",
+      off: "Tắt",
+      noProfiles: "Không tìm thấy profile Chrome nào trên máy Mac này.",
     },
     exportLogs: {
       heading: "Nhật ký chẩn đoán",

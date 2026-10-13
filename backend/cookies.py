@@ -6,7 +6,9 @@ it never deletes the user's own manually-configured file).
 """
 
 import http.cookiejar
+import json
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -33,6 +35,40 @@ CHROMIUM_BROWSER_DIRS = {
     # reads Arc directly, did.
     "arc": "~/Library/Application Support/Arc/User Data",
 }
+
+
+_CHROME_PROFILE_RE = re.compile(r"^(Default|Profile \d+)$")
+
+
+def list_chrome_profiles():
+    """Chrome profiles on this Mac that can hold a YouTube login, for Settings.
+
+    Returns [{"id": "Default", "name": "Person 1"}, ...]. `name` is the display name
+    Chrome shows for the profile (from its Local State file); the account email that
+    file also holds is deliberately never read. Only profile folders that have a
+    cookie database are listed. Never raises.
+    """
+    base = os.path.expanduser(CHROMIUM_BROWSER_DIRS["chrome"])
+    try:
+        folders = sorted(n for n in os.listdir(base) if _CHROME_PROFILE_RE.match(n))
+    except OSError:
+        return []
+    names = {}
+    try:
+        with open(os.path.join(base, "Local State"), "r") as f:
+            cache = json.load(f).get("profile", {}).get("info_cache", {})
+        for folder, info in cache.items():
+            if isinstance(info, dict) and isinstance(info.get("name"), str):
+                names[folder] = info["name"]
+    except (OSError, ValueError, AttributeError):
+        pass
+    profiles = []
+    for folder in folders:
+        if _profile_cookie_db(os.path.join(base, folder)):
+            profiles.append({"id": folder, "name": names.get(folder) or folder})
+    # "Default" first, then Profile 1, 2, ... in numeric order.
+    profiles.sort(key=lambda p: (p["id"] != "Default", int(p["id"].split()[-1]) if p["id"] != "Default" else 0))
+    return profiles
 
 
 def _profile_cookie_db(profile_dir):

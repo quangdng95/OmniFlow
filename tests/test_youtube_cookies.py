@@ -306,6 +306,99 @@ def test_save_session_keeps_the_youtube_cookie_source(isolated_config):
     assert data["path"] == "/y" and data["playlist_limit"] == 50
 
 
+# ---- Settings: choose the Chrome profile (YouTube sign-in) ----
+
+
+def test_set_youtube_cookie_source_saves_and_clears_it_and_keeps_other_keys(isolated_config):
+    isolated_config.write_text(json.dumps({"path": "/x", "playlist_limit": 50}))
+    config_module.set_youtube_cookie_source("chrome:Profile 3")
+    assert json.loads(isolated_config.read_text()) == {"path": "/x", "playlist_limit": 50, "youtube_cookie_source": "chrome:Profile 3"}
+    assert config_module.get_youtube_cookie_source() == ("chrome", "Profile 3")
+    assert config_module.youtube_cookie_source_value() == "chrome:Profile 3"
+    config_module.set_youtube_cookie_source("")
+    assert json.loads(isolated_config.read_text()) == {"path": "/x", "playlist_limit": 50}
+    assert config_module.youtube_cookie_source_value() == ""
+
+
+@pytest.mark.parametrize("bad", ["chrome:../../etc", "brave:Default", "/Users/x/Library", "chrome:Profile", None, 5, "chrome:Default; rm"])
+def test_set_youtube_cookie_source_rejects_anything_but_a_chrome_profile_folder(isolated_config, bad):
+    with pytest.raises(ValueError):
+        config_module.set_youtube_cookie_source(bad)
+    assert not isolated_config.exists()  # nothing was written
+
+
+def test_set_youtube_cookie_source_works_without_an_existing_config_file(isolated_config):
+    config_module.set_youtube_cookie_source("chrome:Default")
+    assert json.loads(isolated_config.read_text()) == {"youtube_cookie_source": "chrome:Default"}
+
+
+def _fake_chrome(tmp_path, monkeypatch, local_state=None):
+    base = tmp_path / "Chrome"
+    for folder, has_db in (("Default", True), ("Profile 2", True), ("Profile 10", True), ("Profile 3", False), ("Guest Profile", True), ("System Profile", True)):
+        (base / folder / "Network").mkdir(parents=True)
+        if has_db:
+            (base / folder / "Network" / "Cookies").write_text("x")
+    if local_state is not None:
+        (base / "Local State").write_text(json.dumps(local_state))
+    monkeypatch.setitem(cookies_module.CHROMIUM_BROWSER_DIRS, "chrome", str(base))
+
+
+def test_list_chrome_profiles_uses_display_names_and_never_the_email(tmp_path, monkeypatch):
+    _fake_chrome(tmp_path, monkeypatch, {"profile": {"info_cache": {
+        "Default": {"name": "Quang", "user_name": "secret@example.com"},
+        "Profile 2": {"name": "Work", "user_name": "work@example.com"},
+    }}})
+    profiles = cookies_module.list_chrome_profiles()
+    assert profiles == [
+        {"id": "Default", "name": "Quang"},
+        {"id": "Profile 2", "name": "Work"},
+        {"id": "Profile 10", "name": "Profile 10"},  # numeric order, falls back to the folder name
+    ]
+    assert "example.com" not in json.dumps(profiles)  # Profile 3 has no cookie DB, guest/system are not listed
+
+
+def test_list_chrome_profiles_survives_a_missing_or_corrupt_local_state(tmp_path, monkeypatch):
+    _fake_chrome(tmp_path, monkeypatch, None)
+    assert [p["id"] for p in cookies_module.list_chrome_profiles()] == ["Default", "Profile 2", "Profile 10"]
+    (tmp_path / "Chrome" / "Local State").write_text("{not json")
+    assert [p["name"] for p in cookies_module.list_chrome_profiles()] == ["Default", "Profile 2", "Profile 10"]
+
+
+def test_list_chrome_profiles_is_empty_without_chrome(tmp_path, monkeypatch):
+    monkeypatch.setitem(cookies_module.CHROMIUM_BROWSER_DIRS, "chrome", str(tmp_path / "nope"))
+    assert cookies_module.list_chrome_profiles() == []
+
+
+def test_settings_route_lists_profiles_and_saves_the_choice_locally(client, tmp_path, monkeypatch):
+    _fake_chrome(tmp_path, monkeypatch, {"profile": {"info_cache": {"Default": {"name": "Quang"}}}})
+    body = client.get("/api/settings").get_json()
+    assert body["youtube_cookie_source"] == "" and body["youtube_profiles"][0] == {"id": "Default", "name": "Quang"}
+    resp = client.post("/api/settings", json={"youtube_cookie_source": "chrome:Default"})
+    assert resp.status_code == 200
+    assert client.get("/api/settings").get_json()["youtube_cookie_source"] == "chrome:Default"
+    # an unrelated settings save keeps it, and switching it off clears it
+    client.post("/api/settings", json={"playlist_limit": 30})
+    assert client.get("/api/settings").get_json()["youtube_cookie_source"] == "chrome:Default"
+    client.post("/api/settings", json={"youtube_cookie_source": ""})
+    assert client.get("/api/settings").get_json()["youtube_cookie_source"] == ""
+
+
+def test_settings_route_rejects_a_bad_profile_with_400(client):
+    resp = client.post("/api/settings", json={"youtube_cookie_source": "chrome:../../x"})
+    assert resp.status_code == 400
+    assert client.get("/api/settings").get_json()["youtube_cookie_source"] == ""
+
+
+def test_settings_route_hides_profiles_and_refuses_to_set_a_source_for_a_remote_visitor(client, tmp_path, monkeypatch):
+    _fake_chrome(tmp_path, monkeypatch, {"profile": {"info_cache": {"Default": {"name": "Quang"}}}})
+    remote = {"Host": "example.com"}
+    body = client.get("/api/settings", headers=remote).get_json()
+    assert "youtube_profiles" not in body and "youtube_cookie_source" not in body
+    resp = client.post("/api/settings", json={"youtube_cookie_source": "chrome:Default"}, headers=remote)
+    assert resp.status_code == 403
+    assert config_module.youtube_cookie_source_value() == ""
+
+
 # ---- messages ----
 
 

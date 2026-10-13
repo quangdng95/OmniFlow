@@ -91,6 +91,35 @@ def get_youtube_cookie_source():
     return browser, profile
 
 
+def youtube_cookie_source_value():
+    # The raw saved value ("chrome:Default"), or "" when off / missing / not valid.
+    source = get_youtube_cookie_source()
+    return f"{source[0]}:{source[1]}" if source else ""
+
+
+def set_youtube_cookie_source(value):
+    """Save (or, with "", clear) which Chrome profile YouTube cookies come from.
+
+    Only an exact "chrome:Default" / "chrome:Profile N" is accepted - never a path.
+    Raises ValueError for anything else. Every other key in the file is kept.
+    """
+    if value != "" and not (isinstance(value, str) and _YOUTUBE_SOURCE_RE.match(value)):
+        raise ValueError("invalid youtube_cookie_source")
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            data = {}
+    except (OSError, ValueError):
+        data = {}
+    if value:
+        data[YOUTUBE_COOKIE_SOURCE_KEY] = value
+    else:
+        data.pop(YOUTUBE_COOKIE_SOURCE_KEY, None)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(data, f)
+
+
 def save_session(path_val, cookies_path_val="", browser_val="chrome", playlist_limit_val=100):
     # Keys this function does not own (e.g. youtube_cookie_source) are carried
     # over: rewriting the file from only the four managed keys silently dropped

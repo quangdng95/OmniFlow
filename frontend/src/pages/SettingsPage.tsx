@@ -23,6 +23,8 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
   const [path, setPath] = useState("");
   const [rememberPath, setRememberPath] = useState(true);
   const [playlistLimit, setPlaylistLimit] = useState(100);
+  const [youtubeSource, setYoutubeSource] = useState("off");
+  const [youtubeProfiles, setYoutubeProfiles] = useState<{ id: string; name: string }[]>([]);
   const [cookiesStatus, setCookiesStatus] = useState<CookiesStatus | null>(null);
   const [selectedCookiesFile, setSelectedCookiesFile] = useState<File | null>(null);
 
@@ -30,9 +32,22 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
     void api.getSettings().then((settings) => {
       setPath(settings.path);
       setPlaylistLimit(settings.playlist_limit ?? 100);
+      setYoutubeSource(settings.youtube_cookie_source || "off");
+      setYoutubeProfiles(settings.youtube_profiles ?? []);
       setCookiesStatus(settings.cookies_status ?? null);
     });
   }, []);
+
+  const handleYoutubeSourceChange = async (value: string) => {
+    const previous = youtubeSource;
+    setYoutubeSource(value);
+    try {
+      await api.updateSettings({ youtube_cookie_source: value === "off" ? "" : value });
+    } catch (error: unknown) {
+      setYoutubeSource(previous);
+      toast.error(error instanceof Error ? error.message : String(error));
+    }
+  };
 
   const handlePlaylistLimitChange = async (newVal: number) => {
     setPlaylistLimit(newVal);
@@ -249,6 +264,48 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
               </div>
             </RadioGroup>
           </SectionCard>
+
+          {isLocal() && (
+            <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">
+              <p className="text-base font-semibold text-ink m-0">
+                {t.settingsPage.youtubeSignIn.heading}
+              </p>
+              <p className="text-base text-ink-muted m-0 leading-relaxed">
+                {t.settingsPage.youtubeSignIn.description}
+              </p>
+              <RadioGroup
+                value={youtubeSource}
+                onValueChange={(val) => handleYoutubeSourceChange(String(val))}
+                className="flex flex-col gap-3 mt-2"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="off" id="youtube-source-off" />
+                  <Label htmlFor="youtube-source-off" className="text-base font-semibold text-ink cursor-pointer">
+                    {t.settingsPage.youtubeSignIn.off}
+                  </Label>
+                </div>
+                {youtubeProfiles.map((profile) => {
+                  // "Profile 2" has a space, which cannot be part of an element id.
+                  const inputId = `youtube-source-${profile.id.replace(/\s+/g, "-")}`;
+                  return (
+                  <div key={profile.id} className="flex items-center gap-2">
+                    <RadioGroupItem value={`chrome:${profile.id}`} id={inputId} />
+                    <Label
+                      htmlFor={inputId}
+                      className="text-base font-semibold text-ink cursor-pointer"
+                    >
+                      {profile.name === profile.id ? profile.id : `${profile.name} · ${profile.id}`}
+                    </Label>
+                  </div>
+                  );
+                })}
+              </RadioGroup>
+              {youtubeProfiles.length === 0 && (
+                <p className="text-base text-ink-muted m-0">{t.settingsPage.youtubeSignIn.noProfiles}</p>
+              )}
+              <p className="text-base text-ink-muted m-0">{t.settingsPage.youtubeSignIn.keychainHint}</p>
+            </SectionCard>
+          )}
 
           {isLocal() && (
             <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">

@@ -71,8 +71,8 @@ _CATALOG = {
     # YouTube failures, told apart so the user knows what to do (the retry
     # button is the single instruction - never "paste the link again").
     "youtube_signin_required": {
-        VI: "❌ YouTube đang yêu cầu đăng nhập trước khi cho tải video này. Hãy đăng nhập YouTube trên Chrome rồi bấm Thử lại.",
-        EN: "❌ YouTube wants you signed in before it allows this download. Sign in to YouTube in Chrome, then press Retry.",
+        VI: "❌ YouTube đang yêu cầu đăng nhập trước khi cho tải video này. Nếu dùng app Mac, hãy chọn profile Chrome của bạn trong Cài đặt → Đăng nhập YouTube, rồi bấm Thử lại.",
+        EN: "❌ YouTube wants you signed in before it allows this download. If you use the Mac app, choose your Chrome profile in Settings → YouTube sign-in, then press Retry.",
     },
     "youtube_restricted": {
         VI: "❌ Không tải được video YouTube này. Video có thể ở chế độ riêng tư, dành cho hội viên, giới hạn độ tuổi hoặc bị chặn ở khu vực của bạn.",
