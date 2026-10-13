@@ -28,6 +28,10 @@ keep both updated together when shipping a user-visible change.
 
 ### Fixed
 
+- [x] **The Mac app icon sat inside a grey tile on macOS 26.** The artwork had a transparent border
+  (824 px of art on a 1024 px canvas), so macOS put it on its own plate. The icon is now full-bleed:
+  yellow edge to edge, opaque, glyph centred at about half the canvas (`scripts/make-icon.sh`, pinned by
+  `tests/test_app_icon.py`).
 - [x] **History and the language choice were never kept in the Mac app.** pywebview's macOS default
   (`private_mode=True`) wipes the web view's saved data at every launch; the app now starts with
   `private_mode=False`. (`storage_path` is ignored by the macOS backend, so no old store existed to
