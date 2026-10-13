@@ -13,14 +13,19 @@ def _read(*parts):
         return f.read()
 
 
-def test_the_mac_app_and_the_frontend_package_have_the_same_version():
-    spec = _read("vidrop.spec")
-    short = re.search(r'"CFBundleShortVersionString":\s*"([^"]+)"', spec).group(1)
-    build = re.search(r'"CFBundleVersion":\s*"([^"]+)"', spec).group(1)
+def test_the_version_lives_in_one_place_and_the_spec_and_build_script_read_it():
     package = json.loads(_read("frontend", "package.json"))["version"]
     lock = json.loads(_read("frontend", "package-lock.json"))
-    assert short == build == package == lock["version"] == lock["packages"][""]["version"]
-    assert re.fullmatch(r"\d+\.\d+\.\d+", short)
+    assert package == lock["version"] == lock["packages"][""]["version"]
+    assert re.fullmatch(r"\d+\.\d+\.\d+", package)
+
+    spec = _read("vidrop.spec")
+    assert 'open("frontend/package.json")' in spec
+    assert '"CFBundleShortVersionString": VERSION' in spec and '"CFBundleVersion": VERSION' in spec
+    assert not re.search(r'"CFBundle(?:Short)?Version(?:String)?":\s*"\d', spec)  # no second, hard-coded copy
+
+    build = _read("scripts", "build.sh")
+    assert "frontend/package.json" in build and 'RELEASE_DIR="$RELEASE_ROOT/v$VERSION"' in build
 
 
 def test_the_bundle_identifier_is_vidrops_own():

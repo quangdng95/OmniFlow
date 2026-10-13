@@ -5,10 +5,12 @@ __pycache__/
 .DS_Store
 node_modules/
 
-# Release artifacts (DMGs, checksums, release notes drafts) - never committed.
+# Release artifacts (DMGs, checksums, release notes drafts, the signed apps) - never committed.
+# scripts/build.sh publishes to release/v<VERSION>/; its PyInstaller output goes to build/ (temporary).
 release/
 
-# PyInstaller packaging artifacts (see vidrop.spec / rules/packaging.md)
+# PyInstaller packaging artifacts (see vidrop.spec / rules/packaging.md). build/ is the temporary
+# output of scripts/build.sh; dist/ and dist-*/ are the old output folders (kept ignored for safety).
 build/
 .ffmpeg_stage/
 dist/

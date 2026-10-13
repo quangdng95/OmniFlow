@@ -15,12 +15,24 @@ echo -e "${BLUE}=== Starting ViDrop Build Process ===${NC}"
 # Which Mac this build is for. The DMG is named after it so both can live side by side
 # in a release: ViDrop-AppleSilicon.dmg (arm64) and ViDrop-Intel.dmg (x86_64).
 # Defaults build for THIS machine with .venv. For the Intel build on an Apple Silicon Mac
-# (needs Rosetta 2), point it at the x86_64 Python and give it its own output folder:
-#   PYTHON_BIN=envs/x86_64/bin/python ARCH_PREFIX="arch -x86_64" DIST_DIR=dist-x86_64 \
-#     TARGET_ARCH=x86_64 ./scripts/build.sh
+# (needs Rosetta 2), point it at the x86_64 Python:
+#   PYTHON_BIN=envs/x86_64/bin/python ARCH_PREFIX="arch -x86_64" TARGET_ARCH=x86_64 ./scripts/build.sh
+#
+# WHERE THINGS GO. The result is published under release/v<VERSION>/ (VERSION is read from
+# frontend/package.json, the one place the version lives):
+#   release/v<VERSION>/<DMG_NAME>                the installer
+#   release/v<VERSION>/SHA256SUMS.txt            refreshed from every DMG in that folder
+#   release/v<VERSION>/_build/<arch>/ViDrop.app  the signed app the DMG was made from
+# A DMG of the same name that is already there is moved to release/_archive/, never deleted.
+# Everything else (PyInstaller's output and work files) goes to build/, which is temporary and
+# removed at the end. RELEASE_ROOT overrides the release/ folder (used when building from a
+# git worktree whose release/ lives in the main checkout).
 TARGET_ARCH="${TARGET_ARCH:-$(uname -m)}"
 if [ "$TARGET_ARCH" = "arm64" ]; then DMG_NAME="ViDrop-AppleSilicon.dmg"; else DMG_NAME="ViDrop-Intel.dmg"; fi
-DIST_DIR="${DIST_DIR:-dist}"
+VERSION="$(python3 -c "import json; print(json.load(open('frontend/package.json'))['version'])")"
+RELEASE_ROOT="${RELEASE_ROOT:-release}"
+RELEASE_DIR="$RELEASE_ROOT/v$VERSION"
+DIST_DIR="${DIST_DIR:-build/dist-$TARGET_ARCH}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 ARCH_PREFIX="${ARCH_PREFIX:-}"
 
@@ -135,7 +147,7 @@ APPLESCRIPT
     rm -f "$RW_DMG"
 
     # Copy signed app and DMG back to dist/
-    echo -e "${BLUE}Copying signed app and DMG back to dist/...${NC}"
+    echo -e "${BLUE}Copying the signed app and the DMG next to the build output...${NC}"
     rm -rf "$DIST_DIR/ViDrop.app"
     cp -R "$TEMP_DIR/ViDrop.app" "$DIST_DIR/ViDrop.app"
     cp "$TEMP_DIR/$DMG_NAME" "$DIST_DIR/$DMG_NAME"
@@ -149,13 +161,28 @@ else
     exit 1
 fi
 
-# 6. Clean up temporary build files
+# 6. Publish into release/v<VERSION>/ (nothing already there is deleted)
+echo -e "${BLUE}Publishing to $RELEASE_DIR ...${NC}"
+mkdir -p "$RELEASE_DIR/_build/$TARGET_ARCH"
+if [ -f "$RELEASE_DIR/$DMG_NAME" ]; then
+    mkdir -p "$RELEASE_ROOT/_archive/v$VERSION-replaced"
+    mv "$RELEASE_DIR/$DMG_NAME" "$RELEASE_ROOT/_archive/v$VERSION-replaced/$(date +%Y%m%d-%H%M%S)-$DMG_NAME"
+fi
+if [ -d "$RELEASE_DIR/_build/$TARGET_ARCH/ViDrop.app" ]; then
+    mkdir -p "$RELEASE_ROOT/_archive/v$VERSION-replaced"
+    mv "$RELEASE_DIR/_build/$TARGET_ARCH/ViDrop.app" "$RELEASE_ROOT/_archive/v$VERSION-replaced/$(date +%Y%m%d-%H%M%S)-$TARGET_ARCH-ViDrop.app"
+fi
+cp -R "$DIST_DIR/ViDrop.app" "$RELEASE_DIR/_build/$TARGET_ARCH/ViDrop.app"
+cp "$DIST_DIR/$DMG_NAME" "$RELEASE_DIR/$DMG_NAME"
+(cd "$RELEASE_DIR" && shasum -a 256 *.dmg > SHA256SUMS.txt)
+
+# 7. Clean up temporary build files (build/ also holds the PyInstaller output folder)
 echo -e "${BLUE}Cleaning up temporary build artifacts...${NC}"
 rm -rf build/ .ffmpeg_stage/
 echo -e "${GREEN}Temporary build/ and .ffmpeg_stage/ folders removed.${NC}"
 
 echo -e "\n${GREEN}=== Build Completed Successfully! ===${NC}"
-echo -e "You can find and run your app here:"
-echo -e "  - Standalone App: ${BLUE}$DIST_DIR/ViDrop.app${NC}"
-echo -e "  - DMG Installer:  ${BLUE}$DIST_DIR/$DMG_NAME${NC}"
-echo -e "Double-click ${BLUE}$DIST_DIR/ViDrop.app${NC} to start and test it!\n"
+echo -e "  - DMG Installer:  ${BLUE}$RELEASE_DIR/$DMG_NAME${NC}"
+echo -e "  - Standalone App: ${BLUE}$RELEASE_DIR/_build/$TARGET_ARCH/ViDrop.app${NC}"
+echo -e "  - Checksums:      ${BLUE}$RELEASE_DIR/SHA256SUMS.txt${NC}"
+echo -e "Double-click the app to start and test it!\n"
