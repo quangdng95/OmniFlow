@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "../i18n/LanguageContext";
+import { isLocal } from "../isLocal";
 
 export type UrlInputStatus = "idle" | "checking" | "result" | "error";
 
@@ -148,7 +149,11 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
           </div>
         )}
         {qualities.length > 1 && isHighResolution(qualityValue) && (
-          <p className="m-0 text-base text-ink-muted">{t.qualityAction.slowHint}</p>
+          // On the web the server is a small shared machine: say clearly, before the download starts,
+          // that 4K is converted (minutes) and how to skip that.
+          <p role={!isLocal() && !keepCodec ? "alert" : undefined} className={cn("m-0 text-base", !isLocal() && !keepCodec ? "font-bold text-ink" : "text-ink-muted")}>
+            {!isLocal() && !keepCodec ? t.qualityAction.webSlowWarning : t.qualityAction.slowHint}
+          </p>
         )}
         {qualities.length > 1 && isHighResolution(qualityValue) && onKeepCodecChange && (
           <div className="flex flex-col gap-1">

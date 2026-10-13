@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import * as isLocalModule from "../isLocal";
 import UrlInputCard, { type UrlInputStatus } from "./UrlInputCard";
 import { LanguageProvider } from "../i18n/LanguageContext";
 
@@ -127,5 +128,34 @@ describe("UrlInputCard", () => {
   it("hides the quality picker for a single option", () => {
     setup({ value: "u", status: "result", qualities: ["Image"], qualityValue: "Image" });
     expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+  });
+});
+
+describe("UrlInputCard web warning for 4K", () => {
+  const Q = ["2160p", "1080p"];
+  const WARN = /4K needs converting/i;
+
+  it("warns on the web before the download when 2160p is selected without keep-codec", () => {
+    vi.spyOn(isLocalModule, "isLocal").mockReturnValue(false);
+    setup({ qualities: Q, qualityValue: "2160p", onKeepCodecChange: vi.fn() });
+    expect(screen.getByRole("alert")).toHaveTextContent(WARN);
+    vi.restoreAllMocks();
+  });
+
+  it("drops the warning once keep-codec is on, and never shows it for 1080p", () => {
+    vi.spyOn(isLocalModule, "isLocal").mockReturnValue(false);
+    setup({ qualities: Q, qualityValue: "2160p", keepCodec: true, onKeepCodecChange: vi.fn() });
+    expect(screen.queryByText(WARN)).not.toBeInTheDocument();
+    vi.restoreAllMocks();
+    vi.spyOn(isLocalModule, "isLocal").mockReturnValue(false);
+    setup({ qualities: Q, qualityValue: "1080p", onKeepCodecChange: vi.fn() });
+    expect(screen.queryByText(WARN)).not.toBeInTheDocument();
+    vi.restoreAllMocks();
+  });
+
+  it("keeps the calm hint on the desktop app", () => {
+    setup({ qualities: Q, qualityValue: "2160p", onKeepCodecChange: vi.fn() });
+    expect(screen.queryByText(WARN)).not.toBeInTheDocument();
+    expect(screen.getByText(/can take longer to process/i)).toBeInTheDocument();
   });
 });

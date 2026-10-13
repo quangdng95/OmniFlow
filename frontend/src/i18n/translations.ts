@@ -80,6 +80,7 @@ export interface Translations {
     slowHint: string; // under the quality picker when a 1440p+ option is selected
     keepCodec: string; // checkbox label: skip the H.264 conversion (fastest)
     keepCodecNote: string; // one line under it: the file may not open in QuickTime / on an iPhone
+    webSlowWarning: string; // web only, 1440p+ without keep-codec: warns before the download starts
     converting: string; // processing line while the video is converted; {percent} is 0-100
     downloadAgain: string;
   };
@@ -280,6 +281,7 @@ const en: Translations = {
     slowHint: "High resolutions can take longer to process after the download.",
     keepCodec: "Keep original codec (fastest)",
     keepCodecNote: "Skips the conversion and saves a .mkv. It may not open in QuickTime or on an iPhone.",
+    webSlowWarning: "4K needs converting and can take a few minutes. Choose “Keep original codec” to download right away (a .mkv file).",
     converting: "Converting to H.264… {percent}%",
     downloadAgain: "Download Again",
   },
@@ -774,6 +776,7 @@ const vi: Translations = {
     slowHint: "Độ phân giải cao có thể mất nhiều thời gian xử lý hơn sau khi tải.",
     keepCodec: "Giữ codec gốc (nhanh nhất)",
     keepCodecNote: "Bỏ qua bước chuyển đổi và lưu thành file .mkv. File có thể không mở được bằng QuickTime hoặc trên iPhone.",
+    webSlowWarning: "4K cần chuyển mã và có thể mất vài phút. Chọn “Giữ codec gốc” để tải ngay (file .mkv).",
     converting: "Đang chuyển sang H.264… {percent}%",
     downloadAgain: "Tải lại",
   },

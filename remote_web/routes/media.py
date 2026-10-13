@@ -329,6 +329,7 @@ def start_download():
     def run():
         total_streams = 1 if "Audio" in quality else 2
         state = {"stream_index": 0}
+        jobs.jobs[job_id]["t_start"] = time.time()
 
         def progress_hook(d):
             if jobs.jobs[job_id]["cancelled"]:
@@ -359,6 +360,12 @@ def start_download():
             if "Audio" not in quality and not keep_codec:
                 download.ensure_h264(final_output_path, ffmpeg_bin, job_id)
                 download.ensure_apple_audio(final_output_path, ffmpeg_bin, job_id)
+        except download.EncodeTimeoutError:
+            jobs.jobs[job_id]["status"] = "error"
+            jobs.jobs[job_id]["text"] = messages.text("encode_timeout", lang)
+            download.cleanup_partial_download(output_path_no_ext, final_output_path)
+            shutil.rmtree(remote_temp_dir, ignore_errors=True)
+            return
         except yt_dlp.utils.DownloadCancelled:
             jobs.jobs[job_id]["status"] = "cancelled"
             jobs.jobs[job_id]["text"] = "Cancelled"
@@ -439,6 +446,7 @@ def start_download():
         finally:
             cookies._cleanup_temp_cookiefiles([ydl_opts.get("cookiefile")])
 
+        download.write_perf_log(job_id, url, quality, keep_codec, final_output_path)
         jobs.jobs[job_id]["status"] = "done"
         jobs.jobs[job_id]["percent"] = 100
         jobs.jobs[job_id]["text"] = f"Saved: {final_filename}"

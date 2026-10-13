@@ -379,7 +379,7 @@ def _fake_probe(monkeypatch, vcodec, acodec="aac", videotoolbox=False, width=384
         lambda path, ff: {"vcodec": vcodec, "acodec": acodec, "width": width, "height": height, "fps": fps, "duration": 10.0},
     )
     monkeypatch.setattr(download_module, "videotoolbox_available", lambda ff: videotoolbox)
-    monkeypatch.setattr(download_module, "prefer_hardware_encoder", lambda *a, **k: True)
+    monkeypatch.setattr(download_module, "hardware_encoder_decision", lambda *a, **k: (True, "test"))
 
 
 def test_ensure_h264_is_a_noop_for_already_h264(monkeypatch):
@@ -899,7 +899,7 @@ def test_a_big_cpu_mac_uses_libx264_even_when_videotoolbox_exists(monkeypatch, t
     video.write_bytes(b"vp9")
     jobs_module.jobs["j-big"] = {"cancelled": False, "text": "", "status": "running"}
     _fake_probe(monkeypatch, "vp9", videotoolbox=True)
-    monkeypatch.setattr(download_module, "prefer_hardware_encoder", lambda *a, **k: False)
+    monkeypatch.setattr(download_module, "hardware_encoder_decision", lambda *a, **k: (False, "big cpu"))
     seen = []
 
     class FakePopen:
@@ -916,3 +916,92 @@ def test_a_big_cpu_mac_uses_libx264_even_when_videotoolbox_exists(monkeypatch, t
     monkeypatch.setattr(subprocess, "Popen", FakePopen)
     ensure_h264(str(video), "/ff", "j-big")
     assert "libx264" in seen[0] and "h264_videotoolbox" not in seen[0]
+
+
+def test_hardware_encoder_decision_gives_a_reason_for_every_branch(monkeypatch):
+    monkeypatch.delenv("VIDROP_H264_ENCODER", raising=False)
+    d = download_module.hardware_encoder_decision
+    assert d(14, "libx264", "arm64") == (False, "forced by VIDROP_H264_ENCODER=libx264")
+    assert d(4, "", "x86_64") == (True, "x86_64 process (Intel Mac or Rosetta)")
+    assert d(8, "", "arm64")[0] is True and "8 logical cores" in d(8, "", "arm64")[1]
+    assert d(14, "", "arm64")[0] is False and "software" in d(14, "", "arm64")[1]
+    monkeypatch.setenv("VIDROP_H264_ENCODER", "videotoolbox")  # the env var works in the packaged app too
+    assert d(14, None, "arm64") == (True, "forced by VIDROP_H264_ENCODER=videotoolbox")
+
+
+def test_ensure_h264_records_what_it_chose_and_why_for_perf_log(monkeypatch, tmp_path):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"vp9")
+    jobs_module.jobs["j-perf"] = {"cancelled": False, "text": "", "status": "running"}
+    _fake_probe(monkeypatch, "vp9", videotoolbox=True)
+
+    class FakePopen:
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            self.stdout = []
+            self.returncode = 0
+            with open(cmd[-1], "wb") as f:
+                f.write(b"x")
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(subprocess, "Popen", FakePopen)
+    assert ensure_h264(str(video), "/ff", "j-perf") == "videotoolbox"
+    perf = jobs_module.jobs["j-perf"]["perf"]
+    assert (perf["src_codec"], perf["encoder"], perf["reason"], perf["width"]) == ("vp9", "videotoolbox", "test", 3840)
+
+
+def test_ensure_h264_reports_copy_for_an_already_h264_file(monkeypatch):
+    jobs_module.jobs["j-copy"] = {"cancelled": False, "text": "", "status": "running"}
+    _fake_probe(monkeypatch, "h264")
+    assert ensure_h264("/tmp/x.mp4", "/ff", "j-copy") == "copy"
+    assert jobs_module.jobs["j-copy"]["perf"]["encoder"] == "copy"
+
+
+def test_a_conversion_longer_than_the_timeout_is_stopped_and_the_original_kept(monkeypatch, tmp_path):
+    video = tmp_path / "clip.mp4"
+    video.write_bytes(b"original")
+    jobs_module.jobs["j-slow"] = {"cancelled": False, "text": "", "status": "running"}
+    _fake_probe(monkeypatch, "vp9")
+    monkeypatch.setattr(download_module, "ENCODE_TIMEOUT_SECONDS", 0)
+
+    class SlowPopen:
+        def __init__(self, cmd, stdout=None, stderr=None, text=None):
+            self.stdout = []
+            self.returncode = None
+            with open(cmd[-1], "wb") as f:
+                f.write(b"partial")
+
+        def poll(self):
+            return None
+
+        def terminate(self):
+            pass
+
+        def wait(self, timeout=None):
+            return 0
+
+    monkeypatch.setattr(subprocess, "Popen", SlowPopen)
+    with pytest.raises(download_module.EncodeTimeoutError):
+        ensure_h264(str(video), "/ff", "j-slow")
+    assert video.read_bytes() == b"original" and sorted(p.name for p in tmp_path.iterdir()) == ["clip.mp4"]
+
+
+def test_write_perf_log_writes_one_line_without_query_strings(monkeypatch, tmp_path):
+    from backend import paths
+
+    monkeypatch.setattr(paths, "LOG_DIR", str(tmp_path))
+    out = tmp_path / "v.mp4"
+    out.write_bytes(b"x" * 2_000_000)
+    now = time.time()
+    jobs_module.jobs["j-log"] = {
+        "t_start": now - 100, "t_first_dl": now - 90, "t_dl_end": now - 80,
+        "perf": {"src_codec": "vp9", "width": 3840, "height": 2160, "encoder": "videotoolbox", "reason": "x86_64 process", "encode_s": 70.0},
+    }
+    download_module.write_perf_log("j-log", "https://www.youtube.com/watch?v=abc&si=SECRET&token=T0K3N", "2160p", False, str(out))
+    lines = (tmp_path / "perf.log").read_text().splitlines()
+    assert len(lines) == 1
+    line = lines[0]
+    for needle in ("src_codec=vp9", "resolution=3840x2160", "encoder=videotoolbox", "reason=x86_64 process", "encode_s=70.0", "size_mb=2.0", "cpus=", "info_s=10.0", "download_s=10.0"):
+        assert needle in line, needle
+    assert "SECRET" not in line and "T0K3N" not in line and "?" not in line

@@ -2,6 +2,7 @@
 filename hygiene, and the two low-level downloaders (yt-dlp + direct CDN).
 """
 
+import datetime
 import os
 import platform
 import re
@@ -303,6 +304,20 @@ MACOS_INCOMPATIBLE_VCODECS = ("vp9", "vp09", "vp8", "av01", "av1")
 ENCODE_SLOTS = threading.BoundedSemaphore(2)
 
 
+# A 4K conversion on a small shared VM can run for ages and starve everything else; remote_web
+# sets this (15 minutes). None = no limit (the desktop app).
+ENCODE_TIMEOUT_SECONDS = None
+
+
+class EncodeTimeoutError(Exception):
+    """The H.264 conversion ran longer than ENCODE_TIMEOUT_SECONDS and was stopped."""
+
+
+def set_encode_timeout(seconds):
+    global ENCODE_TIMEOUT_SECONDS
+    ENCODE_TIMEOUT_SECONDS = seconds
+
+
 def set_encode_concurrency(n):
     global ENCODE_SLOTS
     ENCODE_SLOTS = threading.BoundedSemaphore(max(1, int(n)))
@@ -371,18 +386,26 @@ def videotoolbox_available(ffmpeg_bin):
 HARDWARE_ENCODER_MAX_CPUS = 8
 
 
-def prefer_hardware_encoder(cpu_count=None, override=None, machine=None):
-    # VIDROP_H264_ENCODER=videotoolbox|libx264 forces one (for testing); otherwise: always on
-    # an x86_64 process (an Intel Mac, or the Intel build under Rosetta where libx264 runs
-    # emulated: 4K took 178 s with libx264 vs 135 s with VideoToolbox on an M4 Pro), and on
-    # Apple Silicon only for small CPUs.
+def hardware_encoder_decision(cpu_count=None, override=None, machine=None):
+    # Returns (use_hardware, reason). VIDROP_H264_ENCODER=videotoolbox|libx264 forces one (also in the
+    # packaged app: `VIDROP_H264_ENCODER=libx264 open -a ViDrop`). Otherwise: always on an x86_64
+    # process (an Intel Mac, or the Intel build under Rosetta where libx264 runs emulated: 4K took
+    # 178 s with libx264 vs 135 s with VideoToolbox on an M4 Pro), and on Apple Silicon only for
+    # small CPUs.
+    env = os.environ.get("VIDROP_H264_ENCODER", "")
+    forced = (override if override is not None else env).strip().lower()
+    if forced in ("videotoolbox", "libx264"):
+        return forced == "videotoolbox", f"forced by VIDROP_H264_ENCODER={forced}"
     if (machine if machine is not None else platform.machine()) == "x86_64" and override in (None, ""):
-        if not os.environ.get("VIDROP_H264_ENCODER", "").strip():
-            return True
-    override = (override if override is not None else os.environ.get("VIDROP_H264_ENCODER", "")).strip().lower()
-    if override in ("videotoolbox", "libx264"):
-        return override == "videotoolbox"
-    return (cpu_count if cpu_count is not None else (os.cpu_count() or 1)) <= HARDWARE_ENCODER_MAX_CPUS
+        return True, "x86_64 process (Intel Mac or Rosetta)"
+    cpus = cpu_count if cpu_count is not None else (os.cpu_count() or 1)
+    if cpus <= HARDWARE_ENCODER_MAX_CPUS:
+        return True, f"{cpus} logical cores <= {HARDWARE_ENCODER_MAX_CPUS}"
+    return False, f"{cpus} logical cores > {HARDWARE_ENCODER_MAX_CPUS}, software encoding is faster"
+
+
+def prefer_hardware_encoder(cpu_count=None, override=None, machine=None):
+    return hardware_encoder_decision(cpu_count, override, machine)[0]
 
 
 def choose_video_action(vcodec, can_videotoolbox):
@@ -439,10 +462,20 @@ def ensure_h264(path, ffmpeg_bin, job_id):
     # veryfast. Honors the cooperative cancel flag. Progress goes to the job as
     # `encode_percent` (from ffmpeg's -progress output) and a readable `text`.
     probe = probe_media(path, ffmpeg_bin)
-    action = choose_video_action(probe["vcodec"], videotoolbox_available(ffmpeg_bin) and prefer_hardware_encoder())
+    vt_present = videotoolbox_available(ffmpeg_bin)
+    use_hw, hw_reason = hardware_encoder_decision()
+    action = choose_video_action(probe["vcodec"], vt_present and use_hw)
     if action == "copy":
-        return
+        reason = "source is not VP9/AV1 (already plays in QuickTime)"
+    elif action == "videotoolbox":
+        reason = hw_reason
+    else:
+        reason = "no VideoToolbox encoder in this ffmpeg or OS" if not vt_present else hw_reason
     job = jobs.jobs[job_id]
+    perf = job.setdefault("perf", {})
+    perf.update({"src_codec": probe["vcodec"], "width": probe["width"], "height": probe["height"], "encoder": action, "reason": reason, "encode_s": 0.0})
+    if action == "copy":
+        return action
     with ENCODE_SLOTS:
         for attempt_action in ([action, "libx264"] if action == "videotoolbox" else [action]):
             tmp_out = path + ".h264.mp4"
@@ -451,14 +484,19 @@ def ensure_h264(path, ffmpeg_bin, job_id):
             job["encode_percent"] = 0
             job["text"] = "Converting to H.264 for macOS..."
             ok, err = _run_ffmpeg_replacing(cmd, tmp_out, path, job_id, probe.get("duration"))
+            perf["encode_s"] = round(perf["encode_s"] + job.get("encode_seconds", 0), 1)
             if ok:
-                return
+                perf["encoder"] = attempt_action
+                return attempt_action
             from backend import paths
+            perf["encoder"] = "libx264" if attempt_action == "videotoolbox" else "failed"
+            perf["reason"] = reason + (f"; {attempt_action} failed" if attempt_action != "libx264" or action == "videotoolbox" else "")
             paths.log_exception(
                 f"ensure_h264: {attempt_action} encode failed"
                 + (", falling back to libx264 veryfast" if attempt_action == "videotoolbox" else ", keeping the original file"),
                 RuntimeError(err or "ffmpeg exited with an error"),
             )
+    return perf["encoder"]
 
 
 def _run_ffmpeg_replacing(cmd, tmp_out, path, job_id, duration=None):
@@ -487,7 +525,8 @@ def _run_ffmpeg_replacing(cmd, tmp_out, path, job_id, duration=None):
         reader = threading.Thread(target=read_progress, daemon=True)
         reader.start()
         while proc.poll() is None:
-            if job["cancelled"]:
+            timed_out = ENCODE_TIMEOUT_SECONDS is not None and time.time() - started > ENCODE_TIMEOUT_SECONDS
+            if job["cancelled"] or timed_out:
                 proc.terminate()
                 try:
                     proc.wait(timeout=5)
@@ -498,6 +537,8 @@ def _run_ffmpeg_replacing(cmd, tmp_out, path, job_id, duration=None):
                         os.remove(tmp_out)
                     except OSError:
                         pass
+                if timed_out and not job["cancelled"]:
+                    raise EncodeTimeoutError(f"conversion stopped after {ENCODE_TIMEOUT_SECONDS} s")
                 raise yt_dlp.utils.DownloadCancelled("cancelled by user")
             time.sleep(0.3)
         reader.join(timeout=2)
@@ -574,6 +615,7 @@ def apply_progress_update(job, progress_dict, stream_index, total_streams):
     # non-audio jobs.
     status = progress_dict.get("status")
     if status == "downloading":
+        job.setdefault("t_first_dl", time.time())
         total = progress_dict.get("total_bytes") or progress_dict.get("total_bytes_estimate")
         downloaded = progress_dict.get("downloaded_bytes") or 0
         if total:
@@ -582,6 +624,7 @@ def apply_progress_update(job, progress_dict, stream_index, total_streams):
             job["percent"] = combined
             job["text"] = f"Downloading... ({combined:.1f}%)"
     elif status == "finished":
+        job["t_dl_end"] = time.time()
         stream_index = min(stream_index + 1, total_streams - 1)
     return stream_index
 
@@ -677,3 +720,52 @@ def download_one_video(url, save_dir, title, quality, ffmpeg_bin, job_id, entry_
     finally:
         cookies._cleanup_temp_cookiefiles(auto_cookiefiles)
     return final_output_path
+
+
+def _short_url(url):
+    # host + path only: no query string (tracking ids, tokens), no fragment, at most 60 characters.
+    try:
+        from urllib.parse import urlsplit
+
+        parts = urlsplit(url or "")
+        return ((parts.hostname or "") + parts.path)[:60]
+    except ValueError:
+        return ""
+
+
+def write_perf_log(job_id, url, quality, keep_codec, final_path):
+    # One line per finished download in <LOG_DIR>/perf.log (~/Library/Logs/ViDrop/perf.log in the
+    # app): when, short link, source codec, resolution, the encoder chosen and why, logical cores,
+    # and the time of each stage. Best effort - a logging failure never touches the download.
+    # No cookies, no tokens, no query strings.
+    try:
+        from backend import paths
+
+        job = jobs.jobs[job_id]
+        perf = job.get("perf", {})
+        now = time.time()
+        t0 = job.get("t_start") or now
+        t_first = job.get("t_first_dl")
+        t_dl_end = job.get("t_dl_end") or now
+        fields = [
+            ("time", datetime.datetime.now().isoformat(timespec="seconds")),
+            ("url", _short_url(url)),
+            ("quality", quality),
+            ("keep_codec", "yes" if keep_codec else "no"),
+            ("src_codec", perf.get("src_codec") or "-"),
+            ("resolution", f"{perf.get('width')}x{perf.get('height')}" if perf.get("width") else "-"),
+            ("encoder", perf.get("encoder") or "none"),
+            ("reason", (perf.get("reason") or "no conversion step").replace("|", "/")),
+            ("cpus", os.cpu_count()),
+            ("machine", platform.machine()),
+            ("info_s", round((t_first or t_dl_end) - t0, 1)),
+            ("download_s", round(t_dl_end - (t_first or t_dl_end), 1)),
+            ("encode_s", perf.get("encode_s", 0)),
+            ("total_s", round(now - t0, 1)),
+            ("size_mb", round(os.path.getsize(final_path) / 1e6, 1) if final_path and os.path.exists(final_path) else "-"),
+        ]
+        os.makedirs(paths.LOG_DIR, exist_ok=True)
+        with open(os.path.join(paths.LOG_DIR, "perf.log"), "a") as f:
+            f.write(" | ".join(f"{k}={v}" for k, v in fields) + "\n")
+    except Exception:
+        pass
