@@ -39,12 +39,54 @@
     "name": "linkedin",
     "url": "https://www.linkedin.com/posts/themaheshkamble_figma-figmamcp-uxdesign-activity-7477954117269811200-7QhJ",
     "expect": "video",
-    "download": false
+    "download": false,
+    "kind": "image"
   },
   {
     "name": "linkedin-document",
     "url": "https://lnkd.in/p/gGaVJcim",
     "expect": "playlist",
+    "download": false,
+    "min_items": 5
+  },
+  {
+    "name": "youtube-mix",
+    "url": "https://www.youtube.com/watch?v=dwWOEA00K8s&list=RDKzl6cT_u7RA&index=4",
+    "expect": "playlist",
+    "min_items": 10,
+    "download": false
+  },
+  {
+    "name": "tiktok-photo",
+    "url": "https://www.tiktok.com/@u40lambo/photo/7656817162857876756",
+    "expect": "playlist",
+    "min_items": 2,
+    "download": false
+  },
+  {
+    "name": "instagram-carousel",
+    "url": "https://www.instagram.com/thexxlab_/p/DZFb8x-mxOP/",
+    "expect": "playlist",
+    "min_items": 2,
+    "download": false
+  },
+  {
+    "name": "threads-image",
+    "url": "https://www.threads.com/@figma/post/DaTf9pqiaMW",
+    "expect": "video",
+    "kind": "image",
+    "download": false
+  },
+  {
+    "name": "linkedin-video",
+    "url": "https://www.linkedin.com/posts/mishalkhawaja_sendinblueviews-toronto-digitalmarketing-ugcPost-6850898786781339649-mM20",
+    "expect": "video",
+    "download": false
+  },
+  {
+    "name": "facebook-share",
+    "url": "https://www.facebook.com/share/r/17nieUfjTL/",
+    "expect": "video",
     "download": false
   }
 ]
