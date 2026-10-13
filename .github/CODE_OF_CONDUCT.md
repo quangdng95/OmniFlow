@@ -1,6 +1,6 @@
 # Code of Conduct & Acceptable Use Policy
 
-## Vidrop is for Personal/Educational Use Only
+## ViDrop is for Personal/Educational Use Only
 
 ### ✅ Acceptable Uses
 
@@ -41,4 +41,4 @@ Each platform has specific ToS restrictions:
 
 ---
 
-If you disagree with these terms, don't use Vidrop.
+If you disagree with these terms, don't use ViDrop.

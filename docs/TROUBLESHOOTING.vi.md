@@ -2,10 +2,10 @@
 
 **[🇬🇧 English](TROUBLESHOOTING.md)&nbsp;&nbsp;|&nbsp;&nbsp;🇻🇳 Tiếng Việt**
 
-Nếu dán link vào Vidrop mà check không được, hoặc việc tải cứ lỗi hoài, hướng dẫn này đi qua các
+Nếu dán link vào ViDrop mà check không được, hoặc việc tải cứ lỗi hoài, hướng dẫn này đi qua các
 nguyên nhân phổ biến nhất và hai công cụ có sẵn giúp bạn chẩn đoán thay vì phải đoán mò.
 
-Nếu bạn chưa từng mở Vidrop lần nào, hoặc đang thấy một cảnh báo bảo mật của macOS thay vì lỗi
+Nếu bạn chưa từng mở ViDrop lần nào, hoặc đang thấy một cảnh báo bảo mật của macOS thay vì lỗi
 trong app, xem [Cảnh báo bảo mật macOS khi mở app lần đầu](FIRST_LAUNCH.vi.md) thay vào đó.
 
 ## Bắt đầu từ đây: hai công cụ trong Cài đặt
@@ -18,7 +18,7 @@ cho tình huống này:
   app chỉ hiện cho bạn một thông báo ngắn gọn, thân thiện. Nếu bạn đang báo lỗi (bug), nội dung file
   này là thứ hữu ích nhất bạn có thể đính kèm.
 - **Đặt lại dữ liệu ứng dụng** (Cài đặt → Đặt lại dữ liệu ứng dụng → **Xóa Cache & Đặt lại Cài
-  đặt**) — xóa các cài đặt đã lưu của Vidrop (thư mục tải, thông tin đăng nhập đã lưu) và bắt đầu
+  đặt**) — xóa các cài đặt đã lưu của ViDrop (thư mục tải, thông tin đăng nhập đã lưu) và bắt đầu
   lại từ đầu. Thao tác này **không** xóa bất kỳ file nào bạn đã tải. Dùng cách này khi một lỗi có
   vẻ vô lý so với thực tế bạn biết (ví dụ: "mình chắc chắn đang đăng nhập Instagram, nhưng app báo
   không tìm thấy session") — một cài đặt cũ còn sót lại từ phiên bản trước là nguyên nhân thường
@@ -26,16 +26,16 @@ cho tình huống này:
 
 ## Các thông báo thường gặp và ý nghĩa
 
-Dưới đây là nguyên văn các thông báo lỗi mà Vidrop hiển thị (app luôn báo lỗi bằng tiếng Việt,
+Dưới đây là nguyên văn các thông báo lỗi mà ViDrop hiển thị (app luôn báo lỗi bằng tiếng Việt,
 bất kể ngôn ngữ giao diện bạn chọn trong Cài đặt), kèm giải thích và cách xử lý.
 
 ### Sai bản cài đặt cho chip máy Mac
 
-> ❌ Lỗi: Bản Vidrop này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc ...).
+> ❌ Lỗi: Bản ViDrop này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc ...).
 > Vui lòng tải đúng bản dành cho máy bạn (Vidrop-AppleSilicon.dmg hoặc Vidrop-Intel.dmg) tại
-> trang GitHub Releases của Vidrop.
+> trang GitHub Releases của ViDrop.
 
-Vidrop có hai bản build riêng biệt — một bản native cho Apple Silicon (M1/M2/M3/M4) và một bản
+ViDrop có hai bản build riêng biệt — một bản native cho Apple Silicon (M1/M2/M3/M4) và một bản
 native cho Intel — vì công cụ `ffmpeg` đi kèm chỉ chạy được trên đúng loại chip mà nó được build
 cho. Thông báo này nghĩa là bạn đã cài nhầm bản không đúng với máy Mac của mình.
 
@@ -47,22 +47,22 @@ tên chip.
 
 ### "Không thể tải video từ tài khoản Private (Kín)"
 
-> ❌ Lỗi: Không thể tải video từ tài khoản Private (Kín). Vidrop hiện tại chỉ hỗ trợ tải nội
+> ❌ Lỗi: Không thể tải video từ tài khoản Private (Kín). ViDrop hiện tại chỉ hỗ trợ tải nội
 > dung Public (Công khai).
 
-Thông báo này bao gồm hai tình huống khác nhau mà Vidrop không phải lúc nào cũng phân biệt được:
+Thông báo này bao gồm hai tình huống khác nhau mà ViDrop không phải lúc nào cũng phân biệt được:
 
 1. Tài khoản/bài đăng thực sự đang ở chế độ Private, và bạn không follow từ một phiên đăng nhập
-   trên máy này — đây là điều bình thường; Vidrop chỉ truy cập được những gì tài khoản đã đăng
+   trên máy này — đây là điều bình thường; ViDrop chỉ truy cập được những gì tài khoản đã đăng
    nhập của bạn thấy được.
 2. Phiên đăng nhập Instagram/Threads đã lưu của bạn bị hết hạn hoặc không còn hợp lệ — phản hồi từ
-   nền tảng trông giống nhau trong cả hai trường hợp, nên Vidrop không phải lúc nào cũng phân
+   nền tảng trông giống nhau trong cả hai trường hợp, nên ViDrop không phải lúc nào cũng phân
    biệt được "thực sự riêng tư" với "session đã chết".
 
 **Thử cách này:** mở link đó trên trình duyệt trước — nếu bạn xem được mà không bị hỏi đăng nhập,
 nghĩa là nó công khai, và bạn nhiều khả năng đang gặp tình huống 2. Thử **Đặt lại dữ liệu ứng
 dụng**, rồi thử lại link đó. Nếu bạn vẫn đang đăng nhập Instagram/Threads trên trình duyệt,
-Vidrop sẽ tự lấy session mới ở lần thử tiếp theo.
+ViDrop sẽ tự lấy session mới ở lần thử tiếp theo.
 
 ### "Không tìm thấy phiên đăng nhập Instagram/Threads"
 
@@ -73,7 +73,7 @@ Vidrop sẽ tự lấy session mới ở lần thử tiếp theo.
 > *(Với Threads: ❌ Lỗi: Cần một trình duyệt đã đăng nhập Threads (threads.com) trên máy này để
 > tải bài viết. Vui lòng đăng nhập rồi thử lại.)*
 
-Vidrop tự động tìm một phiên đăng nhập Instagram hoặc Threads trong các trình duyệt cục bộ trên
+ViDrop tự động tìm một phiên đăng nhập Instagram hoặc Threads trong các trình duyệt cục bộ trên
 máy bạn (Chrome, Brave, Edge, Vivaldi, Opera, Safari) — bạn không bao giờ cần export cookie thủ
 công. Thông báo này nghĩa là nó không tìm thấy phiên nào. Kiểm tra lại:
 
@@ -83,8 +83,8 @@ công. Thông báo này nghĩa là nó không tìm thấy phiên nào. Kiểm tr
   [Cảnh báo bảo mật macOS khi mở app lần đầu](FIRST_LAUNCH.vi.md#2-omniflow-wants-to-use-your-confidential-information-stored-in-chrome-safe-storage-in-your-keychain)
   nếu bạn chưa chắc đó là gì.
 
-Cookie của Safari được macOS bảo vệ theo cách mà Vidrop hiện tại hoàn toàn không đọc được (đây
-là giới hạn ở cấp hệ thống, không phải điều Vidrop có thể vượt qua) — nếu Safari là trình duyệt
+Cookie của Safari được macOS bảo vệ theo cách mà ViDrop hiện tại hoàn toàn không đọc được (đây
+là giới hạn ở cấp hệ thống, không phải điều ViDrop có thể vượt qua) — nếu Safari là trình duyệt
 duy nhất bạn đăng nhập Instagram/Threads, hãy dùng Chrome, Brave, hoặc Edge thay thế cho hai nền
 tảng này.
 
@@ -93,9 +93,9 @@ tảng này.
 > ❌ Lỗi: Không thể kết nối mạng để xử lý liên kết này. Vui lòng kiểm tra kết nối Internet (hoặc
 > tường lửa/VPN) rồi thử lại.
 
-Vidrop không kết nối được internet để xử lý link. Kiểm tra lại kết nối Wi-Fi/Ethernet, và nếu
+ViDrop không kết nối được internet để xử lý link. Kiểm tra lại kết nối Wi-Fi/Ethernet, và nếu
 bạn đang dùng VPN hay tường lửa (firewall) chặt, thử tắt tạm thời — một số mạng công ty hoặc
-trường học chặn các nền tảng mà Vidrop cần kết nối tới.
+trường học chặn các nền tảng mà ViDrop cần kết nối tới.
 
 ### "IP của bạn đang tạm thời bị chặn/giới hạn"
 
@@ -111,7 +111,7 @@ thoại) nếu vẫn còn lỗi.
 > ❌ Lỗi: Không đọc được nội dung bài đăng LinkedIn này. Bài có thể đã bị xoá hoặc ở chế độ riêng
 > tư, hoặc là tài liệu/slide (PDF) mà các trang không đọc được.
 
-Vidrop hỗ trợ bài LinkedIn dạng video, ảnh **và** tài liệu/slide (PDF): tài liệu được liệt kê mỗi
+ViDrop hỗ trợ bài LinkedIn dạng video, ảnh **và** tài liệu/slide (PDF): tài liệu được liệt kê mỗi
 trang một ảnh, giống một carousel. Link rút gọn `lnkd.in` cũng dùng được. Thông báo này nghĩa là
 chính bài đăng không đọc được: đã bị xoá, không công khai, hoặc LinkedIn đã đổi cách phục vụ. Hãy mở
 link trong cửa sổ ẩn danh để kiểm tra bài có công khai không; nếu có mà vẫn lỗi, mở một GitHub
@@ -129,7 +129,7 @@ Với bản cloud: máy Mac đồng bộ cookie (xem `remote_web/README.md`) ph�
 
 > ❌ Lỗi: Không thể xử lý liên kết này. Vui lòng kiểm tra lại link hoặc thử lại sau.
 
-Đây là thông báo dự phòng của Vidrop cho một lỗi mà nó không có lời giải thích cụ thể, thân
+Đây là thông báo dự phòng của ViDrop cho một lỗi mà nó không có lời giải thích cụ thể, thân
 thiện nào. Đây chính xác là lúc `errors.log` phát huy tác dụng — mở **Cài đặt → Nhật ký chẩn đoán
 → Mở thư mục Log**, mở file `errors.log`, và tìm mục gần nhất (có timestamp). Nếu bạn đang báo lỗi
 này, hãy đính kèm toàn bộ nội dung mục đó.
@@ -137,7 +137,7 @@ này, hãy đính kèm toàn bộ nội dung mục đó.
 ## Vẫn chưa hoạt động?
 
 1. Thử **Đặt lại dữ liệu ứng dụng** một lần (trong Cài đặt), rồi thử lại link.
-2. Thoát và mở lại Vidrop.
+2. Thoát và mở lại ViDrop.
 3. Kiểm tra `errors.log` (Cài đặt → Nhật ký chẩn đoán) để xem lỗi cụ thể.
 4. Nếu vẫn không giải quyết được, mở một
    [GitHub Issue](https://github.com/quangdng95/OmniFlow/issues) kèm link đó (nếu không phải nội

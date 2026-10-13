@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}=== Starting Vidrop Build Process ===${NC}"
+echo -e "${BLUE}=== Starting ViDrop Build Process ===${NC}"
 
 # 1. Setup/Activate Python virtual environment
 if [ ! -d ".venv" ]; then
@@ -61,14 +61,14 @@ if [ -d "dist/Vidrop.app" ]; then
     cp -R "$TEMP_DIR/Vidrop.app" "$STAGING_DIR/Vidrop.app"
     ln -s /Applications "$STAGING_DIR/Applications"
 
-    # Detach a stale "Vidrop" volume left mounted from a previous run, if any
+    # Detach a stale "ViDrop" volume left mounted from a previous run, if any
     if [ -d "/Volumes/Vidrop" ]; then
         hdiutil detach "/Volumes/Vidrop" -force >/dev/null 2>&1 || true
     fi
 
     RW_DMG="$TEMP_DIR/Vidrop-rw.dmg"
     rm -f "$RW_DMG"
-    hdiutil create -volname Vidrop -srcfolder "$STAGING_DIR" -ov -format UDRW -fs HFS+ "$RW_DMG"
+    hdiutil create -volname ViDrop -srcfolder "$STAGING_DIR" -ov -format UDRW -fs HFS+ "$RW_DMG"
     MOUNT_OUTPUT=$(hdiutil attach "$RW_DMG" -readwrite -noverify -noautoopen)
     MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep -o '/Volumes/Vidrop.*')
 
@@ -79,7 +79,7 @@ if [ -d "dist/Vidrop.app" ]; then
     # just with default icon placement.
     osascript <<APPLESCRIPT &
 tell application "Finder"
-    tell disk "Vidrop"
+    tell disk "ViDrop"
         open
         set current view of container window to icon view
         set toolbar visible of container window to false

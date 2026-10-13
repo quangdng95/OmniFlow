@@ -2,7 +2,7 @@
 
 **🇬🇧 English&nbsp;&nbsp;|&nbsp;&nbsp;[🇻🇳 Tiếng Việt](EXAMPLE_LINKS.vi.md)**
 
-Not sure what to paste first? Copy any link below straight into Vidrop to see it in action —
+Not sure what to paste first? Copy any link below straight into ViDrop to see it in action —
 one example per supported platform.
 
 > Instagram and Threads examples need you to be logged into that platform in a browser on your
@@ -80,5 +80,5 @@ https://x.com/yui540/status/2074033238293856397
 
 These are real, public posts, not test fixtures built into the app — if one of them ever stops
 working, it's most likely because the original poster took it down or made it private, not a bug
-in Vidrop. If you hit an error trying any of these, see
+in ViDrop. If you hit an error trying any of these, see
 [Troubleshooting Check/Download Failures](TROUBLESHOOTING.md).

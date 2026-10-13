@@ -1,6 +1,6 @@
-# remote_web — Personal Remote Access for Vidrop
+# remote_web — Personal Remote Access for ViDrop
 
-Serves Vidrop's check/download flow (including Instagram/Threads and
+Serves ViDrop's check/download flow (including Instagram/Threads and
 playlist/carousel batch downloads) over a personal, token-gated public URL,
 so it's reachable from a phone anywhere with internet — no native macOS app
 install required on that device.
@@ -35,7 +35,7 @@ deployment gets pushed up from a Mac (see below).
    normal Python package):
    ```bash
    git clone https://github.com/<owner>/Vidrop.git
-   cd Vidrop
+   cd ViDrop
    ```
 2. Set up the Python environment (same as the root project):
    ```bash

@@ -9,7 +9,7 @@ const Logo = ({ size = "compact" }: LogoProps) => {
     return (
       <div className="flex items-center gap-2 shrink-0">
         <img src={logoIcon} alt="Logo" width={32} height={32} className="h-8 w-8 shrink-0" />
-        <span className="font-display text-xl leading-none font-bold tracking-[-0.04em] text-ink uppercase">Vidrop</span>
+        <span className="font-display text-xl leading-none font-bold tracking-[-0.04em] text-ink uppercase">ViDrop</span>
       </div>
     );
   }

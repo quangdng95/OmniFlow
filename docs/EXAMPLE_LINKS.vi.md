@@ -2,7 +2,7 @@
 
 **[🇬🇧 English](EXAMPLE_LINKS.md)&nbsp;&nbsp;|&nbsp;&nbsp;🇻🇳 Tiếng Việt**
 
-Chưa biết thử dán link gì trước? Copy bất kỳ link nào bên dưới và dán thẳng vào Vidrop để xem
+Chưa biết thử dán link gì trước? Copy bất kỳ link nào bên dưới và dán thẳng vào ViDrop để xem
 app hoạt động ra sao — một ví dụ cho mỗi nền tảng được hỗ trợ.
 
 > Các ví dụ Instagram và Threads cần bạn đang đăng nhập nền tảng đó trên một trình duyệt của máy
@@ -80,5 +80,5 @@ https://x.com/yui540/status/2074033238293856397
 
 Đây là các bài đăng thật, công khai, không phải fixture test được gắn cứng trong app — nếu một
 link nào đó ngừng hoạt động, nhiều khả năng là do người đăng đã gỡ bài hoặc chuyển sang riêng tư,
-không phải lỗi của Vidrop. Nếu bạn gặp lỗi khi thử bất kỳ link nào ở trên, xem
+không phải lỗi của ViDrop. Nếu bạn gặp lỗi khi thử bất kỳ link nào ở trên, xem
 [Xử lý lỗi Check/Tải file](TROUBLESHOOTING.vi.md).

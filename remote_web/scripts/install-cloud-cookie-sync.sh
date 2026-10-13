@@ -1,6 +1,6 @@
 #!/bin/bash
 # Installs a LaunchAgent that runs sync_cloud_cookies.py every hour, so
-# the Vidrop cloud deployment's YouTube/Instagram/Threads session stays
+# the ViDrop cloud deployment's YouTube/Instagram/Threads session stays
 # fresh while this Mac is on. Also runs it once now. It pushes over HTTPS with
 # the cloud access token (saved once by set-cloud-token.sh) - no SSH needed.
 #

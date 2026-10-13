@@ -1,8 +1,8 @@
-# Legal Disclaimer — Vidrop
+# Legal Disclaimer — ViDrop
 
 ## Purpose & Scope
 
-Vidrop is a **download utility tool only**. It provides functionality to download media and video content from various platforms. Nothing more.
+ViDrop is a **download utility tool only**. It provides functionality to download media and video content from various platforms. Nothing more.
 
 ## User Responsibility
 
@@ -18,15 +18,15 @@ By using this tool, you acknowledge and agree:
 - Circumvent platform access controls, DRM, or authentication systems
 - Violate any platform's Terms of Service
 
-## What Vidrop Does NOT Do
+## What ViDrop Does NOT Do
 
-- Vidrop does **NOT** grant you legal permission to download or use copyrighted content
-- Vidrop does **NOT** authorize you to ignore platform ToS
-- Vidrop does **NOT** represent that downloaded content is free to use
+- ViDrop does **NOT** grant you legal permission to download or use copyrighted content
+- ViDrop does **NOT** authorize you to ignore platform ToS
+- ViDrop does **NOT** represent that downloaded content is free to use
 
 ## No Liability / No Warranty
 
-The Vidrop developers and contributors:
+The ViDrop developers and contributors:
 
 - Provide this tool "AS IS" without any warranties
 - Assume **ZERO responsibility** for:
@@ -38,7 +38,7 @@ The Vidrop developers and contributors:
 
 ## Indemnification
 
-**You agree to indemnify and hold harmless** Vidrop developers from any claims, damages, or legal action resulting from your use of this tool.
+**You agree to indemnify and hold harmless** ViDrop developers from any claims, damages, or legal action resulting from your use of this tool.
 
 ## Summary
 

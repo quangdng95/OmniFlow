@@ -137,7 +137,7 @@ def _notify(message):
         return
     try:
         urllib.request.urlopen(
-            urllib.request.Request(f"https://ntfy.sh/{topic}", data=message.encode(), headers={"Title": "Vidrop"}),
+            urllib.request.Request(f"https://ntfy.sh/{topic}", data=message.encode(), headers={"Title": "ViDrop"}),
             timeout=10,
         )
     except (urllib.error.URLError, OSError):

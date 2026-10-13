@@ -77,7 +77,7 @@ def update_settings():
     })
 
 
-LOCAL_ONLY_ERROR = "This action is only available when running Vidrop locally."
+LOCAL_ONLY_ERROR = "This action is only available when running ViDrop locally."
 
 
 @app.get("/api/clipboard")
@@ -667,7 +667,7 @@ def start_download():
     return jsonify({"job_id": job_id})
 
 
-PLAYLIST_LOCAL_ONLY_ERROR = "Batch playlist downloads are only available when running Vidrop locally on your own machine."
+PLAYLIST_LOCAL_ONLY_ERROR = "Batch playlist downloads are only available when running ViDrop locally on your own machine."
 
 # How many playlist items download at once. Parallelism is the main speed win for
 # a playlist (YouTube throttles each stream, so independent streams add up), but

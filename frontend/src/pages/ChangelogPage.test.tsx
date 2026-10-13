@@ -20,7 +20,7 @@ describe("ChangelogPage", () => {
   it("shows only the release log: no eyebrow, no heading, no intro paragraph", () => {
     const { container } = renderPage();
     expect(screen.queryByText(/what's new/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/What's changed in Vidrop/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/What's changed in ViDrop/)).not.toBeInTheDocument();
     expect(screen.queryByText(/running log of what actually shipped/)).not.toBeInTheDocument();
     expect(container.querySelector("h3")).toBeNull();
     expect(container.querySelectorAll("ul")).toHaveLength(translations.en.changelog.releases.length);

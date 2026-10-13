@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec for Vidrop — packages the local Flask server + built React
+# PyInstaller spec for ViDrop — packages the local Flask server + built React
 # frontend + vendored ffmpeg into a standalone macOS .app that each end user
 # installs and runs 100% on their own machine (no owner server involved).
 #
@@ -83,7 +83,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="Vidrop",
+    name="ViDrop",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -104,7 +104,7 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="Vidrop",
+    name="ViDrop",
 )
 
 app = BUNDLE(

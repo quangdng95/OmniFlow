@@ -95,7 +95,7 @@ _UNLOCK_TEXT = {
 
 _UNLOCK_FORM_HTML = """<!doctype html>
 <html lang="{lang}"><head><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vidrop</title>
+<title>ViDrop</title>
 <style>
 body {{ font-family: -apple-system, sans-serif; display: flex; align-items: center;
        justify-content: center; height: 100vh; margin: 0; background: #f5f5f5; }}
@@ -111,7 +111,7 @@ button {{ width: 100%; padding: .75rem; background: #111; color: white; border: 
 </style></head>
 <body>
 <form method="post" action="/unlock">
-<h2>Vidrop</h2>
+<h2>ViDrop</h2>
 {error}
 <input type="password" name="token" placeholder="{placeholder}" autofocus required>
 <button type="submit">{button}</button>

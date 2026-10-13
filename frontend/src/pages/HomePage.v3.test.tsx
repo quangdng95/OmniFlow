@@ -89,7 +89,7 @@ describe("HomePage (V3)", () => {
 
     it("has the three accordion sections, collapsed", () => {
       renderHome();
-      for (const name of ["How it works", "Why Vidrop", "Questions"]) {
+      for (const name of ["How it works", "Why ViDrop", "Questions"]) {
         expect(screen.getByRole("button", { name })).toHaveAttribute("aria-expanded", "false");
       }
     });

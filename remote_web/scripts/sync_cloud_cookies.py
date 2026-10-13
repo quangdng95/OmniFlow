@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Push this Mac's logged-in YouTube / Instagram / Threads browser session up
-to the Vidrop *cloud* deployment (the GCP VM), so the cloud URL can pull
+to the ViDrop *cloud* deployment (the GCP VM), so the cloud URL can pull
 from those login-gated platforms.
 
 Why this exists: YouTube/Instagram/Threads refuse a datacenter IP outright
@@ -210,7 +210,7 @@ def _notify(message):
     safe = message.replace("\\", " ").replace('"', "'")
     try:
         subprocess.run(
-            ["osascript", "-e", f'display notification "{safe}" with title "Vidrop cookie sync failed"'],
+            ["osascript", "-e", f'display notification "{safe}" with title "ViDrop cookie sync failed"'],
             check=False, capture_output=True, timeout=10,
         )
     except (OSError, subprocess.SubprocessError):

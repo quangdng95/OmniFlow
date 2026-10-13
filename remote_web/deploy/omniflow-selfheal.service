@@ -1,5 +1,5 @@
 [Unit]
-Description=Vidrop self-heal (upgrade yt-dlp, run the canary, roll back on a regression)
+Description=ViDrop self-heal (upgrade yt-dlp, run the canary, roll back on a regression)
 After=network-online.target omniflow-remote.service
 Wants=network-online.target
 

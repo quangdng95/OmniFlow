@@ -11,5 +11,5 @@ def run_flask():
 
 if __name__ == "__main__":
     threading.Thread(target=run_flask, daemon=True).start()
-    webview.create_window("Vidrop", f"http://127.0.0.1:{PORT}", width=720, height=1024)
+    webview.create_window("ViDrop", f"http://127.0.0.1:{PORT}", width=720, height=1024)
     webview.start()

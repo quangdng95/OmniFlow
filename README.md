@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="Assets/Logo/Logo.png" alt="Vidrop logo" width="120" />
+  <img src="Assets/Logo/Logo.png" alt="ViDrop logo" width="120" />
 
-  # Vidrop
+  # ViDrop
 
   **All-in-one video, audio & image downloader for macOS.**
 
@@ -31,7 +31,7 @@ These links always point at the latest release. See [Installation](#installation
 
 ## What it does
 
-Vidrop extracts and downloads high-quality, watermark-free video, audio, and images from the
+ViDrop extracts and downloads high-quality, watermark-free video, audio, and images from the
 platforms creators, designers, and researchers actually pull reference material from:
 
 <p align="center">
@@ -62,7 +62,7 @@ platforms creators, designers, and researchers actually pull reference material 
 
 - **Single or bulk downloads** — one video, or an entire YouTube playlist/channel, Instagram
   carousel, or Instagram Story, in one paste.
-- **Automatic link detection** — Vidrop figures out whether a link is a single item or a
+- **Automatic link detection** — ViDrop figures out whether a link is a single item or a
   multi-item source; you never have to declare it.
 - **Per-item control** — in a playlist or carousel, download everything at once, hand-pick a
   subset, or retry a single failed item.
@@ -78,7 +78,7 @@ platforms creators, designers, and researchers actually pull reference material 
    from [Releases](../../releases/latest):
    - **OmniFlow-AppleSilicon.dmg** — for M1/M2/M3/M4 Macs
    - **OmniFlow-Intel.dmg** — for Intel Macs
-2. Open the `.dmg` and drag **Vidrop** into `Applications`.
+2. Open the `.dmg` and drag **ViDrop** into `Applications`.
 3. On first launch, macOS will show one or two security prompts (an "unidentified developer"
    warning, and — only if you plan to download private Instagram/Threads content — a Keychain
    permission request). Both are normal, one-time, and explained step-by-step in
@@ -88,15 +88,15 @@ Prefer to build it yourself? See [Building from source](#building-from-source) b
 
 ## Usage
 
-1. Paste a link into Vidrop (from the clipboard, or type/paste manually).
-2. Vidrop detects the platform and whether it's a single item or a batch.
+1. Paste a link into ViDrop (from the clipboard, or type/paste manually).
+2. ViDrop detects the platform and whether it's a single item or a batch.
 3. Pick a quality (Best, 1080p, 720p, 480p, Audio Only, …) — or, for a batch, select which
    items you want.
 4. Hit **Download** and watch progress in real time.
 5. The finished file lands in your configured download folder (defaults to `~/Downloads`).
 
 Some platforms (Instagram, Threads) need a logged-in browser session to resolve private/gated
-content — Vidrop reads this automatically from your local browser cookies; no manual export
+content — ViDrop reads this automatically from your local browser cookies; no manual export
 needed.
 
 **Example:**
@@ -117,7 +117,7 @@ example per supported platform.
 ```bash
 # clone and enter the repo
 git clone https://github.com/quangdng95/OmniFlow.git
-cd Vidrop
+cd ViDrop
 
 # one-time setup
 python3 -m venv .venv && source .venv/bin/activate
@@ -146,7 +146,7 @@ cd frontend && npm install && cd ..
 
 ## Privacy
 
-Vidrop runs entirely on your Mac. It does **not**:
+ViDrop runs entirely on your Mac. It does **not**:
 
 - Store or route your downloads through any external server
 - Track or log your download history
@@ -173,8 +173,8 @@ Known gaps, tracked honestly rather than hidden.
 **Platform expansion**
 
 - [ ] Chrome extension — click a button in your browser to send the video you're watching
-  straight to Vidrop, no copy-pasting the link needed
-- [ ] A convenient way to send a link to Vidrop from your phone while it's running on your Mac
+  straight to ViDrop, no copy-pasting the link needed
+- [ ] A convenient way to send a link to ViDrop from your phone while it's running on your Mac
   (e.g. an iOS Shortcut, or a simple mobile-friendly page)
 - [ ] Native Android app
 - [ ] Native iOS app
@@ -225,7 +225,7 @@ Have a feature request instead? Open an issue for that too.
 
 ## Disclaimer
 
-Vidrop is built for **personal, non-commercial use** — research, study, and archiving your own
+ViDrop is built for **personal, non-commercial use** — research, study, and archiving your own
 reference material. You are solely responsible for the copyright status of anything you download
 and for complying with each platform's Terms of Service. The developers provide this tool "AS IS"
 with zero liability for how it's used — see [DISCLAIMER.md](.github/DISCLAIMER.md) for the full legal

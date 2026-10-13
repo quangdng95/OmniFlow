@@ -18,12 +18,12 @@ LANGUAGE_HEADER = "X-Language"
 
 _CATALOG = {
     "instagram_local_only": {
-        VI: "Chỉ tải được Instagram khi chạy Vidrop trực tiếp trên máy của bạn.",
-        EN: "Instagram downloads are only available when running Vidrop locally on your own machine.",
+        VI: "Chỉ tải được Instagram khi chạy ViDrop trực tiếp trên máy của bạn.",
+        EN: "Instagram downloads are only available when running ViDrop locally on your own machine.",
     },
     "threads_local_only": {
-        VI: "Chỉ tải được Threads khi chạy Vidrop trực tiếp trên máy của bạn.",
-        EN: "Threads downloads are only available when running Vidrop locally on your own machine.",
+        VI: "Chỉ tải được Threads khi chạy ViDrop trực tiếp trên máy của bạn.",
+        EN: "Threads downloads are only available when running ViDrop locally on your own machine.",
     },
     "instagram_no_session": {
         VI: "❌ Lỗi: Không tìm thấy phiên đăng nhập Instagram nào trên trình duyệt của máy này. Vui lòng đăng nhập Instagram trên Chrome/Safari/Brave (hoặc thêm cookies.txt thủ công trong Settings) rồi thử lại.",
@@ -45,8 +45,8 @@ _CATALOG = {
     # resolver (see MISTAKES.md), so it gets its own specific message rather
     # than whatever unrelated error yt-dlp raises for the same URL.
     "linkedin_document": {
-        VI: "❌ Lỗi: Không đọc được nội dung bài đăng LinkedIn này. Bài có thể đã bị xoá hoặc ở chế độ riêng tư, hoặc là tài liệu/slide (PDF) mà các trang không đọc được. Vidrop hỗ trợ bài LinkedIn công khai dạng video, ảnh và tài liệu.",
-        EN: "❌ Error: Couldn't read this LinkedIn post. It may have been removed or be private, or it is a document/slide (PDF) whose pages couldn't be read. Vidrop supports public LinkedIn video, image and document posts.",
+        VI: "❌ Lỗi: Không đọc được nội dung bài đăng LinkedIn này. Bài có thể đã bị xoá hoặc ở chế độ riêng tư, hoặc là tài liệu/slide (PDF) mà các trang không đọc được. ViDrop hỗ trợ bài LinkedIn công khai dạng video, ảnh và tài liệu.",
+        EN: "❌ Error: Couldn't read this LinkedIn post. It may have been removed or be private, or it is a document/slide (PDF) whose pages couldn't be read. ViDrop supports public LinkedIn video, image and document posts.",
     },
     "network_unreachable": {
         VI: "❌ Lỗi: Không thể kết nối mạng để xử lý liên kết này. Vui lòng kiểm tra kết nối Internet (hoặc tường lửa/VPN) rồi thử lại.",
@@ -61,8 +61,8 @@ _CATALOG = {
         EN: "❌ Error: Your IP is temporarily blocked or rate-limited by this platform. Please try again in a few minutes or switch networks.",
     },
     "private_account": {
-        VI: "❌ Lỗi: Không thể tải video từ tài khoản Private (Kín). Vidrop hiện tại chỉ hỗ trợ tải nội dung Public (Công khai).",
-        EN: "❌ Error: Can't download videos from a Private account. Vidrop only supports Public content.",
+        VI: "❌ Lỗi: Không thể tải video từ tài khoản Private (Kín). ViDrop hiện tại chỉ hỗ trợ tải nội dung Public (Công khai).",
+        EN: "❌ Error: Can't download videos from a Private account. ViDrop only supports Public content.",
     },
     "process_failed": {
         VI: "❌ Lỗi: Không thể xử lý liên kết này. Vui lòng kiểm tra lại link hoặc thử lại sau.",
@@ -85,28 +85,28 @@ _CATALOG = {
     # A platform yt-dlp has no extractor for (e.g. a Threads /share/ link).
     # Two variants: with the platform name when classify recognised it.
     "unsupported_platform": {
-        VI: "❌ Vidrop chưa tải được link {platform} dạng này. Hãy thử link video từ nền tảng khác được hỗ trợ.",
-        EN: "❌ Vidrop can't download {platform} links like this one yet. Try a video link from another supported site.",
+        VI: "❌ ViDrop chưa tải được link {platform} dạng này. Hãy thử link video từ nền tảng khác được hỗ trợ.",
+        EN: "❌ ViDrop can't download {platform} links like this one yet. Try a video link from another supported site.",
     },
     "unsupported_site": {
-        VI: "❌ Vidrop chưa hỗ trợ trang này. Hãy thử link từ YouTube, TikTok, Instagram, Facebook, X, LinkedIn hoặc RedNote.",
-        EN: "❌ Vidrop doesn't support this site yet. Try a link from YouTube, TikTok, Instagram, Facebook, X, LinkedIn or RedNote.",
+        VI: "❌ ViDrop chưa hỗ trợ trang này. Hãy thử link từ YouTube, TikTok, Instagram, Facebook, X, LinkedIn hoặc RedNote.",
+        EN: "❌ ViDrop doesn't support this site yet. Try a link from YouTube, TikTok, Instagram, Facebook, X, LinkedIn or RedNote.",
     },
     "page_changed": {
-        VI: "❌ Trang này đã đổi cách phát video nên Vidrop chưa đọc được. Hãy thử lại sau hoặc dùng link khác.",
-        EN: "❌ This site changed how it plays video, so Vidrop couldn't read it. Try again later or use another link.",
+        VI: "❌ Trang này đã đổi cách phát video nên ViDrop chưa đọc được. Hãy thử lại sau hoặc dùng link khác.",
+        EN: "❌ This site changed how it plays video, so ViDrop couldn't read it. Try again later or use another link.",
     },
     "load_failed": {
         VI: "❌ Lỗi: Đã xảy ra lỗi khi tải nội dung. Vui lòng thử lại sau.",
         EN: "❌ Error: Something went wrong while loading the content. Please try again later.",
     },
     "ffmpeg_wrong_chip": {
-        VI: "❌ Lỗi: Bản Vidrop này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc {machine}). Vui lòng tải đúng bản dành cho máy bạn ({dmg}) tại trang GitHub Releases của Vidrop.",
-        EN: "❌ Error: This build of Vidrop isn't compatible with your Mac's chip ({machine} architecture). Please download the right build for your Mac ({dmg}) from Vidrop's GitHub Releases page.",
+        VI: "❌ Lỗi: Bản ViDrop này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc {machine}). Vui lòng tải đúng bản dành cho máy bạn ({dmg}) tại trang GitHub Releases của ViDrop.",
+        EN: "❌ Error: This build of ViDrop isn't compatible with your Mac's chip ({machine} architecture). Please download the right build for your Mac ({dmg}) from ViDrop's GitHub Releases page.",
     },
     "ffmpeg_missing": {
-        VI: "❌ Lỗi: Không tìm thấy FFmpeg khả dụng. Vui lòng cài FFmpeg (brew install ffmpeg) hoặc tải lại Vidrop.",
-        EN: "❌ Error: No usable FFmpeg was found. Please install FFmpeg (brew install ffmpeg) or re-download Vidrop.",
+        VI: "❌ Lỗi: Không tìm thấy FFmpeg khả dụng. Vui lòng cài FFmpeg (brew install ffmpeg) hoặc tải lại ViDrop.",
+        EN: "❌ Error: No usable FFmpeg was found. Please install FFmpeg (brew install ffmpeg) or re-download ViDrop.",
     },
     "ffmpeg_missing_server_linux": {
         VI: "❌ Lỗi: Không tìm thấy FFmpeg khả dụng trên máy chủ này. Vui lòng cài đặt qua trình quản lý gói của hệ điều hành (vd: apt install ffmpeg) rồi khởi động lại dịch vụ.",
