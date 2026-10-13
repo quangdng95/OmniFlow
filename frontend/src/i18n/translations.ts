@@ -1055,7 +1055,7 @@ const vi: Translations = {
           "Đăng nhập YouTube giờ nằm trong Cài đặt. Hãy chọn profile Chrome để tải YouTube được khi YouTube yêu cầu đăng nhập. Mặc định đang tắt.",
           "Dán link kênh YouTube giờ sẽ liệt kê các video của kênh.",
           "Tải lỗi hoặc bị hủy không còn để lại file dở trong thư mục của bạn, và không động tới các file khác có tên gần giống.",
-          "Thông báo rõ hơn khi link RedNote hết hạn, và khi chọn \"Chỉ âm thanh\" cho video không có tiếng.",
+          "Thông báo rõ hơn khi link RedNote hết hạn, và khi chọn \"Audio Only\" cho video không có tiếng.",
           "Chúng tôi đã kiểm tra cả tám nền tảng bằng link thật: YouTube, TikTok, Instagram, Facebook, X, Threads, LinkedIn và RedNote. README giờ nêu rõ từng nền tảng dùng được những gì.",
         ],
       },

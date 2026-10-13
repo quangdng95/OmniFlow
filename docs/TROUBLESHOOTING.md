@@ -25,10 +25,9 @@ Before anything else, know that Settings has two tools built for exactly this si
 
 ## Common messages and what they mean
 
-ViDrop's error messages are currently hardcoded in Vietnamese regardless of the app language you
-have set in Settings (only the rest of the UI follows that setting) — so the exact text below is
-what you'll actually see on screen. Each section quotes the real message alongside an English
-explanation.
+ViDrop's error messages follow the language you chose in Settings. The quotes below are the
+Vietnamese text; the English version says the same thing. Each section explains what the message
+means and what to do.
 
 ### Wrong build for your Mac's chip
 
@@ -113,6 +112,24 @@ listed with one image per page, like a carousel. `lnkd.in` share links work too.
 the post itself couldn't be read: it was removed, it isn't public, or LinkedIn changed how it
 serves it. Open the link in a private browser window to check it is public; if it is and the
 message persists, a GitHub Issue with the link helps.
+
+### "YouTube wants you signed in before it allows this download"
+
+YouTube sometimes refuses a download with "Sign in to confirm you're not a bot", even for a short
+public video. On the Mac app, open **Settings → YouTube sign-in** and choose the Chrome profile
+where you're signed in to YouTube, then press Retry. ViDrop uses that YouTube login only when
+YouTube asks for it. macOS may ask for Keychain access: choose **Always Allow**. It's off by
+default, and only Chrome is supported.
+
+### "This RedNote link has expired"
+
+RedNote share links stop working after a while. Open the post in RedNote, copy a fresh share link
+and paste that one.
+
+### "This video has no audio track"
+
+You picked **Audio Only** for a video that has no sound (some X clips are silent). Pick a video
+quality instead.
 
 ### RedNote asks you to sign in
 
