@@ -21,6 +21,7 @@ import type { CheckResult, Platform, PlaylistItem, RowProgress, VideoInfo } from
 import { useLanguage } from "../i18n/LanguageContext";
 import { isLocal, isMobileRemote } from "../isLocal";
 import { recordDownload } from "../lib/history";
+import { notifyIfHidden, requestNotifyPermission, truncateMiddle } from "../lib/notify";
 
 
 // V3 accordion rows: hard rules between items, big display-type triggers.
@@ -66,6 +67,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   const [finishedBatchJobId, setFinishedBatchJobId] = useState<string | null>(null);
 
   const checkTokenRef = useRef(0);
+  const titleRef = useRef("");
   const inputRef = useRef<HTMLInputElement>(null);
   const busy = batchJobId !== null;
 
@@ -157,6 +159,12 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
         if (progress.status !== "running") {
           if (progress.status === "done") {
             setFinishedBatchJobId(batchJobId);
+            const ips = progress.items_progress ?? [];
+            announceBatchRef.current(
+              ips.filter((ip) => ip.status === "done").length,
+              ips.filter((ip) => ip.status === "error").length,
+              titleRef.current
+            );
           }
           setBatchJobId(null);
           setBatchSummary(null);
@@ -235,6 +243,8 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
   const playlistSingle: PlaylistItem | null =
     checkResult?.type === "playlist" && checkResult.items.length === 1 ? checkResult.items[0] : null;
 
+  titleRef.current = checkResult?.type === "playlist" ? checkResult.title || "" : "";
+
   const selectedItem: VideoInfo | null =
     checkResult?.type === "video"
       ? checkResult
@@ -264,6 +274,33 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     onPendingUrlConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingUrl]);
+
+  // "Saved" feedback. On the local app a finished job IS a saved file, so it
+  // gets an in-page toast. On a remote deployment the file is only ready on the
+  // server until the user taps Save (which has its own toast), so there is no
+  // toast at "done" - only the system notification below, for a hidden tab.
+  const announceSingle = (name: string) => {
+    const label = truncateMiddle(name);
+    if (isLocal()) toast.success(t.downloadSuccess.savedToDevice, { description: label });
+    notifyIfHidden(isLocal() ? t.downloadSuccess.savedToDevice : t.downloadSuccess.ready, label);
+  };
+  // One message for a whole batch, never one per item.
+  const announceBatch = (saved: number, failed: number, listTitle: string) => {
+    if (saved <= 0) return;
+    const head = (isLocal() ? t.downloadSuccess.batchSaved : t.downloadSuccess.batchReady).replace("{saved}", String(saved));
+    const message = failed > 0 ? head + t.downloadSuccess.failedSuffix.replace("{failed}", String(failed)) : head;
+    const label = truncateMiddle(listTitle);
+    if (isLocal()) toast.success(message, { description: label });
+    notifyIfHidden(message, label);
+  };
+  const announceBatchRef = useRef(announceBatch);
+  announceBatchRef.current = announceBatch;
+
+  useEffect(() => {
+    if (downloadState !== "done" || !selectedItem) return;
+    announceSingle(progressFilename || selectedItem.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [downloadState]);
 
   // Remember what this device downloaded (the History page lists the last 10).
   // Keyed on the transition to "done" / a newly finished batch job, so a
@@ -349,6 +386,18 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     }
   };
 
+  // The buttons ask for notification permission (a user gesture is required);
+  // the phone auto-start calls handleStartDownload directly and never asks.
+  const handleStartClick = () => {
+    requestNotifyPermission();
+    void handleStartDownload();
+  };
+
+  const handleDownloadItemsClick = (rowIndices: number[], quality: string) => {
+    requestNotifyPermission();
+    return handleDownloadItems(rowIndices, quality);
+  };
+
   const handleDownloadItems = async (rowIndices: number[], quality: string) => {
     if (batchJobId || rowIndices.length === 0 || checkResult?.type !== "playlist") return;
     const playlist = checkResult;
@@ -403,7 +452,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
     <div className="w-full">
       <div className="w-full flex flex-col gap-6">
           {/* Hero: kept short so the URL bar sits inside the first mobile screen. */}
-          <div className="flex flex-col items-start gap-3 pt-2 text-left md:pt-6">
+          <div className="page-container flex flex-col items-start gap-3 pt-2 text-left md:pt-6">
             <h1 className="m-0 font-display text-[clamp(2.75rem,14vw,10.5rem)] leading-[0.9] [:lang(vi)_&]:leading-[1.02] font-bold tracking-[-0.06em] text-ink uppercase">
               {t.header.home.taglineLines.map((line) => (
                 <span key={line} className="block">
@@ -413,20 +462,22 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
             </h1>
             <p className="m-0 max-w-[40em] text-[1.1875rem] leading-snug text-balance text-ink">{t.header.home.sub}</p>
           </div>
-          <UrlInputCard
-            ref={inputRef}
-            value={url}
-            onChange={setUrl}
-            status={inputStatus}
-            onPaste={handlePaste}
-            onClear={handleClear}
-            clearDisabled={downloadState === "downloading" || busy}
-            pasting={pasting}
-            qualities={currentQualities}
-            qualityValue={selectedQuality}
-            onQualityChange={setSelectedQuality}
-            qualityDisabled={checking || downloadState === "downloading" || busy}
-          />
+          <div className="page-container">
+            <UrlInputCard
+              ref={inputRef}
+              value={url}
+              onChange={setUrl}
+              status={inputStatus}
+              onPaste={handlePaste}
+              onClear={handleClear}
+              clearDisabled={downloadState === "downloading" || busy}
+              pasting={pasting}
+              qualities={currentQualities}
+              qualityValue={selectedQuality}
+              onQualityChange={setSelectedQuality}
+              qualityDisabled={checking || downloadState === "downloading" || busy}
+            />
+          </div>
 
           {checkError && !checking && (
             <PlatformBlock tone="ink" role="alert">
@@ -451,7 +502,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
           )}
 
           {!checking && !checkResult && !checkError && (
-            <AnimatedSection className="flex w-full flex-col gap-8">
+            <AnimatedSection className="page-container flex flex-col gap-8">
               <section aria-labelledby="platforms-heading">
                 <h2 id="platforms-heading" className="sr-only">
                   {t.home.supportedPlatformsHeading}
@@ -518,7 +569,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
               rowStatus={rowStatus}
               batchSummary={batchSummary}
               quality={selectedQuality}
-              onDownloadItems={handleDownloadItems}
+              onDownloadItems={handleDownloadItemsClick}
               onCancel={handleCancelBatch}
               onOpenFolder={isLocal() ? handleOpenFolder : undefined}
               downloadUrl={isLocal() || !finishedBatchJobId ? undefined : `/api/download-file/${finishedBatchJobId}`}
@@ -531,7 +582,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
               actionState={downloadState}
               percent={progressPercent}
               filename={progressFilename}
-              onDownload={handleStartDownload}
+              onDownload={handleStartClick}
               onCancel={handleCancelDownload}
               onOpenFolder={isLocal() ? handleOpenFolder : undefined}
               downloadUrl={isLocal() || !jobId ? undefined : `/api/download-file/${jobId}`}

@@ -10,14 +10,14 @@ interface PlatformBlockProps {
   role?: "status" | "alert";
 }
 
-// V3's full-bleed colour block: it breaks out of the 1200px page column to the
-// window edges (the parent is centred, so 50% - 50vw lands on the window edge)
-// while its content stays on the same column as everything else.
+// V3's full-bleed colour block: the colour spans the whole width of its parent
+// (the page, which is full width) while the content sits in the shared
+// .page-container column, so it lines up with the header, input and footer.
 const PlatformBlock = ({ tone, children, className, role }: PlatformBlockProps) => (
   <motion.section
     role={role}
     className={cn(
-      "w-screen border-y-[3px] border-ink px-5 py-7 [margin-inline:calc(50%-50vw)] md:px-10 md:py-9",
+      "w-full border-y-[3px] border-ink py-7 md:py-9",
       blockToneClass(tone),
       className
     )}
@@ -25,7 +25,7 @@ const PlatformBlock = ({ tone, children, className, role }: PlatformBlockProps) 
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.3, ease: "easeOut" }}
   >
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5">{children}</div>
+    <div className="page-container flex flex-col gap-5">{children}</div>
   </motion.section>
 );
 

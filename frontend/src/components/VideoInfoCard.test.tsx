@@ -35,6 +35,32 @@ const setup = (props: Partial<React.ComponentProps<typeof VideoInfoCard>> = {}) 
 const section = () => screen.getByText("Paper boat").closest("section") as HTMLElement;
 
 describe("VideoInfoCard", () => {
+  it("shows the elapsed counter only while processing (100%), and drops it on cancel", () => {
+    const { rerender } = setup({ actionState: "downloading", percent: 50 });
+    expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+    const props = { info: INFO, percent: 100, filename: null, onDownload: vi.fn(), onCancel: vi.fn() };
+    rerender(
+      <LanguageProvider>
+        <VideoInfoCard {...props} actionState="downloading" />
+      </LanguageProvider>
+    );
+    expect(screen.getByText(/Processing video/)).toBeInTheDocument();
+    expect(screen.getByRole("timer")).toHaveTextContent("0:00");
+    rerender(
+      <LanguageProvider>
+        <VideoInfoCard {...props} actionState="idle" />
+      </LanguageProvider>
+    );
+    expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+  });
+
+  it("rounds a fractional percent once, so the big number and the status line agree", () => {
+    setup({ actionState: "downloading", percent: 0.7814356263219739 });
+    expect(screen.getByText("1%")).toBeInTheDocument();
+    expect(screen.getByText("1% Downloading…")).toBeInTheDocument();
+    expect(screen.queryByText(/0\.78/)).not.toBeInTheDocument();
+  });
+
   it("shows title, uploader · duration, the platform tag and the thumbnail", () => {
     setup();
     expect(screen.getByRole("heading", { name: "Paper boat" })).toBeInTheDocument();

@@ -253,6 +253,11 @@ body {
   --ink-muted: #4a4a4a;
   --ink-hover: #222222;
   --control-h: 3rem; /* header controls (language switch, menu) share one height */
+  /* THE page column: every section (header, hero, input, result blocks, footer)
+     puts its content in .page-container so all left/right edges line up. */
+  --page-max: 1200px;
+  --page-gutter: 1.25rem;
+  --toast-close-size: 2.75rem; /* toast close button: 44px touch target */
   --brand: #1738ff;
   --signal: #ffd60a;
   --signal-hover: #ffe55c;
@@ -352,4 +357,20 @@ body {
   html {
     @apply font-sans;
   }
+}
+@media (min-width: 768px) {
+  :root {
+    --page-gutter: 2.5rem;
+  }
+}
+
+/* The one shared content column. Full-bleed sections keep their background on
+   an outer element and put their content in this; nothing else may set its own
+   horizontal padding or width for the page edge. */
+.page-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
 }

@@ -77,10 +77,12 @@ export interface Translations {
     startDownload: string;
     downloading: string;
     finalizing: string; // shown once the transfer hits 100% but the job is still merging/converting
+    elapsedLabel: string; // accessible name of the counter next to the processing line
+    slowHint: string; // under the quality picker when a 1440p+ option is selected
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
-  downloadSuccess: { saved: string; openFolder: string; save: string; tryAgain: string; tapAgain: string; savedToDevice: string; downloadStarted: string };
+  downloadSuccess: { saved: string; openFolder: string; save: string; tryAgain: string; tapAgain: string; savedToDevice: string; downloadStarted: string; ready: string; batchSaved: string; batchReady: string; failedSuffix: string };
   home: {
     supportedPlatformsHeading: string;
     howToHeading: string;
@@ -168,6 +170,7 @@ export interface Translations {
     footerNote: string;
   };
   languageSwitcher: { label: string; english: string; vietnamese: string };
+  toast: { close: string }; // accessible name of every toast's X button
   apiErrors: {
     unreachable: string;
     requestFailed: string;
@@ -186,7 +189,7 @@ const en: Translations = {
     nav: { home: "Home", history: "History", settings: "Settings", terms: "Terms of Use", shortcut: "Shortcut Setup", changelog: "Changelog" },
     home: {
       taglineLines: ["Paste a link.", "Get the file."],
-      sub: "Free, no sign-up. Up to 1080p, or audio only.",
+      sub: "Free, no sign-up. Up to 4K, or audio only.",
     },
     settings: { title: "Settings" },
     terms: { title: "Terms of Use" },
@@ -265,10 +268,12 @@ const en: Translations = {
     startDownload: "Start Download",
     downloading: "Downloading",
     finalizing: "Processing video…",
+    elapsedLabel: "Time elapsed",
+    slowHint: "High resolutions can take longer to process after the download.",
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
-  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tryAgain: "Try download again", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your Downloads" },
+  downloadSuccess: { saved: "Saved:", openFolder: "Open Folder", save: "Save to device", tryAgain: "Try download again", tapAgain: "Your files are ready - tap Save to device again.", savedToDevice: "Saved to your device", downloadStarted: "Download started - check your Downloads", ready: "Ready to save", batchSaved: "{saved} saved", batchReady: "{saved} ready to save", failedSuffix: ", {failed} failed" },
   home: {
     supportedPlatformsHeading: "Supported platforms",
     howToHeading: "How it works",
@@ -278,7 +283,7 @@ const en: Translations = {
       "Select Start Download, then Save to device when it finishes.",
     ],
     whyHeading: "Why Vidrop",
-    whyBody: "Free, no account, up to 1080p, and whole playlists in one go.",
+    whyBody: "Free, no account. Single videos up to 4K, and whole playlists in one go.",
     faqHeading: "Questions",
     faqs: [
       {
@@ -531,6 +536,7 @@ const en: Translations = {
       "Server: remote_web, authenticated via the Authorization: Bearer header (added specifically for a headless client like this — the browser's own cookie login still works the same, side by side). The job's temp file on the server is deleted automatically once Phase 5 pulls it down.",
   },
   languageSwitcher: { label: "Language", english: "English", vietnamese: "Tiếng Việt" },
+  toast: { close: "Close notification" },
   apiErrors: {
     unreachable: "Can't reach the Vidrop server. Make sure it's running, then reload this page.",
     requestFailed: "Request failed.",
@@ -636,7 +642,7 @@ const vi: Translations = {
     nav: { home: "Trang chủ", history: "Lịch sử", settings: "Cài đặt", terms: "Điều khoản sử dụng", shortcut: "Cài Shortcut", changelog: "Nhật ký cập nhật" },
     home: {
       taglineLines: ["Dán link.", "Nhận file."],
-      sub: "Miễn phí, không cần đăng ký. Tối đa 1080p hoặc chỉ lấy âm thanh.",
+      sub: "Miễn phí, không cần đăng ký. Tối đa 4K hoặc chỉ lấy âm thanh.",
     },
     settings: { title: "Cài đặt" },
     terms: { title: "Điều khoản sử dụng" },
@@ -715,10 +721,12 @@ const vi: Translations = {
     startDownload: "Bắt đầu tải xuống",
     downloading: "Đang tải xuống",
     finalizing: "Đang xử lý video…",
+    elapsedLabel: "Thời gian đã trôi qua",
+    slowHint: "Độ phân giải cao có thể mất nhiều thời gian xử lý hơn sau khi tải.",
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
-  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tryAgain: "Thử tải lại", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - hãy xem mục Tải xuống" },
+  downloadSuccess: { saved: "Đã lưu:", openFolder: "Mở thư mục", save: "Lưu về máy", tryAgain: "Thử tải lại", tapAgain: "Tệp đã sẵn sàng - bấm Lưu về máy lần nữa.", savedToDevice: "Đã lưu về máy của bạn", downloadStarted: "Đã bắt đầu tải - hãy xem mục Tải xuống", ready: "Sẵn sàng để lưu", batchSaved: "Đã lưu {saved} mục", batchReady: "{saved} mục sẵn sàng để lưu", failedSuffix: ", {failed} mục lỗi" },
   home: {
     supportedPlatformsHeading: "Nền tảng được hỗ trợ",
     howToHeading: "Cách dùng",
@@ -728,7 +736,7 @@ const vi: Translations = {
       "Bấm Bắt đầu tải xuống, sau đó Lưu về máy khi tải xong.",
     ],
     whyHeading: "Vì sao chọn Vidrop",
-    whyBody: "Miễn phí, không cần tài khoản, tối đa 1080p, tải cả danh sách phát một lần.",
+    whyBody: "Miễn phí, không cần tài khoản. Video lẻ tối đa 4K, tải cả danh sách phát một lần.",
     faqHeading: "Câu hỏi thường gặp",
     faqs: [
       {
@@ -978,6 +986,7 @@ const vi: Translations = {
       "Server: remote_web, xác thực qua header Authorization: Bearer (thêm riêng cho client kiểu này — cookie trình duyệt vẫn hoạt động bình thường song song). Job tải xong tự xoá file tạm trên server sau khi Phase 5 lấy về máy.",
   },
   languageSwitcher: { label: "Ngôn ngữ", english: "English", vietnamese: "Tiếng Việt" },
+  toast: { close: "Đóng thông báo" },
   apiErrors: {
     unreachable: "Không kết nối được tới máy chủ Vidrop. Hãy đảm bảo máy chủ đang chạy rồi tải lại trang.",
     requestFailed: "Yêu cầu thất bại.",

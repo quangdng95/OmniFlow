@@ -15,7 +15,7 @@ const Footer = ({ onNavigate }: FooterProps) => {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="flex w-full flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-6 pb-4"
+      className="page-container mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-6 pb-4"
     >
       <button
         type="button"

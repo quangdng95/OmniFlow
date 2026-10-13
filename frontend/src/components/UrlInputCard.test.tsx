@@ -14,6 +14,26 @@ const setup = (props: Partial<React.ComponentProps<typeof UrlInputCard>> = {}) =
   return handlers;
 };
 
+describe("UrlInputCard slow-processing hint", () => {
+  const Q = ["2160p", "1440p", "1080p", "360p", "Best", "Audio Only"];
+  const HINT = /can take longer to process/i;
+
+  it.each(["2160p", "1440p"])("shows the hint when %s is selected", (q) => {
+    setup({ qualities: Q, qualityValue: q });
+    expect(screen.getByText(HINT)).toBeInTheDocument();
+  });
+
+  it.each(["1080p", "360p", "Best", "Audio Only"])("hides the hint for %s", (q) => {
+    setup({ qualities: Q, qualityValue: q });
+    expect(screen.queryByText(HINT)).not.toBeInTheDocument();
+  });
+
+  it("hides the hint when there is no quality picker", () => {
+    setup({ qualities: ["2160p"], qualityValue: "2160p" });
+    expect(screen.queryByText(HINT)).not.toBeInTheDocument();
+  });
+});
+
 describe("UrlInputCard", () => {
   it("has a visible label tied to the field", () => {
     setup();

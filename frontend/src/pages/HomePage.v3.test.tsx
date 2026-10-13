@@ -60,7 +60,7 @@ describe("HomePage (V3)", () => {
       const h1 = screen.getByRole("heading", { level: 1 });
       expect(within(h1).getByText("Paste a link.")).toBeInTheDocument();
       expect(within(h1).getByText("Get the file.")).toBeInTheDocument();
-      expect(screen.getByText("Free, no sign-up. Up to 1080p, or audio only.")).toBeInTheDocument();
+      expect(screen.getByText("Free, no sign-up. Up to 4K, or audio only.")).toBeInTheDocument();
     });
 
     it("the two hero lines are fixed blocks, so the break never depends on the screen width", () => {
