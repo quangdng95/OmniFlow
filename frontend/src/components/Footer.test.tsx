@@ -18,7 +18,7 @@ describe("Footer", () => {
     renderFooter();
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
     expect(screen.getByText("By")).toBeInTheDocument();
-    expect(screen.getByAltText("Logo")).toBeInTheDocument();
+    expect(screen.getByAltText("ViDrop")).toBeInTheDocument();
   });
 
   it("opens the Terms page from the footer link", async () => {

@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Assets/Logo/Logo.png" alt="ViDrop logo" width="120" />
+  <img src="docs/logo.png" alt="ViDrop" width="120" />
 
   # ViDrop
 
