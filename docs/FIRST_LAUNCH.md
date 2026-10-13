@@ -49,9 +49,9 @@ all use for this, even though the exact dialog wording varies slightly by browse
 without asking again. If you click **Allow** (single-use) or **Deny**:
 
 - **Allow (once):** works for that one download, but you may see the prompt again next time.
-- **Deny:** ViDrop simply won't be able to read that browser's session — Instagram/Threads
-  downloads that need a login will fail with a "no session found" message, but every other
-  platform (YouTube, TikTok, Facebook, RedNote, LinkedIn, X) is completely unaffected.
+- **Deny:** ViDrop simply won't be able to read that browser's session — Instagram,
+  Threads and RedNote downloads that need a login will fail with a "no session found" message, but
+  every other platform (YouTube, TikTok, Facebook, LinkedIn, X) is completely unaffected.
 
 **Everything stays on your Mac.** This permission only lets ViDrop read the session token
 locally, on your own machine, to make a request to Instagram/Threads on your behalf — nothing is

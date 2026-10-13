@@ -288,7 +288,7 @@ const en: Translations = {
         q: "Where are my files saved?",
         a: "In your Downloads folder on the desktop app. On a phone, tap Save to device when the download finishes.",
       },
-      { q: "Is it really free?", a: "Yes. No account and no limits." },
+      { q: "Is it really free?", a: "Yes. No account and no fees." },
       {
         q: "Can I download a whole playlist?",
         a: "Yes. Paste a YouTube playlist or channel link, then pick the videos.",
@@ -322,7 +322,7 @@ const en: Translations = {
     },
     language: {
       heading: "Language",
-      description: "Please select a language from the list below. You have to restart ViDrop in order to apply your selection.",
+      description: "Choose the language ViDrop uses. The change applies right away.",
       english: "English",
       vietnamese: "Vietnamese",
     },
@@ -757,7 +757,7 @@ const vi: Translations = {
         q: "File được lưu ở đâu?",
         a: "Trong thư mục Tải xuống nếu dùng ứng dụng máy tính. Trên điện thoại, bấm Lưu về máy khi tải xong.",
       },
-      { q: "Có thật sự miễn phí không?", a: "Có. Không cần tài khoản, không giới hạn." },
+      { q: "Có thật sự miễn phí không?", a: "Có. Không cần tài khoản, không mất phí." },
       {
         q: "Có tải được cả danh sách phát không?",
         a: "Có. Dán link danh sách phát hoặc kênh YouTube, rồi chọn các video cần tải.",
@@ -791,7 +791,7 @@ const vi: Translations = {
     },
     language: {
       heading: "Ngôn ngữ",
-      description: "Vui lòng chọn ngôn ngữ từ danh sách bên dưới. Bạn cần khởi động lại ViDrop để áp dụng lựa chọn.",
+      description: "Chọn ngôn ngữ ViDrop sử dụng. Thay đổi có hiệu lực ngay.",
       english: "Tiếng Anh",
       vietnamese: "Tiếng Việt",
     },

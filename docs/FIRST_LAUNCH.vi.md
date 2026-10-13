@@ -52,8 +52,8 @@ sẽ hoạt động mà không hỏi lại. Nếu bạn bấm **Allow** (dùng m
 
 - **Allow (một lần):** hoạt động cho lượt tải đó, nhưng lần sau có thể sẽ hỏi lại.
 - **Deny:** ViDrop sẽ không đọc được phiên đăng nhập của trình duyệt đó — các lượt tải
-  Instagram/Threads cần đăng nhập sẽ báo lỗi "không tìm thấy session", nhưng mọi nền tảng khác
-  (YouTube, TikTok, Facebook, RedNote, LinkedIn, X) hoàn toàn không bị ảnh hưởng.
+  Instagram, Threads và RedNote cần đăng nhập sẽ báo lỗi "không tìm thấy session", nhưng mọi nền
+  tảng khác (YouTube, TikTok, Facebook, LinkedIn, X) hoàn toàn không bị ảnh hưởng.
 
 **Mọi thứ đều ở lại trên máy bạn.** Quyền này chỉ cho phép ViDrop đọc session token cục bộ,
 ngay trên máy của bạn, để gửi request tới Instagram/Threads thay bạn — không có gì được gửi đi

@@ -52,7 +52,7 @@ platforms creators, designers, and researchers actually pull reference material 
 | YouTube | ✅ Video, audio-only | ✅ Playlist, channel, Mix/Radio | |
 | TikTok | ✅ Video, Photo Mode slideshow | — | |
 | Instagram | ✅ Post, Reel, photo | ✅ Carousel, Story, profile/Reels | Private content needs a logged-in browser session |
-| Facebook | ✅ Reel | — | |
+| Facebook | ✅ Video, Reel | — | |
 | RedNote (Xiaohongshu) | ✅ Video, image | — | Needs a logged-in RedNote session (RedNote now requires a login to show any post) |
 | LinkedIn | ✅ Video post, image post | ✅ Document / slide-deck (PDF) — every page as an image | `lnkd.in` share links work |
 | Threads | ✅ Video post, image post | — | Needs a logged-in browser session |
@@ -66,11 +66,13 @@ platforms creators, designers, and researchers actually pull reference material 
   multi-item source; you never have to declare it.
 - **Per-item control** — in a playlist or carousel, download everything at once, hand-pick a
   subset, or retry a single failed item.
-- **Real quality, no re-encoding tax** — H.264/AAC MP4 output that plays natively in QuickLook
-  and QuickTime, with fast parallel fragment downloads and a stream-copy merge (not a full
-  transcode) so exports finish quickly.
+- **Plays everywhere on your Mac** — H.264/AAC MP4 output that plays natively in QuickLook
+  and QuickTime. Up to 1080p it uses fast parallel fragment downloads and a stream-copy merge
+  (not a full transcode). 1440p and 4K are converted to H.264 after the download, which takes
+  longer.
 - **Live progress** — per-item and overall download progress, with cancel support.
-- **Runs entirely on your Mac** — no central server, no upload of your links or cookies anywhere.
+- **Runs on your Mac** — your links and cookies stay on your machine (one exception for TikTok,
+  see [Privacy](#privacy)).
 
 ## Installation
 
@@ -80,7 +82,7 @@ platforms creators, designers, and researchers actually pull reference material 
    - **OmniFlow-Intel.dmg** — for Intel Macs
 2. Open the `.dmg` and drag **ViDrop** into `Applications`.
 3. On first launch, macOS will show one or two security prompts (an "unidentified developer"
-   warning, and — only if you plan to download private Instagram/Threads content — a Keychain
+   warning, and — only if you plan to download from Instagram, Threads or RedNote — a Keychain
    permission request). Both are normal, one-time, and explained step-by-step in
    [First Launch & macOS Security Warnings](docs/FIRST_LAUNCH.md).
 
@@ -95,7 +97,7 @@ Prefer to build it yourself? See [Building from source](#building-from-source) b
 4. Hit **Download** and watch progress in real time.
 5. The finished file lands in your configured download folder (defaults to `~/Downloads`).
 
-Some platforms (Instagram, Threads) need a logged-in browser session to resolve private/gated
+Some platforms (Instagram, Threads, RedNote) need a logged-in browser session to resolve private/gated
 content — ViDrop reads this automatically from your local browser cookies; no manual export
 needed.
 
@@ -152,8 +154,12 @@ ViDrop runs entirely on your Mac. It does **not**:
 - Track or log your download history
 - Collect or transmit personal data anywhere
 
-Browser cookies (used to resolve private Instagram/Threads content) are read locally and never
-leave your machine.
+One exception: when a TikTok link can't be read directly, ViDrop sends that link to the
+third-party service tikwm.com to resolve it. This page describes the Mac app. The hosted web
+version processes the links you paste on its own server.
+
+Browser cookies (used to resolve Instagram, Threads and RedNote content) are read locally and
+never leave your machine.
 
 ## Roadmap
 
