@@ -77,7 +77,7 @@ describe("usePreparedSave on iOS", () => {
 
     await userEvent.click(button);
     expect(saveFile.sharePreparedSave).toHaveBeenCalledTimes(1);
-    expect(toast.success).not.toHaveBeenCalled(); // the share sheet itself was the confirmation
+    expect(toast.success).toHaveBeenCalledWith("Saved to your device"); // confirmed on the page after the share sheet
   });
 
   it("offers Save to Files (not Photos) for audio", async () => {

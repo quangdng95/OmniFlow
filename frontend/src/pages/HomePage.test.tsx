@@ -345,6 +345,25 @@ describe("HomePage in remote mode (non-local hostname)", () => {
     await waitFor(() => expect(input.value).toBe("https://youtube.com/watch?v=abc"));
   });
 
+  it("on a phone the first read is refused (no gesture); tapping the empty field then pastes the copied link", async () => {
+    const user = userEvent.setup({ delay: null });
+    const readText = vi
+      .fn()
+      .mockRejectedValueOnce(Object.assign(new Error("not allowed"), { name: "NotAllowedError" })) // on load
+      .mockRejectedValueOnce(Object.assign(new Error("not allowed"), { name: "NotAllowedError" })) // delayed retry
+      .mockResolvedValue("https://youtu.be/abc123"); // the tap is a gesture
+    Object.defineProperty(navigator, "clipboard", { value: { readText }, writable: true, configurable: true });
+
+    renderHomePage();
+    const input = screen.getByPlaceholderText<HTMLInputElement>("Copy and Paste your url");
+    expect(input.value).toBe("");
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(input.value).toBe("");
+
+    await user.click(input);
+    await waitFor(() => expect(input.value).toBe("https://youtu.be/abc123"));
+  });
+
   it("shows a Download link instead of Open Folder after a finished download", async () => {
     mockedApi.checkLink.mockResolvedValue(VIDEO_A);
     mockedApi.startDownload.mockResolvedValue({ job_id: "job-789" });
@@ -752,13 +771,12 @@ describe("HomePage save-to-device notification (remote mode)", () => {
     vi.mocked(getSavePlatform).mockReturnValue("desktop");
   });
 
-  it("stays silent after the iOS share sheet completes (the share sheet itself was the confirmation)", async () => {
+  it("confirms on the page after the iOS share sheet completes", async () => {
     vi.mocked(getSavePlatform).mockReturnValue("ios");
     vi.mocked(sharePreparedSave).mockResolvedValueOnce("shared");
     await finishDownloadAndPressSave();
-    await waitFor(() => expect(sharePreparedSave).toHaveBeenCalledTimes(1));
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(screen.queryByText(/Saved to your device|download bar/i)).not.toBeInTheDocument();
+    expect(await screen.findByText("Saved to your device")).toBeInTheDocument();
+    expect(screen.queryByText(/download bar/i)).not.toBeInTheDocument();
   });
 
   it("iOS fallback to a plain download tells the user where the file went - never 'download bar'", async () => {

@@ -9,6 +9,7 @@ keep both updated together when shipping a user-visible change.
 
 ### Fixed
 
+- [x] **Phone follow-ups**: the page confirms "Saved to your device" after the iOS share sheet completes (it used to stay silent); tapping the empty URL field reads the clipboard (a phone only allows that inside a tap), on top of the load/focus/visibility attempts plus a retry 600 ms later.
 - [x] **Save to device per platform** (`frontend/src/lib/saveFile.ts`, `hooks/usePreparedSave.ts`).
   iPhone/iPad (incl. iPadOS with a desktop user agent): the finished file is fetched ahead of the tap
   (progress, abortable, 400 MB cap) so the tap calls `navigator.share({files})` at once ("Save to

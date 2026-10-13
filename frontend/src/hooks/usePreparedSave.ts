@@ -104,7 +104,11 @@ export const usePreparedSave = (url: string | undefined, prepare: Preparer): Use
   // there is nothing to add; after a plain download the message depends on where the file went.
   const notifySaved = (result: "shared" | "downloaded") => {
     setFailed(false);
-    if (result === "shared") return;
+    if (result === "shared") {
+      // The share sheet closed after the user picked an action: confirm it on the page too.
+      toast.success(t.downloadSuccess.savedToDevice);
+      return;
+    }
     const platform = getSavePlatform();
     toast.success(
       platform === "ios"
