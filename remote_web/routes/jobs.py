@@ -24,6 +24,9 @@ def progress(job_id):
     return jsonify({
         "status": job["status"], "percent": job["percent"], "text": job["text"],
         "filename": job["filename"],
+        # Re-encode stage (VP9/AV1 -> H.264): `stage` is "encoding" and `encode_percent` 0-100
+        # while it runs, so the UI can show real progress instead of a frozen 100%.
+        "stage": job.get("stage"), "encode_percent": job.get("encode_percent"),
         "item": job.get("item"), "total": job.get("total"),
         "saved_count": job.get("saved_count"),
         "items_progress": job.get("items_progress"),

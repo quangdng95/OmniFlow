@@ -16,6 +16,8 @@ interface VideoInfoCardProps {
   info: VideoInfo;
   actionState: DownloadActionState;
   percent: number;
+  // 0-100 while the finished download is being converted to H.264, else null.
+  encodePercent?: number | null;
   filename: string | null;
   onDownload: () => void;
   onCancel: () => void;
@@ -30,6 +32,7 @@ const VideoInfoCard = ({
   info,
   actionState,
   percent,
+  encodePercent = null,
   filename,
   onDownload,
   onCancel,
@@ -103,7 +106,11 @@ const VideoInfoCard = ({
               </p>
               <Progress value={percent} aria-label={t.qualityAction.downloading} className={progressSlab} />
               <p className="m-0 font-display text-xl font-bold">
-                {shownPercent >= 100 ? t.qualityAction.finalizing : `${shownPercent}% ${t.qualityAction.downloading}…`}
+                {shownPercent >= 100
+                  ? encodePercent !== null
+                    ? t.qualityAction.converting.replace("{percent}", String(Math.round(encodePercent)))
+                    : t.qualityAction.finalizing
+                  : `${shownPercent}% ${t.qualityAction.downloading}…`}
                 {shownPercent >= 100 && (
                   <>
                     {" "}

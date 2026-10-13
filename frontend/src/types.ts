@@ -85,6 +85,10 @@ export interface JobProgress {
   percent: number;
   text: string;
   filename: string | null;
+  // While a VP9/AV1 video is re-encoded to H.264 after the download: stage is "encoding" and
+  // encode_percent runs 0-100 (from ffmpeg's own progress), instead of a frozen 100%.
+  stage?: string | null;
+  encode_percent?: number | null;
   // Present only for batch (playlist) jobs: which item is downloading, how many
   // total, how many finished successfully, and the per-item progress list.
   item?: number | null;

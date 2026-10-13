@@ -75,4 +75,6 @@ if __name__ == "__main__":
     # Set here rather than at import so tests that import `app` don't flip a
     # process-wide flag the backend's own tests assert against.
     download.AVOID_REENCODE = True
+    download.set_encode_timeout(15 * 60)  # a 4K conversion must not hold the VM for longer
+    download.set_encode_concurrency(1)  # one shared vCPU: never run two encodes at once
     app.run(host="127.0.0.1", port=config.PORT, debug=False)

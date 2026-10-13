@@ -457,6 +457,47 @@ def test_start_download_of_watch_list_url_downloads_the_watch_url_not_the_playli
     assert seen["urls"] == [watch_url]  # the watch URL - NOT playlist?list=…
 
 
+def test_start_download_keep_codec_saves_an_mkv_and_skips_the_h264_conversion(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(config, "load_session", lambda: {"path": str(tmp_path), "cookies_path": ""})
+    monkeypatch.setattr(config, "resolve_save_dir", lambda path: str(tmp_path))
+    monkeypatch.setattr(paths, "get_ffmpeg_path", lambda: "/ff")
+    converted = []
+    monkeypatch.setattr(download_module, "ensure_h264", lambda *a, **k: converted.append(a))
+    seen = {}
+
+    class FakeYDL:
+        def __init__(self, opts):
+            seen["opts"] = opts
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def download(self, urls):
+            pass
+
+    monkeypatch.setattr(yt_dlp, "YoutubeDL", FakeYDL)
+    monkeypatch.setattr(download_module, "_fetch_formats_for_quality_resolution", lambda *a, **k: [])
+
+    class SyncThread:
+        def __init__(self, target=None, daemon=None):
+            self._target = target
+
+        def start(self):
+            self._target()
+
+    monkeypatch.setattr(threading, "Thread", SyncThread)
+    url = "https://youtu.be/FNbT75NoaAI"
+    kept = client.post("/api/download", json={"url": url, "title": "V", "quality": "2160p", "keep_codec": True}).get_json()
+    assert seen["opts"]["merge_output_format"] == "mkv" and converted == []
+    assert jobs_module.jobs[kept["job_id"]]["filename"].endswith(".mkv")
+    normal = client.post("/api/download", json={"url": url, "title": "W", "quality": "2160p"}).get_json()
+    assert seen["opts"]["merge_output_format"] == "mp4" and len(converted) == 1
+    assert jobs_module.jobs[normal["job_id"]]["filename"].endswith(".mp4")
+
+
 def test_start_download_missing_ffmpeg(client, monkeypatch, tmp_path):
     monkeypatch.setattr(
         config, "load_session", lambda: {"path": str(tmp_path)}

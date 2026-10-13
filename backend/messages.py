@@ -112,6 +112,10 @@ _CATALOG = {
         VI: "❌ Lỗi: Bản ViDrop này không tương thích với chip của máy Mac bạn đang dùng (kiến trúc {machine}). Vui lòng tải đúng bản dành cho máy bạn ({dmg}) tại trang GitHub Releases của ViDrop.",
         EN: "❌ Error: This build of ViDrop isn't compatible with your Mac's chip ({machine} architecture). Please download the right build for your Mac ({dmg}) from ViDrop's GitHub Releases page.",
     },
+    "encode_timeout": {
+        VI: "❌ Video này chuyển mã quá lâu nên đã bị dừng. Hãy bật \"Giữ codec gốc\" (tải về file .mkv ngay) hoặc chọn chất lượng thấp hơn như 1080p.",
+        EN: "❌ This video took too long to convert, so it was stopped. Turn on \"Keep original codec\" (a .mkv file, ready right away) or choose a lower quality such as 1080p.",
+    },
     "ffmpeg_missing": {
         VI: "❌ Lỗi: Không tìm thấy FFmpeg khả dụng. Vui lòng cài FFmpeg (brew install ffmpeg) hoặc tải lại ViDrop.",
         EN: "❌ Error: No usable FFmpeg was found. Please install FFmpeg (brew install ffmpeg) or re-download ViDrop.",

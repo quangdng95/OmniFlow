@@ -78,6 +78,10 @@ export interface Translations {
     finalizing: string; // shown once the transfer hits 100% but the job is still merging/converting
     elapsedLabel: string; // accessible name of the counter next to the processing line
     slowHint: string; // under the quality picker when a 1440p+ option is selected
+    keepCodec: string; // checkbox label: skip the H.264 conversion (fastest)
+    keepCodecNote: string; // one line under it: the file may not open in QuickTime / on an iPhone
+    webSlowWarning: string; // web only, 1440p+ without keep-codec: warns before the download starts
+    converting: string; // processing line while the video is converted; {percent} is 0-100
     downloadAgain: string;
   };
   downloadProgress: { cancelDownload: string };
@@ -275,6 +279,10 @@ const en: Translations = {
     finalizing: "Processing video…",
     elapsedLabel: "Time elapsed",
     slowHint: "High resolutions can take longer to process after the download.",
+    keepCodec: "Keep original codec (fastest)",
+    keepCodecNote: "Skips the conversion and saves a .mkv. It may not open in QuickTime or on an iPhone.",
+    webSlowWarning: "4K needs converting and can take a few minutes. Choose “Keep original codec” to download right away (a .mkv file).",
+    converting: "Converting to H.264… {percent}%",
     downloadAgain: "Download Again",
   },
   downloadProgress: { cancelDownload: "Cancel Download" },
@@ -560,6 +568,15 @@ const en: Translations = {
     releases: [
       {
         date: "2026-10-13",
+        title: "ViDrop 2.0.1: faster 4K downloads",
+        items: [
+          "4K and 1440p videos are ready sooner. ViDrop now picks the quickest way to convert the video on your Mac, and the progress bar shows the real percentage while it converts.",
+          "New option \"Keep original codec (fastest)\" for 1440p and 4K. It skips the conversion and saves a .mkv file. That file may not open in QuickTime or on an iPhone.",
+          "On the web, ViDrop now warns you before a 4K download that converting takes a few minutes, and suggests \"Keep original codec\". A conversion that runs too long is stopped with a clear message.",
+        ],
+      },
+      {
+        date: "2026-10-13",
         title: "ViDrop 2.0: a new Mac app, eight platforms checked",
         items: [
           "A new ViDrop Mac app, with its own name and icon. The first time you open it, your settings are copied over from the old app. The old app's data stays untouched.",
@@ -766,6 +783,10 @@ const vi: Translations = {
     finalizing: "Đang xử lý video…",
     elapsedLabel: "Thời gian đã trôi qua",
     slowHint: "Độ phân giải cao có thể mất nhiều thời gian xử lý hơn sau khi tải.",
+    keepCodec: "Giữ codec gốc (nhanh nhất)",
+    keepCodecNote: "Bỏ qua bước chuyển đổi và lưu thành file .mkv. File có thể không mở được bằng QuickTime hoặc trên iPhone.",
+    webSlowWarning: "4K cần chuyển mã và có thể mất vài phút. Chọn “Giữ codec gốc” để tải ngay (file .mkv).",
+    converting: "Đang chuyển sang H.264… {percent}%",
     downloadAgain: "Tải lại",
   },
   downloadProgress: { cancelDownload: "Huỷ tải xuống" },
@@ -1046,6 +1067,15 @@ const vi: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "13-10-2026",
+        title: "ViDrop 2.0.1: tải 4K nhanh hơn",
+        items: [
+          "Video 4K và 1440p xong sớm hơn. ViDrop tự chọn cách chuyển đổi nhanh nhất trên máy Mac của bạn, và thanh tiến trình hiện phần trăm thật trong lúc chuyển đổi.",
+          "Tuỳ chọn mới \"Giữ codec gốc (nhanh nhất)\" cho 1440p và 4K. Bỏ qua bước chuyển đổi và lưu thành file .mkv. File này có thể không mở được bằng QuickTime hoặc trên iPhone.",
+          "Trên web, ViDrop cảnh báo trước khi tải 4K rằng việc chuyển đổi mất vài phút, và gợi ý \"Giữ codec gốc\". Một lần chuyển đổi chạy quá lâu sẽ bị dừng kèm thông báo rõ ràng.",
+        ],
+      },
       {
         date: "13-10-2026",
         title: "ViDrop 2.0: app Mac mới, tám nền tảng đã kiểm tra",

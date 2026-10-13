@@ -1,10 +1,12 @@
 import { forwardRef } from "react";
 import { Clipboard, Trash2, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "../i18n/LanguageContext";
+import { isLocal } from "../isLocal";
 
 export type UrlInputStatus = "idle" | "checking" | "result" | "error";
 
@@ -20,6 +22,9 @@ interface UrlInputCardProps {
   qualityValue?: string;
   onQualityChange?: (value: string) => void;
   qualityDisabled?: boolean;
+  // "Keep original codec": offered next to the 1440p+ qualities, skips the slow H.264 conversion.
+  keepCodec?: boolean;
+  onKeepCodecChange?: (value: boolean) => void;
 }
 
 // The V3 "command bar": a hard-edged ink frame with a blue offset shadow, the
@@ -52,6 +57,8 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
       qualityValue,
       onQualityChange,
       qualityDisabled = false,
+      keepCodec = false,
+      onKeepCodecChange,
     },
     ref
   ) => {
@@ -142,7 +149,28 @@ const UrlInputCard = forwardRef<HTMLInputElement, UrlInputCardProps>(
           </div>
         )}
         {qualities.length > 1 && isHighResolution(qualityValue) && (
-          <p className="m-0 text-base text-ink-muted">{t.qualityAction.slowHint}</p>
+          // On the web the server is a small shared machine: say clearly, before the download starts,
+          // that 4K is converted (minutes) and how to skip that.
+          <p role={!isLocal() && !keepCodec ? "alert" : undefined} className={cn("m-0 text-base", !isLocal() && !keepCodec ? "font-bold text-ink" : "text-ink-muted")}>
+            {!isLocal() && !keepCodec ? t.qualityAction.webSlowWarning : t.qualityAction.slowHint}
+          </p>
+        )}
+        {qualities.length > 1 && isHighResolution(qualityValue) && onKeepCodecChange && (
+          <div className="flex flex-col gap-1">
+            <div className="flex min-h-11 items-center gap-3">
+              <Checkbox
+                id="keep-codec-checkbox"
+                checked={keepCodec}
+                disabled={qualityDisabled}
+                onCheckedChange={(checked) => onKeepCodecChange(checked === true)}
+                className="size-6 rounded-none border-[3px] border-ink data-checked:border-ink data-checked:bg-ink data-checked:text-on-ink"
+              />
+              <label htmlFor="keep-codec-checkbox" className="cursor-pointer font-display text-base font-bold">
+                {t.qualityAction.keepCodec}
+              </label>
+            </div>
+            {keepCodec && <p className="m-0 text-base text-ink-muted">{t.qualityAction.keepCodecNote}</p>}
+          </div>
         )}
       </div>
     );
