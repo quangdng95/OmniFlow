@@ -5,12 +5,17 @@ import os
 import re
 import sys
 
-from backend import paths
+from backend import migration, paths
 
 # config.json must be writable at runtime: next to the source in dev, but the
 # frozen .app bundle is read-only, so fall back to a per-user app-support dir.
 if getattr(sys, "frozen", False):
-    _config_dir = os.path.join(os.path.expanduser("~/Library/Application Support"), "OmniFlow")
+    _config_dir = paths.APP_SUPPORT_DIR
+    # Must run before the makedirs below: it only copies when the ViDrop
+    # directory does not exist yet (first launch after the OmniFlow-era app).
+    _migration_status, _migration_error = migration.migrate_from_omniflow(paths.LEGACY_APP_SUPPORT_DIR, _config_dir)
+    if _migration_error is not None:
+        paths.log_exception("migrating OmniFlow data", _migration_error)
     os.makedirs(_config_dir, exist_ok=True)
     CONFIG_FILE = os.path.join(_config_dir, "config.json")
 else:
