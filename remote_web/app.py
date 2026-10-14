@@ -34,11 +34,29 @@ def _trust_gate():
         return jsonify({"error": "Unlock required."}), 401
 
 
+# Public, cache-friendly files. Cloudflare answered each icon request by asking this VM again
+# ("REVALIDATED", 0.5-1.4 s through the tunnel). iOS gives "Add to Home Screen" only a moment to fetch the
+# icon and draws a plain letter tile when it is late, so these are cached at the edge. The icon links carry
+# ?v=N: changing an icon means bumping N, which is a new URL and a new cache entry.
+_BRAND_FILES = {
+    "/favicon.ico", "/favicon.svg", "/favicon-16.png", "/favicon-32.png", "/apple-touch-icon.png",
+    "/apple-touch-icon-precomposed.png", "/apple-touch-icon-180x180.png", "/icon-192.png", "/icon-512.png",
+    "/icon-maskable-512.png", "/og-image.png", "/manifest.webmanifest",
+}
+_BRAND_CACHE_CONTROL = "public, max-age=86400, s-maxage=2592000, stale-while-revalidate=86400"
+_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable"  # /assets/<name>-<content hash>.js|css
+
+
 @app.after_request
 def _referrer_policy(response):
     # Cheap, zero-behavioral-cost - closes off Referer-leakage of the trust
     # cookie/token entirely rather than just on /unlock (§4.1).
     response.headers["Referrer-Policy"] = "no-referrer"
+    if response.status_code == 200 and request.method in ("GET", "HEAD"):
+        if request.path in _BRAND_FILES:
+            response.headers["Cache-Control"] = _BRAND_CACHE_CONTROL
+        elif request.path.startswith("/assets/"):
+            response.headers["Cache-Control"] = _ASSET_CACHE_CONTROL
     return response
 
 
