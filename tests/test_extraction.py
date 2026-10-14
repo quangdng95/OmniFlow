@@ -475,3 +475,18 @@ def test_audio_only_on_a_silent_video_says_there_is_no_audio(lang, expected):
     assert expected in message
     assert "ffprobe" not in message and "github" not in message.lower()
 
+
+
+# ---- display_title: a whole post as the title (LinkedIn, X) ----
+
+
+def test_display_title_shortens_a_caption_for_linkedin_and_x_only():
+    from backend.extraction import display_title
+
+    caption = "Quick win: Figma slots for a progress bar \n\n\nDesign system maintenance is mostly about optimization " + "word " * 30
+    short = display_title("LinkedIn", caption)
+    assert "\n" not in short and len(short) <= 92 and short.startswith("Quick win: Figma slots for a progress bar Design system")
+    assert short.endswith("…") and not short.endswith(" …")
+    assert display_title("X", "name - text https://t.co/abc") == "name - text"
+    assert display_title("YouTube", caption) == caption  # other platforms keep their own title
+    assert display_title("LinkedIn", "Short title") == "Short title"

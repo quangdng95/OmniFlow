@@ -45,6 +45,8 @@ export interface PlaylistCheckResult {
   items: PlaylistItem[];
   // True when a large channel/playlist was capped, so the UI can say so.
   truncated?: boolean;
+  // 1-based slide the shared link pointed at (Instagram ?img_index=N): that row starts ticked.
+  selected_index?: number;
 }
 
 export type CheckResult = VideoInfo | PlaylistCheckResult;

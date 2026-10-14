@@ -226,3 +226,10 @@ def test_fetch_instagram_profile_reel_media_raises_when_user_id_unresolvable(mon
 
     with pytest.raises(InstagramAuthError):
         instagram_module.fetch_instagram_profile_reel_media("someuser", str(cookies_file))
+
+
+def test_a_carousel_link_shared_from_slide_two_tells_the_ui_to_tick_it():
+    media = {"title": "T", "items": [{"kind": "image", "url": f"u{i}", "thumbnail": "t"} for i in range(5)]}
+    assert instagram_check_response("https://www.instagram.com/p/abc/?img_index=2", media)["selected_index"] == 2
+    assert "selected_index" not in instagram_check_response("https://www.instagram.com/p/abc/", media)
+    assert "selected_index" not in instagram_check_response("https://www.instagram.com/p/abc/?img_index=9", media)  # out of range

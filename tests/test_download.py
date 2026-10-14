@@ -1005,3 +1005,18 @@ def test_write_perf_log_writes_one_line_without_query_strings(monkeypatch, tmp_p
     for needle in ("src_codec=vp9", "resolution=3840x2160", "encoder=videotoolbox", "reason=x86_64 process", "encode_s=70.0", "size_mb=2.0", "cpus=", "info_s=10.0", "download_s=10.0"):
         assert needle in line, needle
     assert "SECRET" not in line and "T0K3N" not in line and "?" not in line
+
+
+# ---- file names made from a long caption ----
+
+
+def test_sanitize_filename_drops_links_and_line_breaks_from_a_caption():
+    name = "🔥 Free course (3h) (https://lnkd.in/dxyKfFfM), a lovely free course\n\nfor designers"
+    assert sanitize_filename(name) == "🔥 Free course (3h) , a lovely free course for designers"
+    assert "\n" not in sanitize_filename("a\nb\r\nc\td")
+    assert sanitize_filename("https://lnkd.in/xyz") == "Download"  # never an empty file name
+    assert sanitize_filename("Title (https://x.com/a) ") == "Title"
+
+
+def test_sanitize_filename_keeps_a_numbered_differentiator():
+    assert sanitize_filename("Carousel (3)") == "Carousel (3)"

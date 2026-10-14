@@ -16,6 +16,8 @@ import re
 import urllib.parse
 import urllib.request
 
+from backend import extraction
+
 LINKEDIN_UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -100,6 +102,7 @@ def fetch_linkedin_image_post(url):
     image_url = image_match.group(1).replace("&amp;", "&")
 
     title_match = _OG_TITLE_RE.search(html)
-    title = title_match.group(1).replace("&amp;", "&") if title_match else "LinkedIn Post"
+    title = html_module.unescape(title_match.group(1)) if title_match else "LinkedIn Post"
+    title = extraction.display_title("LinkedIn", title)
 
     return {"title": title, "items": [{"kind": "image", "url": image_url, "thumbnail": image_url}]}

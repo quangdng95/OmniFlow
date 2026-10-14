@@ -578,6 +578,7 @@ const HomePage = ({ onNavigate: _onNavigate, pendingUrl = null, onPendingUrlCons
               platform={checkResult.platform}
               items={checkResult.items}
               truncated={checkResult.truncated}
+              selectedIndex={checkResult.selected_index}
               busy={busy}
               rowStatus={rowStatus}
               batchSummary={batchSummary}

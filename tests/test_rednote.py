@@ -209,3 +209,76 @@ def test_fetch_any_reports_an_auth_error_only_when_every_account_is_logged_out(m
     monkeypatch.setattr(rednote, "fetch_rednote_post", lambda url, cf: (_ for _ in ()).throw(rednote.RedNoteAuthError("x")))
     with pytest.raises(rednote.RedNoteAuthError):
         rednote.fetch_rednote_post_any(URL, ["a", "b"])
+
+
+# ---- share links (xhslink.com), 2026-10-14 ----
+
+SHARE = "https://xhslink.com/o/4AMx4jW7ZFx"
+NOTE_URL = f"http://www.xiaohongshu.com/discovery/item/{NOTE_ID}?app_platform=ios&xsec_token=T%3D&xsec_source=app_share"
+
+
+def test_a_share_link_is_resolved_through_the_login_redirect_that_carries_the_note_url(monkeypatch):
+    import urllib.parse as up
+
+    login = "https://www.xiaohongshu.com/login?redirectPath=" + up.quote(NOTE_URL, safe="")
+    seen = []
+    _serve(monkeypatch, "<html>login</html>", final_url=login, seen=seen)
+    expanded = rednote.expand_short_link(SHARE)
+    assert expanded == NOTE_URL.replace("http://", "https://", 1)
+    assert seen[0].get_header("Cookie") is None  # the expansion never sends the login cookies anywhere
+
+
+def test_a_note_link_is_returned_unchanged_and_a_dead_share_link_says_expired(monkeypatch):
+    assert rednote.expand_short_link(URL) == URL
+    _serve(monkeypatch, "<html>gone</html>", final_url="https://www.xiaohongshu.com/404?source=x")
+    with pytest.raises(rednote.RedNoteExpiredError):
+        rednote.expand_short_link(SHARE)
+
+
+def test_a_share_link_is_fetched_with_the_session_of_the_domain_it_lands_on(monkeypatch, tmp_path):
+    import urllib.parse as up
+
+    login = "https://www.xiaohongshu.com/login?redirectPath=" + up.quote(NOTE_URL, safe="")
+    hosts = []
+
+    def fake(req, timeout=20):
+        hosts.append(up.urlparse(req.full_url).hostname)
+        if "xhslink" in req.full_url:
+            return _Resp("<html>login</html>", login)
+        return _Resp(_page(VIDEO_NOTE), req.full_url)
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    media = rednote.fetch_rednote_post(SHARE, _cookies(tmp_path, domain=".rednote.com"))  # session only on rednote.com
+    assert media["items"][0]["kind"] == "video"
+    # xhslink (no cookies) -> xiaohongshu.com skipped, the jar has no login there -> straight to rednote.com
+    assert hosts == ["xhslink.com", "www.rednote.com"]
+
+
+def test_a_timeout_on_one_account_is_reported_as_a_network_problem_not_as_logged_out(monkeypatch, tmp_path):
+    calls = {"n": 0}
+
+    def fake(req, timeout=20):
+        calls["n"] += 1
+        raise TimeoutError("handshake timed out")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    monkeypatch.setattr(rednote.time, "sleep", lambda s: None)
+    logged_out = tmp_path / "a.txt"
+    logged_out.write_text("")
+    with pytest.raises((TimeoutError, OSError)):
+        rednote.fetch_rednote_post_any(URL, [_cookies(tmp_path)])
+    assert calls["n"] == 3  # tried three times before giving up
+
+
+def test_a_login_page_on_every_account_is_still_reported_as_logged_out(monkeypatch, tmp_path):
+    _serve(monkeypatch, "<html>login</html>", final_url="https://www.rednote.com/login?redirectPath=x")
+    with pytest.raises(rednote.RedNoteAuthError):
+        rednote.fetch_rednote_post_any(URL, [_cookies(tmp_path)])
+
+
+def test_ytdlp_is_skipped_for_a_share_link_and_not_for_a_note_link():
+    import yt_dlp
+
+    with pytest.raises(yt_dlp.utils.DownloadError):
+        rednote.skip_ytdlp_for_short_link(SHARE)
+    rednote.skip_ytdlp_for_short_link(URL)  # no exception

@@ -44,7 +44,14 @@ _TAIL_BYTES = 24
 
 
 def sanitize_filename(name):
-    name = re.sub(r'[\\/*?:"<>|]', "", name).strip()
+    # A caption used as a title can carry links, line breaks and emoji: drop the links (a stripped link only
+    # leaves junk like "httpslnkd.indxyKfFfM"), turn every line break/control character into a space, then
+    # remove what the filesystems refuse and tidy the spaces.
+    name = re.sub(r"https?://[^\s)\]>]+", "", name or "")
+    name = re.sub(r"[\x00-\x1f\x7f\u2028\u2029]+", " ", name)
+    name = re.sub(r'[\\/*?:"<>|]', "", name)
+    name = re.sub(r"\(\s*\)", "", name)  # empty brackets left behind by a removed link
+    name = re.sub(r"\s+", " ", name).strip().rstrip("…").rstrip() or "Download"
     encoded = name.encode("utf-8")
     if len(encoded) <= _MAX_FILENAME_BYTES:
         return name

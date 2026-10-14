@@ -236,7 +236,13 @@ def instagram_check_response(url, media):
             "entry_index": i,
             "qualities": quality_label(item["kind"]),
         })
-    return {"type": "playlist", "platform": platform, "title": title, "items": entries}
+    response = {"type": "playlist", "platform": platform, "title": title, "items": entries}
+    # A link shared from slide N of a carousel carries ?img_index=N: tell the UI which slide the person meant so
+    # it can be ticked (1-based; ignored when out of range).
+    picked = classify.entry_index_from_url(url)
+    if picked and 1 <= picked <= len(entries):
+        response["selected_index"] = picked
+    return response
 
 
 def fetch_instagram_profile_instaloader(username, cookiefile_path=None, limit=30):
