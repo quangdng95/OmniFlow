@@ -141,3 +141,22 @@ def test_the_manifest_names_the_app_and_every_icon_it_lists_exists(client, web_d
     assert purposes == {"any", "maskable"}
     for icon in manifest["icons"]:
         assert os.path.isfile(os.path.join(web_dir, icon["src"].split("?")[0].lstrip("/")))
+
+
+# ---- edge caching of the public brand files (iOS gives the Home Screen icon only a moment) --------
+
+
+@pytest.mark.parametrize("path", ["/apple-touch-icon.png", "/favicon.ico", "/icon-192.png", "/manifest.webmanifest", "/og-image.png"])
+def test_brand_files_can_be_served_from_the_cloudflare_edge(client, path):
+    cache = client.get(path).headers["Cache-Control"]
+    assert "public" in cache and "s-maxage=2592000" in cache
+
+
+def test_hashed_build_assets_are_immutable_and_the_pages_and_api_are_not_cached(client, web_dir):
+    os.makedirs(os.path.join(web_dir, "assets"), exist_ok=True)
+    with open(os.path.join(web_dir, "assets", "index-abc123.js"), "w") as f:
+        f.write("//")
+    assert "immutable" in client.get("/assets/index-abc123.js").headers["Cache-Control"]
+    assert "s-maxage" not in (client.get("/unlock").headers.get("Cache-Control") or "")
+    assert "s-maxage" not in (client.get("/api/settings").headers.get("Cache-Control") or "")
+    assert "s-maxage" not in (client.get("/").headers.get("Cache-Control") or "")

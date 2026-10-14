@@ -5,6 +5,16 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-14 · Web update: Home Screen icon (after 2.0.2)
+
+### Fixed
+
+- [x] **"Add to Home Screen" on iPhone showed a plain letter tile instead of the logo.** The icon files were
+  public and valid, but Cloudflare asked the VM again for every request ("REVALIDATED", 0.5-1.4 s through
+  the tunnel) and iOS draws the letter tile when the icon is late. Brand files are now cacheable at the edge
+  (`s-maxage`), build assets are `immutable`, and the icon links moved to `?v=4` (a new URL, so nothing
+  cached earlier can get in the way). Cause is the most likely one, not reproduced on a device.
+
 ## 2026-10-14 · ViDrop 2.0.2
 
 ### Changed
