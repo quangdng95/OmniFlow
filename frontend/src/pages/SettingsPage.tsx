@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
-import { Folder, RotateCcw, ScrollText } from "lucide-react";
+import { Eraser, Folder, RotateCcw, ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { type Page } from "../components/Header";
 import SectionCard from "../components/SectionCard";
@@ -13,6 +13,7 @@ import { useLanguage } from "../i18n/LanguageContext";
 import type { Language } from "../i18n/translations";
 import type { CookiesStatus } from "../types";
 import { isLocal } from "../isLocal";
+import { clearBrowserData, reloadFresh } from "../lib/clearData";
 
 interface SettingsPageProps {
   onNavigate: (page: Page) => void;
@@ -92,6 +93,22 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
     } catch (e) {
       toast.error((e as Error).message);
     }
+  };
+
+  const [clearing, setClearing] = useState(false);
+
+  // One action that does what "clear website data" in the system settings would: server-side leftovers (and
+  // the sign-in on the web version), then everything the browser keeps, then a fresh reload.
+  const handleClearData = async () => {
+    if (!window.confirm(isLocal() ? t.settingsPage.clearData.confirm : t.settingsPage.clearData.confirmRemote)) return;
+    setClearing(true);
+    try {
+      await api.clearSession();
+    } catch {
+      // Offline or already signed out: the local clean-up below still has to run.
+    }
+    await clearBrowserData();
+    reloadFresh();
   };
 
   const handleResetSettings = async () => {
@@ -325,6 +342,17 @@ const SettingsPage = ({ onNavigate: _onNavigate }: SettingsPageProps) => {
               </Button>
             </SectionCard>
           )}
+
+          <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">
+            <p className="text-base font-semibold text-ink m-0">{t.settingsPage.clearData.heading}</p>
+            <p className="text-base text-ink-muted font-normal m-0 leading-relaxed">
+              {isLocal() ? t.settingsPage.clearData.description : t.settingsPage.clearData.descriptionRemote}
+            </p>
+            <Button onClick={handleClearData} disabled={clearing} variant="outline" className="w-fit border-ink text-brand hover:bg-signal hover:text-ink">
+              <Eraser className="h-4 w-4" />
+              {clearing ? t.settingsPage.clearData.working : t.settingsPage.clearData.button}
+            </Button>
+          </SectionCard>
 
           {isLocal() && (
             <SectionCard className="p-5 bg-white border border-ink  rounded-none flex flex-col gap-4">

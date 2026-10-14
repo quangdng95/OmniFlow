@@ -958,6 +958,29 @@ def open_logs():
     return jsonify({"ok": True, "has_logs": os.path.isfile(log_file) and os.path.getsize(log_file) > 0})
 
 
+@app.post("/api/clear-session")
+def clear_session():
+    # Server half of Settings > "Clear cache and saved data" (the browser half is frontend/src/lib/clearData.ts).
+    # Removes only what ViDrop itself left in the temp folder - auto-extracted cookie jars and raw cookie
+    # dumps (they carry live sessions) - and forgets finished jobs from memory. Never touches config.json, the
+    # save folder or the downloaded files (so jobs._remove_job_file, which deletes a job's output, is NOT used).
+    removed = 0
+    tmp = tempfile.gettempdir()
+    try:
+        for name in os.listdir(tmp):
+            if name.startswith(("omniflow-cookies-", "omniflow-raw-")):
+                try:
+                    os.remove(os.path.join(tmp, name))
+                    removed += 1
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    for job_id in [j for j, job in jobs.jobs.items() if job.get("status") in ("done", "error", "cancelled")]:
+        jobs.jobs.pop(job_id, None)
+    return jsonify({"ok": True, "removed_temp_files": removed})
+
+
 @app.post("/api/reset-settings")
 def reset_settings():
     # A stale saved value (most concretely: cookies_path pointing at a long-

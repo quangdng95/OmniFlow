@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import types
@@ -2038,3 +2039,25 @@ def test_check_link_truncated_for_a_mix_uses_its_own_cap_of_50(client, monkeypat
                         lambda url: {"_type": "playlist", "title": "Mix", "entries": entries})
     mix = "https://www.youtube.com/watch?v=dwWOEA00K8s&list=RDKzl6cT_u7RA&index=4"
     assert client.post("/api/check", json={"url": mix}).get_json()["truncated"] is True
+
+
+def test_clear_session_removes_only_the_apps_own_temp_cookie_files_and_never_a_download(client, monkeypatch, tmp_path):
+    scratch = tmp_path / "tmp"
+    scratch.mkdir()
+    (scratch / "omniflow-cookies-abc.txt").write_text("session")
+    (scratch / "omniflow-raw-xyz.txt").write_text("session")
+    (scratch / "someone-elses.txt").write_text("keep")
+    download = tmp_path / "Video.mp4"
+    download.write_bytes(b"the user's finished download")
+    monkeypatch.setattr(tempfile, "gettempdir", lambda: str(scratch))
+    jobs_module.jobs.clear()
+    jobs_module.jobs["finished"] = {"status": "done", "filepath": str(download)}
+    jobs_module.jobs["running"] = {"status": "running", "filepath": str(tmp_path / "x")}
+
+    resp = client.post("/api/clear-session")
+
+    assert resp.status_code == 200 and resp.get_json()["removed_temp_files"] == 2
+    assert sorted(p.name for p in scratch.iterdir()) == ["someone-elses.txt"]
+    assert download.read_bytes() == b"the user's finished download"  # a finished download is never deleted
+    assert "finished" not in jobs_module.jobs and "running" in jobs_module.jobs
+    jobs_module.jobs.clear()

@@ -102,6 +102,9 @@ export const api = {
 
   openLogs: () => request<{ ok: true; has_logs: boolean }>("/api/open-logs", { method: "POST" }),
 
+  // Server side of "Clear cache and saved data": the web version also signs this browser out.
+  clearSession: () => request<{ ok: true }>("/api/clear-session", { method: "POST" }),
+
   resetSettings: () => request<Settings>("/api/reset-settings", { method: "POST" }),
 
   getClipboard: () => request<{ text: string }>("/api/clipboard"),

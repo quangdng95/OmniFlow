@@ -146,6 +146,15 @@ export interface Translations {
       noLogsYet: string;
       opened: string;
     };
+    clearData: {
+      heading: string;
+      description: string;
+      descriptionRemote: string;
+      button: string;
+      working: string;
+      confirm: string;
+      confirmRemote: string;
+    };
     resetSettings: {
       heading: string;
       description: string;
@@ -365,6 +374,15 @@ const en: Translations = {
       noLogsYet: "No errors have been logged on this machine yet.",
       opened: "Log folder opened.",
     },
+    clearData: {
+      heading: "Clear cache and saved data",
+      description: "One tap to remove what ViDrop remembers on this device: your download history, language choice, and stored site data, then reload fresh. Use it when something looks out of date, such as an old icon or a screen that will not update. Your downloaded files and your saved folder are not touched.",
+      descriptionRemote: "One tap to remove what ViDrop remembers in this browser: your download history, language choice, and stored site data, then reload fresh. It also signs you out, so you will need your access token again. Your downloaded files are not touched.",
+      button: "Clear cache and saved data",
+      working: "Clearing…",
+      confirm: "Clear the download history, language choice and stored site data, then reload ViDrop?",
+      confirmRemote: "Clear the download history, language choice and stored site data, sign out, and reload ViDrop? You will need your access token again.",
+    },
     resetSettings: {
       heading: "Reset App Data",
       description: "If check/download keeps failing for no clear reason, clearing ViDrop's saved settings (download path, saved cookies, etc.) and starting fresh can help — this does not delete any of your downloaded files.",
@@ -566,6 +584,13 @@ const en: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "2026-10-14",
+        title: "One tap to clear old data",
+        items: [
+          "Settings now has \"Clear cache and saved data\". It removes your download history, language choice and stored site data from this device, then reloads ViDrop fresh. Use it when an old icon or screen will not update, so you no longer need to dig through your phone's or browser's own settings. On the web version it also signs you out.",
+        ],
+      },
       {
         date: "2026-10-14",
         title: "ViDrop 2.0.2: the Mac app catches up with the web",
@@ -887,6 +912,15 @@ const vi: Translations = {
       noLogsYet: "Chưa có lỗi nào được ghi lại trên máy này.",
       opened: "Đã mở thư mục log.",
     },
+    clearData: {
+      heading: "Xoá bộ nhớ đệm và dữ liệu đã lưu",
+      description: "Chỉ một chạm để xoá những gì ViDrop nhớ trên thiết bị này: lịch sử tải, ngôn ngữ đã chọn và dữ liệu trang web đã lưu, rồi tải lại từ đầu. Dùng khi có gì đó cũ hoặc không cập nhật, ví dụ biểu tượng cũ hay màn hình không đổi. Các tệp đã tải và thư mục lưu của bạn không bị đụng tới.",
+      descriptionRemote: "Chỉ một chạm để xoá những gì ViDrop nhớ trong trình duyệt này: lịch sử tải, ngôn ngữ đã chọn và dữ liệu trang web đã lưu, rồi tải lại từ đầu. Thao tác này cũng đăng xuất bạn, nên bạn sẽ cần nhập lại mã truy cập. Các tệp đã tải không bị đụng tới.",
+      button: "Xoá bộ nhớ đệm và dữ liệu đã lưu",
+      working: "Đang xoá…",
+      confirm: "Xoá lịch sử tải, ngôn ngữ đã chọn và dữ liệu trang web đã lưu, rồi tải lại ViDrop?",
+      confirmRemote: "Xoá lịch sử tải, ngôn ngữ đã chọn và dữ liệu trang web đã lưu, đăng xuất và tải lại ViDrop? Bạn sẽ cần nhập lại mã truy cập.",
+    },
     resetSettings: {
       heading: "Đặt lại dữ liệu ứng dụng",
       description: "Nếu việc check/tải liên tục báo lỗi không rõ nguyên nhân, xóa cấu hình đã lưu của ViDrop (thư mục lưu, cookies đã lưu, v.v.) và bắt đầu lại từ đầu có thể giúp ích — thao tác này không xóa bất kỳ file đã tải nào của bạn.",
@@ -1085,6 +1119,13 @@ const vi: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "14-10-2026",
+        title: "Một chạm để xoá dữ liệu cũ",
+        items: [
+          "Cài đặt giờ có nút \"Xoá bộ nhớ đệm và dữ liệu đã lưu\". Nút xoá lịch sử tải, ngôn ngữ đã chọn và dữ liệu trang web đã lưu trên thiết bị này, rồi tải lại ViDrop từ đầu. Dùng khi biểu tượng hay màn hình cũ không chịu cập nhật, không cần tìm trong cài đặt của điện thoại hay trình duyệt nữa. Trên bản web, nút này cũng đăng xuất bạn.",
+        ],
+      },
       {
         date: "14-10-2026",
         title: "ViDrop 2.0.2: app Mac bắt kịp bản web",

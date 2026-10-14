@@ -160,3 +160,14 @@ def test_hashed_build_assets_are_immutable_and_the_pages_and_api_are_not_cached(
     assert "s-maxage" not in (client.get("/unlock").headers.get("Cache-Control") or "")
     assert "s-maxage" not in (client.get("/api/settings").headers.get("Cache-Control") or "")
     assert "s-maxage" not in (client.get("/").headers.get("Cache-Control") or "")
+
+
+def test_clear_session_signs_this_browser_out_and_needs_a_trusted_visitor(client):
+    assert client.post("/api/clear-session").status_code == 401  # not signed in: gated like every /api route
+    client.post("/unlock", data={"token": config.get_or_create_token()})
+    assert client.post("/api/settings", json={"playlist_limit": 100}).status_code == 200  # trusted now
+    resp = client.post("/api/clear-session")
+    assert resp.status_code == 200
+    cleared = " ".join(resp.headers.getlist("Set-Cookie"))
+    assert config.TRUST_COOKIE_NAME in cleared and "Expires=Thu, 01 Jan 1970" in cleared
+    assert client.post("/api/clear-session").status_code == 401  # the cookie is gone: signed out
