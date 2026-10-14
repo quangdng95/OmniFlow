@@ -65,6 +65,9 @@ describe("ChangelogPage", () => {
     const en = translations.en.changelog.releases;
     const vi = translations.vi.changelog.releases;
     expect(vi.map((r) => r.items.length)).toEqual(en.map((r) => r.items.length));
-    expect(en[0].date).toBe("2026-10-13");
+    // Newest first, every date a real ISO date.
+    const dates = en.map((r) => r.date);
+    expect(dates.every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))).toBe(true);
+    expect([...dates].sort().reverse()).toEqual(dates);
   });
 });
