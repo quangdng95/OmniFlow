@@ -65,9 +65,9 @@ describe("ChangelogPage", () => {
     const en = translations.en.changelog.releases;
     const vi = translations.vi.changelog.releases;
     expect(vi.map((r) => r.items.length)).toEqual(en.map((r) => r.items.length));
-    // Newest first, every date a real ISO date.
-    const dates = en.map((r) => r.date);
-    expect(dates.every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))).toBe(true);
-    expect([...dates].sort().reverse()).toEqual(dates);
+    // Newest first; every entry starts with an ISO date (a few cover a range: "2026-08-29 → 2026-09-10").
+    const starts = en.map((r) => r.date.slice(0, 10));
+    expect(starts.every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))).toBe(true);
+    expect([...starts].sort().reverse()).toEqual(starts);
   });
 });
