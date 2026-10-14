@@ -23,13 +23,14 @@ const makeItem = (n: number): PlaylistItem =>
     entry_index: n,
   }) as PlaylistItem;
 
-const renderCard = (items: PlaylistItem[]) =>
+const renderCard = (items: PlaylistItem[], selectedIndex?: number) =>
   render(
     <LanguageProvider>
       <PlaylistItemsCard
         title="Carousel"
         platform="TikTok"
         items={items}
+        selectedIndex={selectedIndex}
         busy={false}
         rowStatus={{}}
         batchSummary={null}
@@ -206,5 +207,20 @@ describe("PlaylistItemsCard header", () => {
     // Clamped visually, but the whole title stays in the DOM for screen readers.
     expect(heading).toHaveTextContent(longTitle);
     expect(screen.getByRole("button", { name: "Download All" })).toBeInTheDocument();
+  });
+});
+
+describe("PlaylistItemsCard link shared from one slide", () => {
+  it("starts with that slide ticked (Instagram ?img_index=2) so one tap downloads it", () => {
+    renderCard([makeItem(1), makeItem(2), makeItem(3)], 2);
+    expect(screen.getByText(/Download Items Selected/i)).toBeInTheDocument();
+    expect(screen.getAllByRole("checkbox").filter((box) => box.getAttribute("aria-checked") === "true").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("ticks nothing without the hint or when the index is outside the list", () => {
+    renderCard([makeItem(1), makeItem(2)]);
+    expect(screen.queryByText(/Download Items Selected/i)).not.toBeInTheDocument();
+    renderCard([makeItem(1), makeItem(2)], 9);
+    expect(screen.queryAllByText(/Download Items Selected/i)).toHaveLength(0);
   });
 });

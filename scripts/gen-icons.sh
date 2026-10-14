@@ -4,7 +4,7 @@
 #   glyph (about 47% wide, 50% tall, inside the 60% maskable safe zone).
 # Outputs (all opaque RGB PNG except the SVG/ICO):
 #   frontend/public/favicon.svg, favicon.ico (16/32/48), favicon-16.png, favicon-32.png,
-#   apple-touch-icon.png (180), icon-192.png, icon-512.png, icon-maskable-512.png, og-image.png (1200x630),
+#   apple-touch-icon.png (180) + -167/-152 fallbacks (the 180 px one is also written into the page by plugins/inlineIcons.ts), icon-192.png, icon-512.png, icon-maskable-512.png, og-image.png (1200x630),
 #   frontend/src/assets/logo-icon.svg (header logo), docs/logo.png (README, 240).
 # The Mac app icon (Assets/Logo/ViDrop.icns) has the same geometry; scripts/make-icon.sh builds it.
 # Needs Google Chrome (headless screenshot), sips and python3. Usage (repo root): ./scripts/gen-icons.sh
@@ -35,10 +35,27 @@ size "$PUB/favicon-16.png" 16
 size "$PUB/favicon-32.png" 32
 size "$WORK/favicon-48.png" 48
 size "$PUB/apple-touch-icon.png" 180
+size "$PUB/apple-touch-icon-167.png" 167   # iPad Pro; fallbacks next to the inline 180 px one
+size "$PUB/apple-touch-icon-152.png" 152   # iPad / older iPhone
 size "$PUB/icon-192.png" 192
 size "$PUB/icon-512.png" 512
 size "$PUB/icon-maskable-512.png" 512   # same art: the glyph already sits inside the 60% safe zone
 size "docs/logo.png" 240
+
+# 2b. Keep only what a PNG needs (header, sRGB, pixels, end): sips adds an EXIF block that a Home Screen icon does not need.
+python3 - "$PUB"/favicon-16.png "$PUB"/favicon-32.png "$PUB"/apple-touch-icon*.png "$PUB"/icon-192.png "$PUB"/icon-512.png "$PUB"/icon-maskable-512.png "$WORK/favicon-48.png" <<'PY'
+import struct, sys
+KEEP = {b"IHDR", b"sRGB", b"IDAT", b"IEND"}
+for path in sys.argv[1:]:
+    data = open(path, "rb").read()
+    out, pos = data[:8], 8
+    while pos < len(data):
+        length, kind = struct.unpack(">I4s", data[pos : pos + 8])
+        if kind in KEEP:
+            out += data[pos : pos + 12 + length]
+        pos += 12 + length
+    open(path, "wb").write(out)
+PY
 
 # 3. SVGs are copies of the source.
 cp "$SRC" "$PUB/favicon.svg"

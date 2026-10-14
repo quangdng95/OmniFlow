@@ -5,6 +5,28 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-14 · ViDrop 2.0.3
+
+### Fixed
+
+- [x] **RedNote share links** (`xhslink.com/o/...`): without a session RedNote answers them with a redirect to its
+  login page that carries the note URL in `redirectPath`; `rednote.expand_short_link` reads it, the note is then
+  fetched with the session of the domain it belongs to (a jar with no login for a host is not asked), timeouts
+  are retried and a timeout is no longer reported as "not signed in", and yt-dlp is skipped for share links
+  (it cost 12 s and could not open them anyway). Cloud and Mac app.
+- [x] **X photo tweets**: yt-dlp only reads tweets with a video or GIF. `backend/xposts.py` reads the photos from
+  X's public embed endpoint (original size). Single photo = an image item; several = a list.
+- [x] **Readable titles**: LinkedIn and X posts use the caption as the title; `extraction.display_title` makes it one
+  short line, and `sanitize_filename` drops links, line breaks and empty brackets from file names.
+- [x] **Instagram carousel link with `?img_index=N`** opens with slide N ticked (`selected_index`).
+- [x] **iPhone Home Screen icon**: `frontend/plugins/inlineIcons.ts` writes the 180 px apple-touch-icon into
+  `index.html` as a data: URI (and the manifest icons inline), with file-based 167/152 px icons as fallbacks, so
+  "Add to Home Screen" needs no second download. Not reproduced on a device; see MISTAKES.md.
+- [x] Measured on the 2017 Intel MacBook Pro (8 logical cores): a 3:14 4K clip took 100.8 s in total with the
+  hardware encoder (90.1 s of it encoding), against about 1.1 s of processing per second of video before. The
+  encoder rule is unchanged (x86_64 -> VideoToolbox).
+- [x] The Mac app gets "Clear cache and saved data" (added to the web version earlier the same day).
+
 ## 2026-10-14 · Settings: Clear cache and saved data
 
 - [x] **One action to clear old data** (Settings, web and Mac app): `frontend/src/lib/clearData.ts` empties
