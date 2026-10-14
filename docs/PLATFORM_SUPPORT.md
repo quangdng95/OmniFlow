@@ -4,7 +4,7 @@ What ViDrop can download from each platform, checked against real links on **202
 (Mac app, Apple Silicon, yt-dlp 2026.8.19). Every ✅ below was a real download or a real
 link check, verified with `ffprobe` (picture, sound, size) and then deleted.
 
-**Seven of the eight platforms were verified** (YouTube, TikTok, Instagram, Facebook, X, Threads, LinkedIn). **RedNote is not verified yet**: both sample links had expired, so it needs a fresh share link. Not tested either: Instagram Stories and private posts, X images and GIFs, X `t.co` and Facebook `fb.me` links, Threads `/share/` links. They need sample links.
+**All eight platforms have now been verified** (updated 2026-10-14 with fresh links for RedNote, X images, LinkedIn and Instagram). **RedNote works in the Mac app only**: its servers send our cloud (web) server to the sign-in page even with a valid session. Not tested: Instagram Stories and private posts, X GIFs, X `t.co` and Facebook `fb.me` links, Threads `/share/` links. They need sample links.
 
 | Status | Meaning |
 |---|---|
@@ -58,7 +58,8 @@ link check, verified with `ffprobe` (picture, sound, size) and then deleted.
 |---|---|---|
 | Video post | ✅ Works | Up to 1792 px. |
 | Audio only | ➖ Not tested | The only sample clip has no sound. ViDrop says so ("This video has no audio track") instead of failing with a generic error. |
-| Image or GIF post | ➖ Not tested | No sample link. |
+| Image post | ✅ Works | Read from X's public embed endpoint, original size; several pictures are listed. |
+| GIF post | ➖ Not tested | No sample link. |
 | `t.co` short link | ➖ Not tested | No sample link. |
 
 ## Threads
@@ -81,7 +82,7 @@ link check, verified with `ffprobe` (picture, sound, size) and then deleted.
 
 | Content | Status | Notes |
 |---|---|---|
-| Video or image note | ➖ Not tested | Both sample links had expired (RedNote's `xsec_token` links stop working). ViDrop now says "This RedNote link has expired" instead of a generic error. Copy a fresh share link from RedNote to try it. Needs a RedNote sign-in in your browser. |
+| Video or image note (including `xhslink.com` share links) | 🔑 Works in the Mac app, needs sign-in | Verified 2026-10-14 with three share links (two videos, one 16-picture note). Sign in to RedNote in Chrome on your Mac. **Not available on the web version**: RedNote refuses the cloud server, and ViDrop says so. A share link's token expires after a while; copy a fresh one. |
 
 ## Sample links missing
 
