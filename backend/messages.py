@@ -45,6 +45,10 @@ _CATALOG = {
         VI: "❌ Lỗi: RedNote yêu cầu đăng nhập để xem bài này. Hãy đăng nhập RedNote (rednote.com) trong trình duyệt trên máy chủ rồi thử lại.",
         EN: "❌ Error: RedNote requires a signed-in session to view this post. Sign in to RedNote (rednote.com) in the browser on the server, then try again.",
     },
+    "rednote_cloud_blocked": {
+        VI: "❌ RedNote không cho máy chủ đám mây xem bài này (dù đã có phiên đăng nhập, RedNote vẫn chuyển về trang đăng nhập). Hãy dùng app ViDrop trên máy Mac cho link RedNote.",
+        EN: "❌ RedNote does not let a cloud server open this post (it sends the server to its sign-in page even with a valid session). Please use the ViDrop Mac app for RedNote links.",
+    },
     "extract_failed": {
         VI: "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung.",
         EN: "❌ Error: Couldn't extract data from this link. Please check the link, or whether the content is public.",

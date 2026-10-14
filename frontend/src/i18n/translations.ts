@@ -588,7 +588,7 @@ const en: Translations = {
         date: "2026-10-14",
         title: "ViDrop 2.0.3: RedNote share links, X photos, a sturdier Home Screen icon",
         items: [
-          "RedNote share links (xhslink.com) now work, including video and picture notes. Slow connections are retried instead of being reported as \"not signed in\".",
+          "RedNote share links (xhslink.com) now work in the Mac app, for video and picture notes. Slow connections are retried instead of being reported as \"not signed in\". On the web version RedNote still refuses our cloud server, and ViDrop now says so and points you to the Mac app.",
           "X posts that contain only pictures can be downloaded, at their original size. A post with several pictures lists them all.",
           "LinkedIn and X posts get a short, readable title, and saved file names no longer contain links or line breaks.",
           "An Instagram link copied from slide 2 or 3 of a carousel opens with that slide already ticked.",
@@ -1135,7 +1135,7 @@ const vi: Translations = {
         date: "14-10-2026",
         title: "ViDrop 2.0.3: link chia sẻ RedNote, ảnh X, biểu tượng Màn hình chính vững hơn",
         items: [
-          "Link chia sẻ RedNote (xhslink.com) giờ dùng được, cả bài video lẫn bài ảnh. Mạng chậm được thử lại thay vì báo \"chưa đăng nhập\".",
+          "Link chia sẻ RedNote (xhslink.com) giờ dùng được trong app Mac, cả bài video lẫn bài ảnh. Mạng chậm được thử lại thay vì báo \"chưa đăng nhập\". Trên bản web, RedNote vẫn từ chối máy chủ đám mây của chúng tôi; ViDrop giờ nói rõ điều đó và hướng bạn sang app Mac.",
           "Bài đăng X chỉ có ảnh giờ tải được, ở kích thước gốc. Bài có nhiều ảnh sẽ liệt kê đủ.",
           "Bài LinkedIn và X có tiêu đề ngắn gọn, dễ đọc; tên file đã lưu không còn chứa liên kết hay xuống dòng.",
           "Link Instagram sao chép từ ảnh thứ 2, thứ 3 của carousel mở ra với ảnh đó đã được tick sẵn.",

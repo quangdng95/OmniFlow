@@ -134,13 +134,13 @@ def check_link():
             except rednote.RedNoteExpiredError:
                 return jsonify({"error": messages.text("rednote_expired", lang)}), 400
             except rednote.RedNoteAuthError:
-                return jsonify({"error": messages.text("rednote_auth", lang)}), 400
+                return jsonify({"error": messages.text("rednote_cloud_blocked", lang)}), 400
             except Exception:
                 pass
             finally:
                 cookies._cleanup_temp_cookiefiles(rn_candidates)
             if not rn_candidates:
-                return jsonify({"error": messages.text("rednote_auth", lang)}), 400
+                return jsonify({"error": messages.text("rednote_cloud_blocked", lang)}), 400
         error_to_describe = ig_resolver_error if ig_resolver_error is not None else e
         return jsonify({"error": extraction.describe_extraction_error(url, error_to_describe, backend_config.get_cookies_path(), lang=lang)}), 400
     except Exception as e:
@@ -440,7 +440,7 @@ def start_download():
                     return
                 except rednote.RedNoteAuthError:
                     jobs.jobs[job_id]["status"] = "error"
-                    jobs.jobs[job_id]["text"] = messages.text("rednote_auth", lang)
+                    jobs.jobs[job_id]["text"] = messages.text("rednote_cloud_blocked", lang)
                     return
                 except Exception:
                     pass
@@ -448,7 +448,7 @@ def start_download():
                     cookies._cleanup_temp_cookiefiles(rn_candidates)
                 if not rn_candidates:
                     jobs.jobs[job_id]["status"] = "error"
-                    jobs.jobs[job_id]["text"] = messages.text("rednote_auth", lang)
+                    jobs.jobs[job_id]["text"] = messages.text("rednote_cloud_blocked", lang)
                     return
             print(f"[remote_web download] job {job_id} failed: {e}")
             jobs.jobs[job_id]["status"] = "error"

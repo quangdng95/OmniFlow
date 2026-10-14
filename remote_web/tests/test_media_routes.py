@@ -538,3 +538,19 @@ def test_a_rednote_share_link_skips_ytdlp_on_the_cloud_too(client, monkeypatch):
     monkeypatch.setattr(rednote_module, "fetch_rednote_post_any", lambda url, files: seen.setdefault("url", url) and {"title": "N", "items": [{"kind": "video", "url": "v", "thumbnail": "t"}]})
     body = client.post("/api/check", json={"url": "https://xhslink.com/o/4AMx4jW7ZFx"}).get_json()
     assert body["type"] == "video" and seen["url"] == "https://xhslink.com/o/4AMx4jW7ZFx"
+
+
+def test_a_rednote_login_redirect_on_the_cloud_says_the_server_is_blocked_and_points_to_the_mac_app(client, monkeypatch):
+    import yt_dlp
+    from backend import rednote as rednote_module
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda cls: (_ for _ in ()).throw(yt_dlp.utils.DownloadError("x")))
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: ["/synced.txt"])
+
+    def logged_out(url, files):
+        raise rednote_module.RedNoteAuthError("login")
+
+    monkeypatch.setattr(rednote_module, "fetch_rednote_post_any", logged_out)
+    resp = client.post("/api/check", json={"url": "https://xhslink.com/o/4AMx4jW7ZFx"}, headers={"X-Language": "en"})
+    assert resp.status_code == 400
+    assert "Mac app" in resp.get_json()["error"] and "server" in resp.get_json()["error"]

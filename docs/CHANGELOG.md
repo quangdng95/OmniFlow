@@ -13,7 +13,10 @@ keep both updated together when shipping a user-visible change.
   login page that carries the note URL in `redirectPath`; `rednote.expand_short_link` reads it, the note is then
   fetched with the session of the domain it belongs to (a jar with no login for a host is not asked), timeouts
   are retried and a timeout is no longer reported as "not signed in", and yt-dlp is skipped for share links
-  (it cost 12 s and could not open them anyway). Cloud and Mac app.
+  (it cost 12 s and could not open them anyway). Works in the Mac app. On the cloud VM RedNote sends the
+  server to its sign-in page even with the synced session (checked on the VM with the same cookies that work
+  on the Mac: most likely it distrusts a datacenter IP), so the web version now says "use the Mac app"
+  (`rednote_cloud_blocked`) instead of asking for a login on the server.
 - [x] **X photo tweets**: yt-dlp only reads tweets with a video or GIF. `backend/xposts.py` reads the photos from
   X's public embed endpoint (original size). Single photo = an image item; several = a list.
 - [x] **Readable titles**: LinkedIn and X posts use the caption as the title; `extraction.display_title` makes it one
