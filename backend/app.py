@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import yt_dlp
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, messages, paths, rednote, shortlinks, threads, tiktok
+from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, messages, paths, rednote, shortlinks, threads, tiktok, xposts
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
@@ -294,6 +294,14 @@ def check_link():
         # login is now required AND the stream keys were renamed, see
         # backend/rednote.py), so a RedNote DownloadError falls back to the
         # resolver, which uses the user's own RedNote login session.
+        # yt-dlp's Twitter extractor only reads tweets with a video or a GIF; a tweet with just pictures
+        # fails, so a photo tweet is read from X's public embed endpoint (backend/xposts.py).
+        if cls.platform == "X":
+            try:
+                media = xposts.fetch_x_photo_post(url)
+                return jsonify(instagram.instagram_check_response(url, media))
+            except Exception:
+                pass
         if cls.platform == "RedNote":
             rn_candidates = rednote.rednote_cookiefile_candidates()
             try:
@@ -347,7 +355,7 @@ def check_link():
 
     return jsonify({
         "type": "video",
-        "title": info.get("title", "Video"),
+        "title": extraction.display_title(cls.platform, info.get("title", "Video")),
         "uploader": info.get("uploader", ""),
         "thumbnail": extraction.resolve_thumbnail(info),
         "platform": cls.platform,
@@ -552,6 +560,7 @@ def start_download():
                     cookies._cleanup_temp_cookiefiles(candidates[1:])
 
         def attempt(cookiefile):
+            rednote.skip_ytdlp_for_short_link(url)
             ydl_opts = download.build_download_options(
                 quality, output_path_no_ext, ffmpeg_bin, [progress_hook], [postprocessor_hook], cookiefile, entry_index, url, keep_codec
             )
@@ -624,6 +633,17 @@ def start_download():
                     tiktok_media = tiktok.fetch_tiktok_post(url)
                     tiktok_url, tiktok_ext = tiktok.pick_download_target(tiktok_media, quality)
                     _save_single_cdn_file(job_id, save_dir, title, tiktok_url, ext=tiktok_ext)
+                    return
+                except yt_dlp.utils.DownloadCancelled:
+                    jobs.jobs[job_id]["status"] = "cancelled"
+                    jobs.jobs[job_id]["text"] = "Cancelled"
+                    return
+                except Exception:
+                    pass  # fall through to the friendly error below
+            if cls.platform == "X":
+                try:
+                    x_media = xposts.fetch_x_photo_post(url)
+                    _save_single_cdn_file(job_id, save_dir, title, x_media["items"][0]["url"], ext="jpg")
                     return
                 except yt_dlp.utils.DownloadCancelled:
                     jobs.jobs[job_id]["status"] = "cancelled"
@@ -749,6 +769,10 @@ def start_batch_download():
     is_linkedin_document = cls.platform == "LinkedIn"
     # A RedNote "playlist" can only be a multi-image note from the resolver.
     is_rednote_media = cls.platform == "RedNote"
+    # A multi-photo tweet: yt-dlp cannot list it, X's embed endpoint can. A tweet with videos has no photos
+    # there, so x_media stays None and the normal yt-dlp path is used.
+    x_media = xposts.try_photos(url) if cls.platform == "X" else None
+    is_x_photo = x_media is not None
 
     job_id = uuid.uuid4().hex
     total = len(items)
@@ -787,7 +811,7 @@ def start_batch_download():
                 recompute_overall()
 
             try:
-                if is_ig_carousel or is_tiktok_photo or is_linkedin_document or is_rednote_media:
+                if is_ig_carousel or is_tiktok_photo or is_linkedin_document or is_rednote_media or is_x_photo:
                     idx = item.get("entry_index") or (i + 1)
                     node = media_holder["media"]["items"][idx - 1]
                     cdn_url = node.get("url")
@@ -840,6 +864,8 @@ def start_batch_download():
                 media_holder["media"] = tiktok.fetch_tiktok_post(url)
             elif is_linkedin_document:
                 media_holder["media"] = linkedin.fetch_linkedin_image_post(url)
+            elif is_x_photo:
+                media_holder["media"] = x_media
             elif is_rednote_media:
                 rn_candidates = rednote.rednote_cookiefile_candidates()
                 try:

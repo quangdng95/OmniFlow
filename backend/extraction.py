@@ -11,7 +11,7 @@ import socket
 
 import yt_dlp
 
-from backend import classify, config, cookies, instagram, messages
+from backend import classify, config, cookies, instagram, messages, rednote
 
 _QUALITY_LABEL_RE = re.compile(r"^(\d+)p")
 
@@ -61,6 +61,24 @@ def effective_item_limit(cls):
     return limit if limit > 0 else ALL_ITEMS_SAFETY_CAP
 
 
+_TITLE_URL_RE = re.compile(r"https?://[^\s)\]>]+")
+
+
+def display_title(platform, title, limit=90):
+    """A readable one-line title for platforms whose title is the whole post text (LinkedIn, X).
+
+    Links and line breaks are removed and the text is cut at a word boundary, so the page and the saved
+    file get a short name instead of a paragraph. Other platforms' titles are returned untouched."""
+    if platform not in ("LinkedIn", "X") or not isinstance(title, str):
+        return title
+    text = re.sub(r"\s+", " ", _TITLE_URL_RE.sub("", title)).strip()
+    text = re.sub(r"\(\s*\)", "", text).strip()
+    if len(text) > limit:
+        cut = text[:limit].rsplit(" ", 1)[0] if " " in text[:limit] else text[:limit]
+        text = cut.rstrip(" ,;:-") + "…"
+    return text or title.strip()[:limit] or "Video"
+
+
 def extract_video_info(cls):
     # `cls` is a classify.Classification - what the link IS was already decided
     # by classify.classify_url() (owner core capability #4); this function only
@@ -68,6 +86,7 @@ def extract_video_info(cls):
     # platform/kind from the URL string.
     url = cls.extraction_url
     item_limit = effective_item_limit(cls)
+    rednote.skip_ytdlp_for_short_link(url)
 
     if cls.kind == classify.LinkKind.INSTAGRAM_PROFILE:
         # Use our Custom Instagram Profile/Reels Resolver to bypass Meta blocks

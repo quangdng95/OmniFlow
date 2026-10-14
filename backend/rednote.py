@@ -24,8 +24,12 @@ They are only ever sent to rednote.com / xiaohongshu.com, never shown in errors.
 
 import json
 import re
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
+
+import yt_dlp
 
 from backend import config, cookies
 
@@ -85,6 +89,10 @@ def _has_session(cookies_path):
     return any(name == "web_session" and _base_domain(domain) for domain, name, _ in _cookie_rows(cookies_path))
 
 
+def _has_session_for(cookies_path, base):
+    return any(name == "web_session" and _base_domain(domain) == base for domain, name, _ in _cookie_rows(cookies_path))
+
+
 def _cookie_header(cookies_path, base):
     # Only this site's cookies: the jar is a whole browser's worth (Google,
     # Instagram...), none of which may leave for RedNote.
@@ -100,6 +108,41 @@ def _other_host(url):
 
 def _https(url):
     return "https://" + url[len("http://"):] if (url or "").startswith("http://") else url
+
+
+def _is_short_link(url):
+    host = (urllib.parse.urlparse(url).hostname or "").lower()
+    return host == "xhslink.com" or host.endswith(".xhslink.com")
+
+
+def skip_ytdlp_for_short_link(url):
+    """yt-dlp cannot open a logged-out RedNote share link (it lands on the login page: 12 s, then 'Unsupported URL'),
+    and the resolver below is the path that works. Raising here sends the caller straight to it."""
+    if _is_short_link(url):
+        raise yt_dlp.utils.DownloadError("RedNote share link: handled by backend/rednote.py")
+
+
+def expand_short_link(url):
+    """Resolve a RedNote share link (xhslink.com/o/...) to the note's own URL.
+
+    Without a session RedNote answers the share link with a redirect to its login page that carries the real
+    note URL (with its xsec_token) in `redirectPath`, so the redirect is followed WITHOUT cookies and that
+    parameter is read back. The note page is then fetched with the user's session, on whichever of
+    rednote.com / xiaohongshu.com that session belongs to. A link that is not a short link is returned as is."""
+    if not _is_short_link(url):
+        return url
+    request = urllib.request.Request(url, headers={"User-Agent": REDNOTE_UA, "Accept-Language": "en-US,en;q=0.9"})
+    with urllib.request.urlopen(request, timeout=20) as resp:
+        final = resp.geturl()
+    parsed = urllib.parse.urlparse(final)
+    if parsed.path.startswith("/login"):
+        target = urllib.parse.parse_qs(parsed.query).get("redirectPath", [""])[0]
+        if target and _base_domain(urllib.parse.urlparse(target).hostname):
+            return _https(target)
+        raise RedNoteAuthError("RedNote requires a logged-in session")
+    if parsed.path.startswith("/404"):
+        raise RedNoteExpiredError("RedNote link expired or note removed")
+    return _https(final)
 
 
 def _parse_note(html, url):
@@ -151,9 +194,19 @@ def _fetch_page(url, cookies_path):
     if header:
         headers["Cookie"] = header
     request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, timeout=25) as resp:
-        html = resp.read().decode("utf-8", "replace")
-        final = resp.geturl()
+    html = final = None
+    for attempt in range(3):
+        # RedNote is slow from some networks (TLS handshakes time out now and then): a timeout is retried and
+        # is never reported as "not logged in".
+        try:
+            with urllib.request.urlopen(request, timeout=25) as resp:
+                html = resp.read().decode("utf-8", "replace")
+                final = resp.geturl()
+            break
+        except (urllib.error.URLError, TimeoutError, ConnectionError, OSError):
+            if attempt == 2:
+                raise
+            time.sleep(1.0 + attempt)
     final_path = urllib.parse.urlparse(final).path
     if final_path.startswith("/login"):
         raise RedNoteAuthError("RedNote requires a logged-in session")
@@ -167,8 +220,13 @@ def fetch_rednote_post(url, cookies_path):
     # session is only valid on the domain it was created on - so if the given
     # host sends us to the login page, try the other one before giving up.
     last_error = None
+    url = expand_short_link(url)
     for candidate in (url, _other_host(url)):
         if not candidate:
+            continue
+        # A session only works on the domain it was created on: do not even ask a site this jar has no login for.
+        if not _has_session_for(cookies_path, _base_domain(urllib.parse.urlparse(candidate).hostname)):
+            last_error = RedNoteAuthError("RedNote requires a logged-in session")
             continue
         try:
             html, final = _fetch_page(candidate, cookies_path)
@@ -194,10 +252,12 @@ def fetch_rednote_post_any(url, cookiefiles):
             raise  # every account sees the same dead link: do not hit RedNote again
         except Exception as e:
             last_error = e
-    if last_auth_error:
-        raise last_auth_error
+    # A network error on one account must not be reported as "not logged in" just because another account
+    # answered with the login page.
     if last_error:
         raise last_error
+    if last_auth_error:
+        raise last_auth_error
     raise RedNoteAuthError("RedNote requires a logged-in session")
 
 

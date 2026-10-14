@@ -510,3 +510,31 @@ def test_check_truncated_follows_the_playlist_limit_setting(client, monkeypatch,
     body = client.post("/api/check", json={"url": "https://www.youtube.com/playlist?list=PLxyz"}).get_json()
     assert body["truncated"] is expected
     assert len(body["items"]) == count
+
+
+def test_check_x_photo_tweet_uses_the_embed_resolver_on_the_cloud_too(client, monkeypatch):
+    import yt_dlp
+    from backend import xposts as xposts_module
+
+    def fake_extract(cls):
+        raise yt_dlp.utils.DownloadError("No video could be found in this tweet")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", fake_extract)
+    monkeypatch.setattr(xposts_module, "fetch_x_photo_post", lambda url: {"title": "Pics", "items": [{"kind": "image", "url": f"u{i}", "thumbnail": "t"} for i in range(2)]})
+    body = client.post("/api/check", json={"url": "https://x.com/a/status/2109940833076031916"}).get_json()
+    assert body["type"] == "playlist" and body["platform"] == "X" and len(body["items"]) == 2
+
+
+def test_a_rednote_share_link_skips_ytdlp_on_the_cloud_too(client, monkeypatch):
+    from backend import rednote as rednote_module
+
+    seen = {}
+
+    def fake_extract(cls):
+        raise AssertionError("yt-dlp must not be called for a share link")
+
+    monkeypatch.setattr(extraction_module, "extract_video_info", lambda cls: rednote_module.skip_ytdlp_for_short_link(cls.extraction_url))
+    monkeypatch.setattr(rednote_module, "rednote_cookiefile_candidates", lambda: ["/synced.txt"])
+    monkeypatch.setattr(rednote_module, "fetch_rednote_post_any", lambda url, files: seen.setdefault("url", url) and {"title": "N", "items": [{"kind": "video", "url": "v", "thumbnail": "t"}]})
+    body = client.post("/api/check", json={"url": "https://xhslink.com/o/4AMx4jW7ZFx"}).get_json()
+    assert body["type"] == "video" and seen["url"] == "https://xhslink.com/o/4AMx4jW7ZFx"

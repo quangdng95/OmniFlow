@@ -586,6 +586,18 @@ const en: Translations = {
     releases: [
       {
         date: "2026-10-14",
+        title: "ViDrop 2.0.3: RedNote share links, X photos, a sturdier Home Screen icon",
+        items: [
+          "RedNote share links (xhslink.com) now work, including video and picture notes. Slow connections are retried instead of being reported as \"not signed in\".",
+          "X posts that contain only pictures can be downloaded, at their original size. A post with several pictures lists them all.",
+          "LinkedIn and X posts get a short, readable title, and saved file names no longer contain links or line breaks.",
+          "An Instagram link copied from slide 2 or 3 of a carousel opens with that slide already ticked.",
+          "The iPhone Home Screen icon is now built into the page itself, so it no longer depends on a second download. If your current shortcut still shows a letter, remove it and add it again.",
+          "The Mac app now has \"Clear cache and saved data\" in Settings.",
+        ],
+      },
+      {
+        date: "2026-10-14",
         title: "One tap to clear old data",
         items: [
           "Settings now has \"Clear cache and saved data\". It removes your download history, language choice and stored site data from this device, then reloads ViDrop fresh. Use it when an old icon or screen will not update, so you no longer need to dig through your phone's or browser's own settings. On the web version it also signs you out.",
@@ -1119,6 +1131,18 @@ const vi: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "14-10-2026",
+        title: "ViDrop 2.0.3: link chia sẻ RedNote, ảnh X, biểu tượng Màn hình chính vững hơn",
+        items: [
+          "Link chia sẻ RedNote (xhslink.com) giờ dùng được, cả bài video lẫn bài ảnh. Mạng chậm được thử lại thay vì báo \"chưa đăng nhập\".",
+          "Bài đăng X chỉ có ảnh giờ tải được, ở kích thước gốc. Bài có nhiều ảnh sẽ liệt kê đủ.",
+          "Bài LinkedIn và X có tiêu đề ngắn gọn, dễ đọc; tên file đã lưu không còn chứa liên kết hay xuống dòng.",
+          "Link Instagram sao chép từ ảnh thứ 2, thứ 3 của carousel mở ra với ảnh đó đã được tick sẵn.",
+          "Biểu tượng Màn hình chính trên iPhone giờ nằm ngay trong trang, không còn phụ thuộc lượt tải thứ hai. Nếu lối tắt hiện tại vẫn hiện chữ cái, hãy xoá rồi thêm lại.",
+          "App Mac giờ có \"Xoá bộ nhớ đệm và dữ liệu đã lưu\" trong Cài đặt.",
+        ],
+      },
       {
         date: "14-10-2026",
         title: "Một chạm để xoá dữ liệu cũ",
