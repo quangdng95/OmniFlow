@@ -8,7 +8,7 @@ install required on that device.
 **Design spec:** [docs/superpowers/specs/2026-08-29-remote-web-access-design.md](../docs/superpowers/specs/2026-08-29-remote-web-access-design.md)
 
 > **Where this runs in production: a free Google Cloud VM, not a Mac.**
-> The live site (`cloud.southframevn.com`) is served by a GCP `e2-micro`
+> The live site (`cloud.nguyenduyquang.com`; `cloud.southframevn.com` still works side by side) is served by a GCP `e2-micro`
 > (Always Free) running three `systemd` units — this app, a Cloudflare Tunnel
 > (`cloudflared`) and a YouTube bot-check helper. There is **no CI/CD**: an
 > update is built and copied up by hand, see
@@ -179,7 +179,7 @@ home.
 Everything above describes running `remote_web` on a dedicated Mac. The same
 package also runs, unchanged, on a free Linux cloud VM — so nothing needs a
 Mac powered on at all. This is the deployment actually in use
-(`cloud.southframevn.com`, on a GCP `e2-micro`, 2026-09-10); the Mac
+(`cloud.nguyenduyquang.com`, earlier `cloud.southframevn.com`, on a GCP `e2-micro`, 2026-09-10); the Mac
 instructions above are kept for reference.
 
 ### What works on a cloud IP, and what doesn't
@@ -342,7 +342,7 @@ rsync -az --delete -e "ssh -i ~/.ssh/omniflow_cloud -p 2222" frontend/dist/ <use
 ssh -i ~/.ssh/omniflow_cloud -p 2222 <user>@localhost 'sudo systemctl restart omniflow-remote'
 ```
 
-Then check `https://cloud.southframevn.com/health` returns `{"status":"ok"}`.
+Then check `https://cloud.nguyenduyquang.com/health` returns `{"status":"ok"}`.
 Cloudflare may keep serving a cached 404 for a static file you probed before
 deploying it; a cache-busting `?v=` query shows whether the file is really there.
 

@@ -6,10 +6,10 @@ import time
 
 import os
 
-from flask import Blueprint, Response, jsonify, redirect, request, send_from_directory
+from flask import Blueprint, Response, jsonify, redirect, request
 from itsdangerous import BadData, URLSafeTimedSerializer
 
-from backend import paths
+from backend import paths, webpage
 from remote_web import config
 
 unlock_bp = Blueprint("unlock", __name__)
@@ -144,7 +144,7 @@ def unlock_form():
     # The React login page (shadcn) is the normal screen; the plain HTML form
     # below stays as the fallback for a missing frontend build or ?plain=1.
     if request.args.get("plain") != "1" and os.path.isfile(os.path.join(paths.WEB_DIR, "index.html")):
-        return send_from_directory(paths.WEB_DIR, "index.html")
+        return webpage.render_index(config.PUBLIC_ORIGIN)
     override = request.args.get("lang")
     lang = _unlock_language(override)
     resp = Response(_render_unlock_form(lang), mimetype="text/html")

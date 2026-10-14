@@ -47,7 +47,9 @@ import urllib.request
 import uuid
 
 # --- deployment target ------------------------------------------------------
-CLOUD_URL = os.environ.get("OMNIFLOW_CLOUD_URL", "https://cloud.southframevn.com")
+# The web version's primary host (remote_web/config.py PUBLIC_HOST). The old host, cloud.southframevn.com, still
+# works while it is kept side by side: set OMNIFLOW_CLOUD_URL to use it.
+CLOUD_URL = os.environ.get("OMNIFLOW_CLOUD_URL", "https://cloud.nguyenduyquang.com")
 TOKEN_FILE = os.path.expanduser("~/.config/omniflow/cloud_token")
 _UPLOAD_ATTEMPTS = 3  # for server (HTTP 5xx) errors
 # Seconds to wait between tries when there is no network at all (~3 min in total).

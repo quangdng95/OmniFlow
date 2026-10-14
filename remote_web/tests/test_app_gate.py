@@ -171,3 +171,67 @@ def test_clear_session_signs_this_browser_out_and_needs_a_trusted_visitor(client
     cleared = " ".join(resp.headers.getlist("Set-Cookie"))
     assert config.TRUST_COOKIE_NAME in cleared and "Expires=Thu, 01 Jan 1970" in cleared
     assert client.post("/api/clear-session").status_code == 401  # the cookie is gone: signed out
+
+
+# ---- two hostnames side by side (cloud.nguyenduyquang.com primary, cloud.southframevn.com kept) ----------
+
+PRIMARY = "cloud.nguyenduyquang.com"
+LEGACY = "cloud.southframevn.com"
+
+
+@pytest.mark.parametrize("host", [PRIMARY, LEGACY, "127.0.0.1:5050", "localhost", f"{PRIMARY}:443"])
+def test_every_configured_host_is_served(client, host):
+    assert client.get("/health", headers={"Host": host}).status_code == 200
+    assert client.get("/unlock", headers={"Host": host}).status_code == 200
+    assert client.get("/apple-touch-icon.png", headers={"Host": host}).status_code == 200
+
+
+@pytest.mark.parametrize("host", ["evil.example.com", "cloud.nguyenduyquang.com.evil.com", "nguyenduyquang.com", "cloud.example.org"])
+def test_an_unconfigured_host_is_refused_before_anything_else_runs(client, host):
+    for path in ("/health", "/unlock", "/api/settings", "/apple-touch-icon.png"):
+        assert client.get(path, headers={"Host": host}).status_code == 421
+
+
+def test_the_trust_cookie_is_issued_for_the_new_host_alone_without_a_domain_attribute(client):
+    token = config.get_or_create_token()
+    resp = client.post("/unlock", data={"token": token}, base_url=f"https://{PRIMARY}")
+    assert resp.status_code == 302
+    cookie = resp.headers["Set-Cookie"]
+    assert config.TRUST_COOKIE_NAME in cookie and "Secure" in cookie and "HttpOnly" in cookie and "SameSite=Lax" in cookie
+    assert "Domain=" not in cookie  # host-only: it works on the new host and is not shared with the old one
+    assert client.post("/api/clear-session", base_url=f"https://{PRIMARY}").status_code == 200  # signed in there
+    assert client.post("/api/clear-session", base_url=f"https://{LEGACY}").status_code == 401  # not signed in there
+
+
+def test_a_wrong_token_on_the_new_host_is_still_refused(client):
+    resp = client.post("/unlock", data={"token": "nope"}, base_url=f"https://{PRIMARY}")
+    assert resp.status_code == 401 and config.TRUST_COOKIE_NAME not in (resp.headers.get("Set-Cookie") or "")
+
+
+def test_the_gate_holds_on_the_new_host(client):
+    base = f"https://{PRIMARY}"
+    assert client.get("/api/settings", base_url=base).status_code == 401
+    assert client.get("/api/download-file/x", base_url=base).status_code == 401
+    assert client.post("/api/clear-session", base_url=base).status_code == 401
+    assert client.get("/", base_url=base).headers["Location"].endswith("/unlock")
+
+
+def test_share_previews_point_at_the_primary_host_whichever_host_served_the_page(client):
+    for host in (PRIMARY, LEGACY):
+        page = client.get("/unlock", headers={"Host": host}).get_data(as_text=True)
+        assert f'content="https://{PRIMARY}/og-image.png"' in page
+        assert f'<meta property="og:url" content="https://{PRIMARY}/"' in page
+        assert "__PUBLIC_ORIGIN__" not in page and "southframevn" not in page
+
+
+def test_the_hosts_come_from_one_setting(monkeypatch):
+    import subprocess
+    import sys
+
+    code = "from remote_web import config; print(config.PUBLIC_HOST, config.PUBLIC_ORIGIN, sorted(config.ALLOWED_HOSTS))"
+    env = {**os.environ, "OMNIFLOW_PUBLIC_HOST": "Cloud.Example.org", "OMNIFLOW_EXTRA_HOSTS": "a.example.org, b.example.org"}
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env, cwd=REPO_ROOT).stdout
+    assert "cloud.example.org https://cloud.example.org" in out
+    assert "'a.example.org'" in out and "'b.example.org'" in out and "'cloud.southframevn.com'" in out
+    default = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=REPO_ROOT, env={k: v for k, v in os.environ.items() if not k.startswith("OMNIFLOW_")}).stdout
+    assert default.startswith("cloud.nguyenduyquang.com https://cloud.nguyenduyquang.com")

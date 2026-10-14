@@ -265,3 +265,15 @@ def test_the_rednote_login_is_synced_to_the_cloud_too():
     # so its only source is this sync.
     assert sync._DOMAINS["rednote.com"] == ("web_session",)
     assert sync._DOMAINS["xiaohongshu.com"] == ("web_session",)
+
+
+def test_the_sync_defaults_to_the_primary_host_and_can_be_pointed_elsewhere():
+    import subprocess
+    import sys
+
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    code = "import runpy; print(runpy.run_path('remote_web/scripts/sync_cloud_cookies.py', run_name='x')['CLOUD_URL'])"
+    clean = {k: v for k, v in os.environ.items() if k != "OMNIFLOW_CLOUD_URL"}
+    assert subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=root, env=clean).stdout.strip() == "https://cloud.nguyenduyquang.com"
+    pinned = {**clean, "OMNIFLOW_CLOUD_URL": "https://cloud.southframevn.com"}
+    assert subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, cwd=root, env=pinned).stdout.strip() == "https://cloud.southframevn.com"

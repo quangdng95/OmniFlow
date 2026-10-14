@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 import yt_dlp
 from flask import Flask, request, jsonify, send_from_directory, send_file, after_this_request
 
-from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, messages, paths, rednote, shortlinks, threads, tiktok, xposts
+from backend import classify, config, cookies, download, extraction, instagram, jobs, linkedin, messages, paths, rednote, shortlinks, threads, tiktok, webpage, xposts
 
 app = Flask(__name__, static_folder=paths.WEB_DIR, static_url_path="")
 
@@ -51,7 +51,7 @@ def is_local_request():
 
 @app.get("/")
 def index():
-    return send_from_directory(paths.WEB_DIR, "index.html")
+    return webpage.render_index(f"http://127.0.0.1:{os.environ.get('PORT', '5001')}")
 
 
 @app.get("/api/settings")

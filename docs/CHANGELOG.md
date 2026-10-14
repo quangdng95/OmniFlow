@@ -5,6 +5,18 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-14 · Web: new primary host `cloud.nguyenduyquang.com`
+
+- [x] The web version is served on `cloud.nguyenduyquang.com` and, side by side, the old `cloud.southframevn.com`
+  (both hostnames are in the tunnel's `~/.cloudflared/config.yml` on the VM: the tunnel is locally managed, so
+  a "Public hostname" added in the Cloudflare dashboard would NOT take effect). One setting,
+  `remote_web/config.py` (`PUBLIC_HOST`, `OMNIFLOW_PUBLIC_HOST`, `OMNIFLOW_EXTRA_HOSTS`), defines the primary
+  host and `ALLOWED_HOSTS` (primary, old, loopback); any other `Host` header gets 421 before anything else runs.
+- [x] Share previews (`og:image`, `twitter:image`, new `og:url`) use the primary host: `index.html` carries
+  `__PUBLIC_ORIGIN__` and `backend/webpage.py` fills it in when a server serves the page (the Mac app uses its
+  loopback origin). The trust cookie stays host-only (Secure, HttpOnly, SameSite=Lax, no Domain).
+- [x] `sync_cloud_cookies.py` defaults to the new host (`OMNIFLOW_CLOUD_URL` still overrides).
+
 ## 2026-10-14 · ViDrop 2.0.3
 
 ### Fixed
