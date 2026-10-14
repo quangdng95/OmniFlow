@@ -567,6 +567,14 @@ const en: Translations = {
   changelog: {
     releases: [
       {
+        date: "2026-10-14",
+        title: "ViDrop 2.0.2: the Mac app catches up with the web",
+        items: [
+          "The Mac app now has the latest web improvements: one ViDrop icon everywhere, clearer messages after a video is saved, and a tap on the empty link field pastes the link you copied.",
+          "The README roadmap now lists what is still open, such as Apple notarization and checking the 4K conversion on a real Intel Mac.",
+        ],
+      },
+      {
         date: "2026-10-13",
         title: "Save to Photos on iPhone, one icon everywhere",
         items: [
@@ -1077,6 +1085,14 @@ const vi: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "14-10-2026",
+        title: "ViDrop 2.0.2: app Mac bắt kịp bản web",
+        items: [
+          "App Mac giờ có các cải tiến mới nhất của bản web: một biểu tượng ViDrop thống nhất, thông báo rõ hơn sau khi lưu video, và chạm vào ô liên kết đang trống sẽ dán liên kết bạn vừa sao chép.",
+          "Roadmap trong README giờ liệt kê những việc còn mở, như notarize với Apple và kiểm tra việc chuyển đổi 4K trên máy Mac Intel thật.",
+        ],
+      },
       {
         date: "13-10-2026",
         title: "Lưu vào Ảnh trên iPhone, một biểu tượng thống nhất",

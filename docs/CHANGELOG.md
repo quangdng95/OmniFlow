@@ -5,6 +5,19 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-14 · ViDrop 2.0.2
+
+### Changed
+
+- [x] **Mac app rebuilt with the web changes made after 2.0.1** (per-platform Save to device, the single
+  icon source, the "Saved to your device" confirmation, paste on tap of the empty field). The cloud web
+  already had them. No change to the encoder rule: it is still unverified on a real Intel Mac.
+- [x] Tests: the cloud app tests no longer need a built `frontend/dist` (they serve a stand-in made of
+  `frontend/public`, so a fresh clone runs the whole suite green with nothing skipped);
+  `tests/test_brand_name.py` guards the `ViDrop` spelling.
+- [x] README Roadmap rewritten to the real open items (EN + VI); `docs/PLATFORM_SUPPORT.md` states that
+  seven of eight platforms are verified and RedNote is not.
+
 ## 2026-10-13 · Web update (after 2.0.1)
 
 ### Fixed

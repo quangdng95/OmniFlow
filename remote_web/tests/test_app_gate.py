@@ -1,13 +1,33 @@
 """The app-wide trust gate + Referrer-Policy header (spec §4.1, §4.4)."""
 
+import os
+import shutil
+
 import pytest
 
+from backend import paths
 from remote_web import config, trust
 from remote_web.app import app as remote_app
 
 
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
 @pytest.fixture
-def client(isolated_state_file):
+def web_dir(tmp_path, monkeypatch):
+    """A stand-in for frontend/dist that needs no build: the repo's own public assets (icons, manifest,
+    fonts) plus the source index.html, served the way the real build is. Tests that read the page or the
+    brand files therefore run the same on a fresh clone and on a machine that has built the frontend."""
+    site = tmp_path / "dist"
+    shutil.copytree(os.path.join(REPO_ROOT, "frontend", "public"), site)
+    shutil.copy(os.path.join(REPO_ROOT, "frontend", "index.html"), site / "index.html")
+    monkeypatch.setattr(paths, "WEB_DIR", str(site))
+    monkeypatch.setattr(remote_app, "static_folder", str(site))
+    return str(site)
+
+
+@pytest.fixture
+def client(isolated_state_file, web_dir):
     remote_app.config["TESTING"] = True
     return remote_app.test_client()
 
@@ -89,26 +109,14 @@ PUBLIC_ASSETS = [
 ]
 
 
-def _dist_has(name):
-    import os
-
-    from backend import paths
-
-    return os.path.isfile(os.path.join(paths.WEB_DIR, name))
-
-
 @pytest.mark.parametrize("path", PUBLIC_ASSETS)
 def test_brand_assets_load_without_a_token(client, path):
-    if not _dist_has(path.lstrip("/").replace("-precomposed", "").replace("-180x180", "")):
-        pytest.skip("frontend/dist is not built on this machine")
     resp = client.get(path)
     assert resp.status_code == 200
     assert "text/html" not in resp.headers["Content-Type"]
 
 
 def test_apple_touch_icon_aliases_serve_the_same_png(client):
-    if not _dist_has("apple-touch-icon.png"):
-        pytest.skip("frontend/dist is not built on this machine")
     base = client.get("/apple-touch-icon.png").data
     assert base.startswith(b"\x89PNG")
     assert client.get("/apple-touch-icon-precomposed.png").data == base
@@ -123,18 +131,13 @@ def test_the_open_assets_do_not_open_anything_else(client):
     assert resp.status_code == 302 and resp.headers["Location"].endswith("/unlock")
 
 
-def test_the_manifest_names_the_app_and_every_icon_it_lists_exists(client):
+def test_the_manifest_names_the_app_and_every_icon_it_lists_exists(client, web_dir):
     import json
-    import os
 
-    from backend import paths
-
-    if not _dist_has("manifest.webmanifest"):
-        pytest.skip("frontend/dist is not built on this machine")
     manifest = json.loads(client.get("/manifest.webmanifest").data)
     assert manifest["name"] == manifest["short_name"] == "ViDrop"
     assert manifest["display"] == "standalone" and manifest["theme_color"] == "#ffd60a"
     purposes = {icon["purpose"] for icon in manifest["icons"]}
     assert purposes == {"any", "maskable"}
     for icon in manifest["icons"]:
-        assert os.path.isfile(os.path.join(paths.WEB_DIR, icon["src"].split("?")[0].lstrip("/")))
+        assert os.path.isfile(os.path.join(web_dir, icon["src"].split("?")[0].lstrip("/")))

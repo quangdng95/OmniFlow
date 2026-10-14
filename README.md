@@ -173,37 +173,13 @@ never leave your machine.
 
 ## Roadmap
 
-Known gaps, tracked honestly rather than hidden.
+What is still open, stated plainly.
 
-**macOS app polish**
-
-- [x] Native `arm64` `ffmpeg` for the Apple Silicon build, so it no longer needs Rosetta 2 at
-  runtime (both the Apple Silicon and Intel builds now ship a native binary for their own chip)
-- [ ] Code signing + notarization, so macOS stops warning about an unidentified developer on
-  first launch — needs a paid Apple Developer account; see [First Launch](docs/FIRST_LAUNCH.md)
-  for the free one-time workaround in the meantime
-- [x] LinkedIn native document/slide-deck (PDF) posts — every page is listed and downloaded as an image
-  (also `lnkd.in` short links, which are now expanded before the link is classified)
-- [ ] Windows / Linux builds
-
-**Platform expansion**
-
-- [ ] Chrome extension — click a button in your browser to send the video you're watching
-  straight to ViDrop, no copy-pasting the link needed
-- [ ] A convenient way to send a link to ViDrop from your phone while it's running on your Mac
-  (e.g. an iOS Shortcut, or a simple mobile-friendly page)
-- [ ] Native Android app
-- [ ] Native iOS app
-
-> **On the two native mobile app items:** these are early and exploratory, not committed.
-> `yt-dlp` is a Python tool, so a native phone app would need a server to do the work, as the web
-> version does. ViDrop has two modes today: the Mac app processes every link on the user's own
-> machine, and the web version (`remote_web`) processes links on a server, behind an access token
-> (see [Disclaimer](.github/DISCLAIMER.md)). Both the App
-> Store and Play Store have a well-documented history of rejecting or removing "video downloader"
-> apps over copyright/ToS concerns, so a native mobile app may end up needing to ship outside the
-> official stores (sideloading, TestFlight-style distribution) rather than assuming normal store
-> availability.
+- [ ] **Code signing and notarization**: macOS still warns on first launch (right-click → Open). It needs a paid Apple Developer account; see [First Launch](docs/FIRST_LAUNCH.md).
+- [ ] **Check the video conversion choice on a real Intel Mac.** For 1440p/4K, ViDrop picks the hardware or software encoder by the chip. That rule was measured on Apple Silicon and under Rosetta 2 only.
+- [ ] **Check the platforms we could not test**: Instagram Stories and private posts, X images, RedNote, and a few link shapes. They need sample links; see [Platform support](docs/PLATFORM_SUPPORT.md).
+- [ ] **Review the Terms of Use** against how the Mac app and the web version work today.
+- Exploring, not committed: Windows/Linux builds, a Chrome extension, native phone apps. The web version already works in a phone browser.
 
 ## Troubleshooting
 

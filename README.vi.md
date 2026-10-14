@@ -173,37 +173,13 @@ bạn và không bao giờ rời khỏi máy.
 
 ## Roadmap
 
-Những gap còn tồn đọng, được ghi nhận trung thực thay vì giấu đi.
+Những việc còn mở, nói thẳng.
 
-**Hoàn thiện app macOS**
-
-- [x] `ffmpeg` native `arm64` cho bản Apple Silicon, không còn cần Rosetta 2 lúc chạy (cả bản
-  Apple Silicon lẫn Intel giờ đều dùng binary native cho đúng chip của mình)
-- [ ] Code signing + notarization, để macOS không còn cảnh báo "nhà phát triển không xác định"
-  khi mở lần đầu — cần một tài khoản Apple Developer trả phí; xem [First Launch](docs/FIRST_LAUNCH.vi.md)
-  để biết cách xử lý tạm thời (miễn phí, chỉ làm một lần) trong lúc chờ
-- [x] Hỗ trợ bài đăng LinkedIn dạng tài liệu/slide (PDF) — liệt kê và tải từng trang thành ảnh
-  (kèm link rút gọn `lnkd.in`, giờ được mở rộng trước khi phân loại link)
-- [ ] Build cho Windows / Linux
-
-**Mở rộng nền tảng**
-
-- [ ] Chrome extension — bấm một nút ngay trên trình duyệt để gửi video đang xem thẳng vào
-  ViDrop, không cần copy-paste link
-- [ ] Một cách tiện lợi để gửi link vào ViDrop từ điện thoại trong khi app đang chạy trên máy
-  Mac (ví dụ: một iOS Shortcut, hoặc một trang web tối ưu cho di động)
-- [ ] App Android native
-- [ ] App iOS native
-
-> **Về 2 mục app di động native ở trên:** đây vẫn là ý tưởng sớm, mang tính khám phá, chưa cam
-> kết thực hiện. `yt-dlp` là một công cụ Python, nên app di động native sẽ cần một server làm phần xử
-> lý, như bản web. Hiện ViDrop có hai chế độ: app Mac xử lý mọi link ngay trên máy của người dùng,
-> còn bản web (`remote_web`) xử lý link trên server, có access token (xem
-> [Disclaimer](.github/DISCLAIMER.md)). Cả
-> App Store lẫn Play Store đều có lịch sử rõ ràng về việc từ chối hoặc gỡ bỏ các app "tải video"
-> vì lo ngại bản quyền/ToS, nên một app di động native có thể sẽ phải phân phối ngoài store chính
-> thức (sideloading, kiểu phân phối như TestFlight) thay vì mặc định có sẵn trên store thông
-> thường.
+- [ ] **Ký và notarize app**: macOS vẫn cảnh báo ở lần mở đầu tiên (chuột phải → Open). Cần tài khoản Apple Developer trả phí; xem [Lần mở đầu tiên](docs/FIRST_LAUNCH.vi.md).
+- [ ] **Kiểm tra cách chọn bộ chuyển đổi video trên máy Mac Intel thật.** Với 1440p/4K, ViDrop chọn bộ mã hoá phần cứng hoặc phần mềm theo chip. Quy tắc này mới đo trên Apple Silicon và qua Rosetta 2.
+- [ ] **Kiểm tra các nền tảng chưa thử được**: Story và bài riêng tư của Instagram, ảnh X, RedNote và vài dạng link. Cần link mẫu; xem [Nền tảng được hỗ trợ](docs/PLATFORM_SUPPORT.md) (tiếng Anh).
+- [ ] **Rà soát Điều khoản sử dụng** cho khớp với cách app Mac và bản web đang hoạt động.
+- Đang cân nhắc, chưa cam kết: bản Windows/Linux, tiện ích Chrome, app điện thoại gốc. Bản web đã dùng được trong trình duyệt điện thoại.
 
 ## Xử lý sự cố
 
