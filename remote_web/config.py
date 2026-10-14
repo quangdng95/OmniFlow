@@ -28,6 +28,16 @@ TEMP_ROOT = os.path.join(paths.BASE_DIR, "remote_web", ".tmp")
 
 PORT = 5050
 
+# Where the web version lives. ONE place: the primary host is what links, share previews (og:image) and the
+# Mac's cookie sync use; OMNIFLOW_PUBLIC_HOST overrides it. The old host keeps working side by side until the
+# owner retires it (Cloudflare routes both to this server); OMNIFLOW_EXTRA_HOSTS adds more (comma separated).
+PUBLIC_HOST = os.environ.get("OMNIFLOW_PUBLIC_HOST", "cloud.nguyenduyquang.com").strip().lower()
+LEGACY_HOSTS = ("cloud.southframevn.com",)
+LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "::1")  # the VM's own health checks and the canary
+EXTRA_HOSTS = tuple(h.strip().lower() for h in os.environ.get("OMNIFLOW_EXTRA_HOSTS", "").split(",") if h.strip())
+ALLOWED_HOSTS = frozenset((PUBLIC_HOST, *LEGACY_HOSTS, *LOOPBACK_HOSTS, *EXTRA_HOSTS))
+PUBLIC_ORIGIN = f"https://{PUBLIC_HOST}"
+
 # The trust cookie's own lifetime (§4.2) - not unbounded, so a lost/stolen
 # phone's access expires on its own even if never explicitly revoked.
 COOKIE_MAX_AGE_DAYS = 90

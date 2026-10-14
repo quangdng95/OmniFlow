@@ -10,7 +10,7 @@ import sys
 
 from flask import Flask, jsonify, redirect, request, send_from_directory
 
-from backend import download, paths
+from backend import download, paths, webpage
 from remote_web import config, ffmpeg_locator, reaper, trust
 from remote_web.routes import health as health_routes
 from remote_web.routes import jobs as jobs_routes
@@ -23,6 +23,17 @@ app.register_blueprint(health_routes.bp)
 app.register_blueprint(settings_routes.bp)
 app.register_blueprint(media_routes.bp)
 app.register_blueprint(jobs_routes.bp)
+
+
+@app.before_request
+def _known_host_only():
+    # Cloudflare routes only the hostnames in the tunnel config here, so this is a second lock, not the first: a
+    # Host header nobody configured (a typo'd or forgotten domain, a request that skipped Cloudflare) is refused
+    # before anything else runs. config.ALLOWED_HOSTS lists the primary host, the old one and loopback.
+    host = (request.host or "").lower()
+    hostname = host.split("]")[0].lstrip("[") if host.startswith("[") else host.split(":")[0]
+    if hostname not in config.ALLOWED_HOSTS:
+        return jsonify({"error": "Unknown host."}), 421
 
 
 @app.before_request
@@ -74,7 +85,7 @@ for _alias in ("/apple-touch-icon-precomposed.png", "/apple-touch-icon-180x180.p
 def index():
     if not trust.is_trusted_request(request):
         return redirect("/unlock")
-    return send_from_directory(paths.WEB_DIR, "index.html")
+    return webpage.render_index(config.PUBLIC_ORIGIN)
 
 
 def _check_ffmpeg_at_startup():

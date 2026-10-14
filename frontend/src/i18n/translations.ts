@@ -586,6 +586,13 @@ const en: Translations = {
     releases: [
       {
         date: "2026-10-14",
+        title: "A new web address",
+        items: [
+          "The web version is now at cloud.nguyenduyquang.com. The old address, cloud.southframevn.com, still works for now. On the new address you enter your access code once and your history starts fresh, because browsers keep both per address. An iPhone Home Screen shortcut has to be added again from the new address.",
+        ],
+      },
+      {
+        date: "2026-10-14",
         title: "ViDrop 2.0.3: RedNote share links, X photos, a sturdier Home Screen icon",
         items: [
           "RedNote share links (xhslink.com) now work in the Mac app, for video and picture notes. Slow connections are retried instead of being reported as \"not signed in\". On the web version RedNote still refuses our cloud server, and ViDrop now says so and points you to the Mac app.",
@@ -1131,6 +1138,13 @@ const vi: Translations = {
   },
   changelog: {
     releases: [
+      {
+        date: "14-10-2026",
+        title: "Địa chỉ web mới",
+        items: [
+          "Bản web giờ ở cloud.nguyenduyquang.com. Địa chỉ cũ, cloud.southframevn.com, tạm thời vẫn dùng được. Ở địa chỉ mới bạn nhập mã truy cập một lần và lịch sử bắt đầu lại từ đầu, vì trình duyệt lưu cả hai theo từng địa chỉ. Lối tắt trên Màn hình chính iPhone phải được thêm lại từ địa chỉ mới.",
+        ],
+      },
       {
         date: "14-10-2026",
         title: "ViDrop 2.0.3: link chia sẻ RedNote, ảnh X, biểu tượng Màn hình chính vững hơn",
