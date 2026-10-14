@@ -133,6 +133,17 @@ def update_settings():
     return jsonify({"language": language, "playlist_limit": playlist_limit})
 
 
+@bp.post("/api/clear-session")
+def clear_session():
+    # Server half of Settings > "Clear cache and saved data": signs THIS browser out (drops the trust cookie
+    # and the language cookie). Nothing shared is touched - the VM's cookies, settings, jobs and files belong
+    # to the whole deployment, not to one visitor.
+    resp = jsonify({"ok": True})
+    resp.delete_cookie(config.TRUST_COOKIE_NAME, path="/")
+    resp.delete_cookie("omniflow-language", path="/")
+    return resp
+
+
 @bp.post("/api/settings/cookies")
 def upload_cookies():
     uploaded = request.files.get("cookies")

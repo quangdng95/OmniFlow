@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SettingsPage from "./SettingsPage";
 import { api } from "../api";
+import { reloadFresh } from "../lib/clearData";
 import { LanguageProvider } from "../i18n/LanguageContext";
 
 vi.mock("../api", () => ({
@@ -11,7 +12,13 @@ vi.mock("../api", () => ({
     updateSettings: vi.fn(),
     browseFolder: vi.fn(),
     browseFile: vi.fn(),
+    clearSession: vi.fn(),
   },
+}));
+
+vi.mock("../lib/clearData", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../lib/clearData")>()),
+  reloadFresh: vi.fn(),
 }));
 
 const mockedApi = vi.mocked(api, true);
@@ -160,5 +167,37 @@ describe("SettingsPage in remote mode (non-local hostname)", () => {
   it("hides the YouTube sign-in section (reading a browser's cookies is a Mac-only thing)", () => {
     renderSettingsPage();
     expect(screen.queryByText("YouTube sign-in")).not.toBeInTheDocument();
+  });
+
+  describe("Clear cache and saved data", () => {
+    it("asks first, and does nothing when the user says no", async () => {
+      const user = userEvent.setup({ delay: null });
+      vi.spyOn(window, "confirm").mockReturnValue(false);
+      localStorage.setItem("omniflow-history", "[1]");
+      renderSettingsPage();
+      await user.click(screen.getByRole("button", { name: "Clear cache and saved data" }));
+      expect(mockedApi.clearSession).not.toHaveBeenCalled();
+      expect(localStorage.getItem("omniflow-history")).toBe("[1]");
+      expect(reloadFresh).not.toHaveBeenCalled();
+    });
+
+    it("on yes: clears the server side, wipes the saved data and reloads fresh - even if the server call fails", async () => {
+      const user = userEvent.setup({ delay: null });
+      vi.spyOn(window, "confirm").mockReturnValue(true);
+      mockedApi.clearSession.mockRejectedValue(new Error("offline"));
+      localStorage.setItem("omniflow-history", "[1]");
+      renderSettingsPage();
+      await user.click(screen.getByRole("button", { name: "Clear cache and saved data" }));
+      await waitFor(() => expect(reloadFresh).toHaveBeenCalledTimes(1));
+      expect(mockedApi.clearSession).toHaveBeenCalledTimes(1);
+      expect(localStorage.length).toBe(0);
+    });
+
+    it("is offered in Vietnamese too", async () => {
+      const user = userEvent.setup({ delay: null });
+      renderSettingsPage();
+      await user.click(screen.getByRole("radio", { name: "Vietnamese" }));
+      expect(screen.getByRole("button", { name: "Xoá bộ nhớ đệm và dữ liệu đã lưu" })).toBeInTheDocument();
+    });
   });
 });

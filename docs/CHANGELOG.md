@@ -5,6 +5,17 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-14 · Settings: Clear cache and saved data
+
+- [x] **One action to clear old data** (Settings, web and Mac app): `frontend/src/lib/clearData.ts` empties
+  localStorage, sessionStorage, Cache Storage, service workers, IndexedDB and the cookies the page can see,
+  re-downloads the core files with `cache: "reload"` so the HTTP cache holds the current ones, then reloads
+  at `/?fresh=<time>`. `POST /api/clear-session` is the server half: the web version drops the trust and
+  language cookies (signs this browser out; shared VM data is untouched), the Mac app removes only its own
+  temp cookie files and forgets finished jobs from memory. Downloaded files, the save folder and
+  `config.json` are never touched. Limits: it cannot clear the browser's own HTTP cache directly or an icon
+  iOS already copied to the Home Screen (remove and re-add that one).
+
 ## 2026-10-14 · Web update: Home Screen icon (after 2.0.2)
 
 ### Fixed
