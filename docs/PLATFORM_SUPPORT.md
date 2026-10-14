@@ -4,6 +4,8 @@ What ViDrop can download from each platform, checked against real links on **202
 (Mac app, Apple Silicon, yt-dlp 2026.8.19). Every ✅ below was a real download or a real
 link check, verified with `ffprobe` (picture, sound, size) and then deleted.
 
+**Seven of the eight platforms were verified** (YouTube, TikTok, Instagram, Facebook, X, Threads, LinkedIn). **RedNote is not verified yet**: both sample links had expired, so it needs a fresh share link. Not tested either: Instagram Stories and private posts, X images and GIFs, X `t.co` and Facebook `fb.me` links, Threads `/share/` links. They need sample links.
+
 | Status | Meaning |
 |---|---|
 | ✅ Works | Checked and downloaded on 2026-10-13. |
