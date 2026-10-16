@@ -200,6 +200,7 @@ body {
   --color-platform-tiktok: var(--platform-tiktok);
   --color-platform-x: var(--platform-x);
   --color-platform-threads: var(--platform-threads);
+  --color-platform-pinterest: var(--platform-pinterest);
   --color-platform-link: var(--platform-link);
   --color-invalid: var(--invalid);
   --shadow-hard: 6px 6px 0 var(--brand);
@@ -277,6 +278,7 @@ body {
   --platform-tiktok: var(--ink);
   --platform-x: var(--ink-hover);
   --platform-threads: var(--ink);
+  --platform-pinterest: #c40020;
   --platform-link: var(--ink-hover);
 
   --background: var(--paper);

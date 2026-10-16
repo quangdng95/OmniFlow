@@ -185,3 +185,8 @@ def test_share_links_use_the_non_browser_user_agent_and_short_links_keep_theirs(
     shortlinks._fetch_location("https://lnkd.in/p/abc")
     assert seen[SHARE] == shortlinks._SHARE_UA and "Chrome" not in shortlinks._SHARE_UA
     assert seen["https://lnkd.in/p/abc"] == shortlinks._UA
+
+
+def test_a_pin_it_link_expands_to_the_board():
+    board = "https://www.pinterest.com/someone/a-board/"
+    assert shortlinks.expand("https://pin.it/4abCdE", fetch=Fetcher({"https://pin.it/4abCdE": board})) == board

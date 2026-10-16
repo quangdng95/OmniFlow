@@ -9,6 +9,7 @@ from backend import config as backend_config
 from backend import cookies as backend_cookies
 from backend import extraction as extraction_module
 from backend import instagram as instagram_module
+from backend import pinterest as pinterest_module
 from remote_web import config
 from remote_web.app import app as remote_app
 
@@ -554,3 +555,104 @@ def test_a_rednote_login_redirect_on_the_cloud_says_the_server_is_blocked_and_po
     resp = client.post("/api/check", json={"url": "https://xhslink.com/o/4AMx4jW7ZFx"}, headers={"X-Language": "en"})
     assert resp.status_code == 400
     assert "Mac app" in resp.get_json()["error"] and "server" in resp.get_json()["error"]
+
+
+# ---- Pinterest: boards and pins through backend.pinterest ----
+
+PIN_BOARD = "https://www.pinterest.com/someone/a-board/"
+PIN_MEDIA = {"title": "A board", "items": [{"kind": "image", "url": f"https://i.pinimg.com/originals/{n}.png", "thumbnail": f"https://i.pinimg.com/474x/{n}.jpg", "title": f"A board ({n})"} for n in (1, 2, 3)]}
+
+
+def _sync_threads(monkeypatch):
+    class SyncThread:
+        def __init__(self, target=None, daemon=None):
+            self._target = target
+
+        def start(self):
+            self._target()
+
+    monkeypatch.setattr(threading, "Thread", SyncThread)
+
+
+def test_check_pinterest_board_lists_every_pin(client, monkeypatch):
+    seen = {}
+    monkeypatch.setattr(pinterest_module, "fetch_pinterest_media", lambda url, limit=10000: seen.update(url=url, limit=limit) or PIN_MEDIA)
+    resp = client.post("/api/check", json={"url": PIN_BOARD})
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["type"] == "playlist" and body["platform"] == "Pinterest"
+    assert [i["entry_index"] for i in body["items"]] == [1, 2, 3]
+    assert all("pinimg.com/originals" not in str(i.get("url", "")) for i in body["items"])  # CDN links are re-resolved later
+    assert seen["url"] == PIN_BOARD and seen["limit"] > 3
+
+
+def test_check_pinterest_error_is_friendly_and_never_raw(client, monkeypatch):
+    def boom(url, limit=10000):
+        raise pinterest_module.PinterestError("HTTP 500 secret detail")
+
+    monkeypatch.setattr(pinterest_module, "fetch_pinterest_media", boom)
+    resp = client.post("/api/check", json={"url": PIN_BOARD})
+    assert resp.status_code == 400
+    assert "secret detail" not in resp.get_json()["error"]
+
+
+def test_check_pinterest_private_board_asks_for_a_login_here(client, monkeypatch):
+    def private(url, limit=10000):
+        raise pinterest_module.PinterestAuthError("board not visible")
+
+    monkeypatch.setattr(pinterest_module, "fetch_pinterest_media", private)
+    resp = client.post("/api/check", json={"url": PIN_BOARD})
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == pinterest_module.friendly_error(pinterest_module.PinterestAuthError("x"), None, cloud=True)
+
+
+def test_start_download_pinterest_pin_saves_the_picked_item(client, monkeypatch, tmp_path):
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+    monkeypatch.setattr(pinterest_module, "fetch_pinterest_media", lambda url, limit=10000: PIN_MEDIA)
+    got = []
+    monkeypatch.setattr(download_module, "download_direct_url", lambda cdn_url, output_path, job_id, on_progress=None: got.append((cdn_url, output_path)))
+    resp = client.post("/api/download", json={"url": PIN_BOARD, "title": "My pin", "quality": "Best", "entry_index": 2})
+    assert resp.status_code == 200
+    job = _wait_for_job(resp.get_json()["job_id"])
+    assert job["status"] == "done" and job["filename"].endswith(".png")
+    assert got[0][0] == "https://i.pinimg.com/originals/2.png"
+
+
+def test_start_download_pinterest_error_marks_the_job_failed_with_a_friendly_text(client, monkeypatch, tmp_path):
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+
+    def boom(url, limit=10000):
+        raise pinterest_module.PinterestError("HTTP 500 secret detail")
+
+    monkeypatch.setattr(pinterest_module, "fetch_pinterest_media", boom)
+    resp = client.post("/api/download", json={"url": PIN_BOARD, "title": "x", "quality": "Best"})
+    job = _wait_for_job(resp.get_json()["job_id"])
+    assert job["status"] == "error" and "secret detail" not in job["text"]
+
+
+def test_batch_download_pinterest_resolves_once_and_zips_by_position(client, monkeypatch, tmp_path):
+    import zipfile
+
+    monkeypatch.setattr("remote_web.routes.media.ffmpeg_locator.resolve_ffmpeg_binary", lambda: "/fake/ffmpeg")
+    monkeypatch.setattr(config, "TEMP_ROOT", str(tmp_path))
+    resolved = []
+    monkeypatch.setattr(pinterest_module, "fetch_pinterest_media", lambda url, limit=10000: resolved.append(url) or PIN_MEDIA)
+    got = []
+
+    def fake_direct(cdn_url, output_path, job_id, on_progress=None):
+        got.append(cdn_url)
+        with open(output_path, "wb") as f:
+            f.write(b"\x89PNG\r\n\x1a\nx")
+        if on_progress:
+            on_progress(100)
+
+    monkeypatch.setattr(download_module, "download_direct_url", fake_direct)
+    resp = client.post("/api/download-batch", json={"url": PIN_BOARD, "quality": "Best", "items": [{"title": f"A board ({n})", "entry_index": n} for n in (1, 3)]})
+    assert resp.status_code == 200
+    job = _wait_for_job(resp.get_json()["job_id"])
+    assert job["status"] == "done" and job["saved_count"] == 2 and len(resolved) == 1
+    assert sorted(got) == ["https://i.pinimg.com/originals/1.png", "https://i.pinimg.com/originals/3.png"]
+    with zipfile.ZipFile(job["filepath"]) as zf:
+        assert len(zf.namelist()) == 2

@@ -31,7 +31,7 @@ from backend import classify
 # Hosts that are a platform's OWN shortener. instagr.am, youtu.be, vt./vm.tiktok.com
 # and xhslink.com are already recognised by classify (and resolved by their
 # extractors), so they are not listed here.
-SHORT_HOSTS = frozenset({"lnkd.in", "t.co", "fb.me"})
+SHORT_HOSTS = frozenset({"lnkd.in", "t.co", "fb.me", "pin.it"})
 MAX_HOPS = 5
 _TIMEOUT_SECONDS = 8
 _CACHE_SECONDS = 3600

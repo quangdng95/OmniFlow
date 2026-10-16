@@ -33,7 +33,7 @@ const ACCORDION_CONTENT = "text-lg pb-5";
 type DownloadState = "idle" | "downloading" | "done" | "fail";
 
 // Order of the tile grid (4 x 2 on desktop).
-const PLATFORM_TILES: Platform[] = ["YouTube", "TikTok", "Instagram", "Facebook", "Threads", "X", "LinkedIn", "RedNote"];
+const PLATFORM_TILES: Platform[] = ["YouTube", "TikTok", "Instagram", "Facebook", "Threads", "Pinterest", "X", "LinkedIn", "RedNote"];
 
 interface HomePageProps {
   onNavigate: (page: Page) => void;

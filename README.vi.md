@@ -47,7 +47,7 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
   <img src="Assets/Tags/x.com.svg" height="28" alt="X (Twitter)" />
 </p>
 
-**YouTube · TikTok · Instagram · Facebook · RedNote (Xiaohongshu) · LinkedIn · Threads · X (Twitter)**
+**YouTube · TikTok · Instagram · Facebook · RedNote (Xiaohongshu) · LinkedIn · Threads · Pinterest · X (Twitter)**
 
 | Nền tảng | Dùng được | Ghi chú |
 |---|---|---|
@@ -57,6 +57,7 @@ mà các nhà sáng tạo, designer, và nhà nghiên cứu thực sự lấy t�
 | Facebook | Video, Reel, link `share/r/` | |
 | X (Twitter) | Bài video | |
 | Threads | Bài video, bài ảnh | Cần đăng nhập trên trình duyệt |
+| Pinterest | Bảng (mọi ghim, ảnh và video), một ghim | Bảng công khai không cần đăng nhập. Bảng riêng tư cần app Mac và đăng nhập Pinterest trên trình duyệt |
 | LinkedIn | Bài video, bài ảnh, slide (PDF) — mỗi trang là một ảnh | Link `lnkd.in` dùng được. Không cần đăng nhập |
 | RedNote (Xiaohongshu) | Bài video, bài ảnh | Cần đăng nhập trên trình duyệt. Link chia sẻ hết hạn nên hãy copy link mới |
 
