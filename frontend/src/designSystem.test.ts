@@ -42,7 +42,7 @@ describe("design tokens", () => {
       const ref = /^var\(--([\w-]+)\)$/.exec(v);
       return ref ? resolveHex(ref[1]) : v;
     };
-    for (const p of ["youtube", "instagram", "facebook", "rednote", "linkedin", "tiktok", "x", "threads", "link"]) {
+    for (const p of ["youtube", "instagram", "facebook", "rednote", "linkedin", "tiktok", "x", "threads", "pinterest", "link"]) {
       expect(contrast("#ffffff", resolveHex(`platform-${p}`)), p).toBeGreaterThanOrEqual(4.5);
     }
   });

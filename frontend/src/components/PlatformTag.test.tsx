@@ -4,7 +4,7 @@ import PlatformTag from "./PlatformTag";
 import type { Platform } from "../types";
 
 describe("PlatformTag", () => {
-  it.each(["YouTube", "TikTok", "Instagram", "Facebook", "RedNote", "LinkedIn", "Threads", "X", "Link"] as Platform[])(
+  it.each(["YouTube", "TikTok", "Instagram", "Facebook", "RedNote", "LinkedIn", "Threads", "Pinterest", "X", "Link"] as Platform[])(
     "shows %s as text (readable, selectable, not an image)",
     (platform) => {
       render(<PlatformTag platform={platform} />);

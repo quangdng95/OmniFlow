@@ -42,6 +42,9 @@ class LinkKind(str, enum.Enum):
     INSTAGRAM_PROFILE = "instagram_profile"
     INSTAGRAM_STORY = "instagram_story"
     THREADS_POST = "threads_post"
+    PINTEREST_BOARD = "pinterest_board"
+    PINTEREST_PIN = "pinterest_pin"
+    PINTEREST_UNSUPPORTED = "pinterest_unsupported"  # a profile or a board section: no list is read
 
 
 @dataclasses.dataclass(frozen=True)
@@ -172,6 +175,8 @@ def get_platform_info(url):
     # Threads (Meta) currently serves its web app from threads.com, though the
     # older threads.net domain (and its private API host) still resolves too.
     if "threads.com" in url_lower or "threads.net" in url_lower: return "Threads"
+    # Pinterest: pinterest.com plus its country domains (pinterest.co.uk, .fr, .jp ...) and its short link pin.it.
+    if _is_pinterest_host(url_lower): return "Pinterest"
     # x.com (formerly twitter.com) - checked via hostname rather than a bare
     # substring, since "x.com" is short enough to false-positive on an
     # unrelated domain (e.g. "vertex.com").
@@ -182,6 +187,47 @@ def get_platform_info(url):
     if hostname in ("x.com", "www.x.com", "twitter.com", "www.twitter.com", "mobile.twitter.com"):
         return "X"
     return "Link"
+
+
+def _is_pinterest_host(url_lower):
+    try:
+        host = (urllib.parse.urlparse(url_lower).hostname or "").lower()
+    except ValueError:
+        return False
+    return host == "pin.it" or bool(re.fullmatch(r"(?:[a-z0-9-]+\.)*pinterest\.[a-z]{2,3}(?:\.[a-z]{2})?", host))
+
+
+# First path segments that are Pinterest's own pages, not a username.
+_PINTEREST_RESERVED = frozenset({
+    "pin", "ideas", "search", "today", "explore", "business", "settings", "login", "signup", "news_hub", "topics",
+    "video", "shop", "about", "help", "_", "resource", "oauth", "pin-builder", "ads", "creators", "idea-pin-builder",
+})
+
+
+def pinterest_target(url):
+    """What a Pinterest link points at: ("pin", id) | ("board", user, slug) | ("unsupported", reason) | None.
+
+    Reasons: "profile" (a person's page or their Created/Saved tabs), "section" (a board section).
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except ValueError:
+        return None
+    if (parsed.hostname or "").lower() == "pin.it":
+        return None  # a short link: routes expand it (shortlinks.expand) before classifying
+    parts = [urllib.parse.unquote(p) for p in parsed.path.split("/") if p]
+    if not parts:
+        return None
+    if parts[0].lower() == "pin" and len(parts) >= 2:
+        match = re.search(r"(\d{6,})$", parts[1])
+        return ("pin", match.group(1)) if match else None
+    if parts[0].lower() in _PINTEREST_RESERVED:
+        return None
+    if len(parts) == 1 or parts[1].startswith("_"):
+        return ("unsupported", "profile")
+    if len(parts) == 2:
+        return ("board", parts[0], parts[1])
+    return ("unsupported", "section")
 
 
 def is_instagram_profile_url(url):
@@ -316,6 +362,14 @@ def classify_url(raw_url):
         shortcode = threads_shortcode_from_url(url)
         if shortcode:
             kind = LinkKind.THREADS_POST
+    elif platform == "Pinterest":
+        target = pinterest_target(url)
+        if target and target[0] == "board":
+            kind = LinkKind.PINTEREST_BOARD
+        elif target and target[0] == "pin":
+            kind = LinkKind.PINTEREST_PIN
+        elif target and target[0] == "unsupported":
+            kind = LinkKind.PINTEREST_UNSUPPORTED
 
     return Classification(
         platform=platform,

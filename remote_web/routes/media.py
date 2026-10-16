@@ -28,7 +28,7 @@ from flask import Blueprint, jsonify, request
 
 from backend import classify
 from backend import config as backend_config
-from backend import cookies, download, extraction, instagram, jobs, linkedin, messages, paths, rednote, shortlinks, threads, tiktok, xposts
+from backend import cookies, download, extraction, instagram, jobs, linkedin, messages, paths, pinterest, rednote, shortlinks, threads, tiktok, xposts
 from remote_web import config, ffmpeg_locator
 from remote_web import zipper as zipper_module
 
@@ -88,6 +88,21 @@ def check_link():
         if not candidates or isinstance(last_error, threads.ThreadsAuthError):
             return jsonify({"error": messages.text("threads_auth", lang)}), 400
         return jsonify({"error": messages.text("extract_failed", lang)}), 400
+
+    # Pinterest boards and pins are read from Pinterest's own web API (backend/pinterest.py): a public board needs no
+    # login, a private one is read with the user's own Pinterest session.
+    if cls.platform == "Pinterest":
+        limit = extraction.effective_item_limit(cls)
+        try:
+            media = pinterest.fetch_pinterest_media(url, limit=limit)
+            response = instagram.instagram_check_response(url, media)
+            if response.get("type") == "playlist":
+                response["truncated"] = len(media["items"]) >= limit
+            return jsonify(response)
+        except Exception as e:
+            if not isinstance(e, pinterest.PinterestError):
+                paths.log_exception(f"check_link (Pinterest): {url}", e)
+            return jsonify({"error": pinterest.friendly_error(e, lang, cloud=True)}), 400
 
     try:
         info = extraction.extract_video_info(cls)
@@ -317,6 +332,49 @@ def start_download():
         threading.Thread(target=run_threads, daemon=True).start()
         return jsonify({"job_id": job_id})
 
+    # A single Pinterest pin (an image or a video): resolved through Pinterest's web API, saved straight from its CDN.
+    if cls.platform == "Pinterest":
+        job_id = uuid.uuid4().hex
+        jobs.jobs[job_id] = {
+            "status": "running", "percent": 0, "text": "Starting...",
+            "filename": None, "filepath": None, "cancelled": False,
+        }
+
+        def run_pinterest():
+            try:
+                media = pinterest.fetch_pinterest_media(url, limit=extraction.effective_item_limit(cls))
+                items = media["items"]
+                idx = (entry_index - 1) if entry_index else 0
+                if idx < 0 or idx >= len(items):
+                    raise ValueError("Selected item is no longer available")
+                item = items[idx]
+                final_output_path = download.get_unique_filename(save_dir, title, pinterest.file_extension(item))
+                jobs.jobs[job_id]["filename"] = os.path.basename(final_output_path)
+                jobs.jobs[job_id]["filepath"] = final_output_path
+                download.download_direct_url(item["url"], final_output_path, job_id)
+            except yt_dlp.utils.DownloadCancelled:
+                jobs._remove_job_file(job_id)
+                jobs.jobs[job_id]["text"] = "Cancelled"
+                jobs.jobs[job_id]["status"] = "cancelled"
+                return
+            except pinterest.PinterestError as e:
+                jobs._remove_job_file(job_id)
+                jobs.jobs[job_id]["text"] = pinterest.friendly_error(e, lang, cloud=True)
+                jobs.jobs[job_id]["status"] = "error"
+                return
+            except Exception as e:
+                paths.log_exception(f"download (Pinterest): {url}", e)
+                jobs._remove_job_file(job_id)
+                jobs.jobs[job_id]["text"] = str(e) or "Download failed"
+                jobs.jobs[job_id]["status"] = "error"
+                return
+            jobs.jobs[job_id]["percent"] = 100
+            jobs.jobs[job_id]["text"] = f"Saved: {jobs.jobs[job_id]['filename']}"
+            jobs.jobs[job_id]["status"] = "done"
+
+        threading.Thread(target=run_pinterest, daemon=True).start()
+        return jsonify({"job_id": job_id})
+
     ffmpeg_bin = ffmpeg_locator.resolve_ffmpeg_binary()
     if not ffmpeg_bin:
         return jsonify({"error": ffmpeg_locator.ffmpeg_unavailable_message(lang)}), 400
@@ -510,6 +568,8 @@ def start_batch_download():
     is_linkedin_document = cls.platform == "LinkedIn"
     # A RedNote "playlist" can only be a multi-image note from the resolver.
     is_rednote_media = cls.platform == "RedNote"
+    # A Pinterest "playlist" is always a board: every pin resolved once, then fetched by position.
+    is_pinterest_board = cls.platform == "Pinterest"
     # A multi-photo tweet: yt-dlp cannot list it, X's embed endpoint can. A tweet with videos has no photos
     # there, so x_media stays None and the normal yt-dlp path is used.
     x_media = xposts.try_photos(url) if cls.platform == "X" else None
@@ -564,7 +624,7 @@ def start_batch_download():
                 recompute_overall()
 
             try:
-                if is_ig_carousel or is_tiktok_photo or is_linkedin_document or is_rednote_media or is_x_photo:
+                if is_ig_carousel or is_tiktok_photo or is_linkedin_document or is_rednote_media or is_x_photo or is_pinterest_board:
                     idx = item.get("entry_index") or (i + 1)
                     node = media_holder["media"]["items"][idx - 1]
                     cdn_url = node.get("url")
@@ -621,6 +681,8 @@ def start_batch_download():
                 media_holder["media"] = linkedin.fetch_linkedin_image_post(url)
             elif is_x_photo:
                 media_holder["media"] = x_media
+            elif is_pinterest_board:
+                media_holder["media"] = pinterest.fetch_pinterest_media(url, limit=extraction.effective_item_limit(cls))
             elif is_rednote_media:
                 rn_candidates = rednote.rednote_cookiefile_candidates()
                 try:

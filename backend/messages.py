@@ -49,6 +49,22 @@ _CATALOG = {
         VI: "❌ RedNote không cho máy chủ đám mây xem bài này (dù đã có phiên đăng nhập, RedNote vẫn chuyển về trang đăng nhập). Hãy dùng app ViDrop trên máy Mac cho link RedNote.",
         EN: "❌ RedNote does not let a cloud server open this post (it sends the server to its sign-in page even with a valid session). Please use the ViDrop Mac app for RedNote links.",
     },
+    "pinterest_login": {
+        VI: "❌ Không xem được bảng Pinterest này. Nếu đây là bảng riêng tư, hãy đăng nhập Pinterest (đúng tài khoản sở hữu bảng) bằng Chrome trên máy Mac này rồi thử lại. Nếu không phải, kiểm tra lại link.",
+        EN: "❌ This Pinterest board can't be opened. If it is private, sign in to Pinterest (the account that owns it) in Chrome on this Mac and try again. Otherwise, check the link.",
+    },
+    "pinterest_cloud_private": {
+        VI: "❌ Không xem được bảng Pinterest này. Bảng riêng tư chỉ tải được bằng app ViDrop trên Mac (cần đăng nhập Pinterest trong Chrome trên máy bạn). Với bảng công khai, hãy kiểm tra lại link.",
+        EN: "❌ This Pinterest board can't be opened. Private boards only work in the ViDrop Mac app (it uses your Pinterest sign-in in Chrome). For a public board, check the link.",
+    },
+    "pinterest_unsupported": {
+        VI: "❌ Hãy dán link của một bảng Pinterest (pinterest.com/tên-bạn/tên-bảng/) hoặc của một Pin. Trang cá nhân và mục con (section) của bảng chưa được hỗ trợ.",
+        EN: "❌ Paste the link of a Pinterest board (pinterest.com/your-name/board-name/) or of a single pin. Profile pages and board sections aren't supported yet.",
+    },
+    "pinterest_failed": {
+        VI: "❌ Pinterest không trả dữ liệu lúc này. Thử lại sau ít phút.",
+        EN: "❌ Pinterest isn't answering right now. Please try again in a few minutes.",
+    },
     "extract_failed": {
         VI: "❌ Lỗi: Không thể trích xuất dữ liệu từ liên kết này. Vui lòng kiểm tra lại liên kết hoặc trạng thái công khai của nội dung.",
         EN: "❌ Error: Couldn't extract data from this link. Please check the link, or whether the content is public.",

@@ -70,6 +70,17 @@ link check, verified with `ffprobe` (picture, sound, size) and then deleted.
 | Image post | 🔑 Works, needs sign-in | |
 | `threads.com/share/…` link | ➖ Not tested | No sample link. Covered by unit tests only. |
 
+## Pinterest
+
+| Content | Status | Notes |
+|---|---|---|
+| Public board | ✅ Works | Every pin (images at original size, video pins as MP4), paged until the end. Needs no sign-in. Checked 2026-10-16 on a 24-pin board. |
+| Private board | 🔑 Works in the Mac app | Uses your Pinterest login from your browser. Checked 2026-10-16 on a 27-pin board. On the web version ViDrop says private boards need the Mac app. |
+| Single pin | ✅ Works | |
+| `pin.it` short link | ➖ Not tested | No sample link. Covered by unit tests only. |
+| Profile, board section | ❌ Not supported | ViDrop says to paste the link of one board. |
+| Idea pins (story pins) | ❌ Skipped | Not a plain picture or video. |
+
 ## LinkedIn
 
 | Content | Status | Notes |

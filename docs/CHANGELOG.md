@@ -5,6 +5,19 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
+## 2026-10-16 · Pinterest boards and pins
+
+- [x] Paste a Pinterest board link (`pinterest.com/<user>/<board>/`) and every pin is listed for download, like a
+  playlist: images at original size, video pins as MP4. A single `/pin/<id>/` link and `pin.it` short links work too.
+  Profiles and board sections are refused with a clear message; Idea pins are skipped.
+- [x] `backend/pinterest.py` reads Pinterest's own web API (`BoardResource`/`BoardFeedResource`/`PinResource`) through
+  curl_cffi with Chrome impersonation and the `X-Pinterest-PWS-Handler` header (without it every call is 403). A public
+  board needs no login. A private ("secret") board answers "not found" to everyone but its owner, so the resolver then
+  tries the owner's `_pinterest_sess` from the browsers on the Mac. On the cloud VM there is no Pinterest login (not
+  synced on purpose), so a private board says it needs the Mac app.
+- [x] Classification in `classify.py` (`PINTEREST_BOARD`/`PINTEREST_PIN`/`PINTEREST_UNSUPPORTED`), routes in both
+  `backend/app.py` and `remote_web/routes/media.py`; frontend: Pinterest platform tag and tile.
+
 ## 2026-10-14 · Web: new primary host `cloud.nguyenduyquang.com`
 
 - [x] The web version is served on `cloud.nguyenduyquang.com` and, side by side, the old `cloud.southframevn.com`

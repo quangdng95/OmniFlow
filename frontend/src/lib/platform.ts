@@ -11,6 +11,7 @@ const BLOCK_TONES: Record<Platform, string> = {
   RedNote: "bg-platform-rednote [--block-bg:var(--platform-rednote)]",
   LinkedIn: "bg-platform-linkedin [--block-bg:var(--platform-linkedin)]",
   Threads: "bg-platform-threads [--block-shadow:var(--on-ink)] [--block-bg:var(--platform-threads)]",
+  Pinterest: "bg-platform-pinterest [--block-bg:var(--platform-pinterest)]",
   X: "bg-platform-x [--block-shadow:var(--on-ink)] [--block-bg:var(--platform-x)]",
   Link: "bg-platform-link [--block-shadow:var(--on-ink)] [--block-bg:var(--platform-link)]",
 };

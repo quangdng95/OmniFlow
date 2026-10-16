@@ -45,7 +45,7 @@ platforms creators, designers, and researchers actually pull reference material 
   <img src="Assets/Tags/x.com.svg" height="28" alt="X (Twitter)" />
 </p>
 
-**YouTube · TikTok · Instagram · Facebook · RedNote (Xiaohongshu) · LinkedIn · Threads · X (Twitter)**
+**YouTube · TikTok · Instagram · Facebook · RedNote (Xiaohongshu) · LinkedIn · Threads · Pinterest · X (Twitter)**
 
 | Platform | What works | Notes |
 |---|---|---|
@@ -55,6 +55,7 @@ platforms creators, designers, and researchers actually pull reference material 
 | Facebook | Video, Reel, `share/r/` links | |
 | X (Twitter) | Video post | |
 | Threads | Video post, image post | Needs a login in your browser |
+| Pinterest | Board (every pin, images and videos), single pin | Public boards need no login. A private board needs the Mac app and a Pinterest login in your browser |
 | LinkedIn | Video post, image post, slide-deck (PDF) — every page as an image | `lnkd.in` links work. No login needed |
 | RedNote (Xiaohongshu) | Video note, image note | Needs a login in your browser. Share links expire, so copy a fresh one |
 
