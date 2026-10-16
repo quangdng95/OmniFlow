@@ -586,7 +586,7 @@ const en: Translations = {
     releases: [
       {
         date: "2026-10-16",
-        title: "Pinterest boards and pins",
+        title: "ViDrop 2.0.4: Pinterest boards and pins",
         items: [
           "Paste a Pinterest board link and ViDrop lists every pin so you can download them all, or just the ones you pick. Pictures come at their original size and video pins as MP4. A single pin link works too.",
           "Private boards work in the Mac app, using the Pinterest account you are signed in to in your browser. The web version can only read public boards and tells you so.",
@@ -1148,7 +1148,7 @@ const vi: Translations = {
     releases: [
       {
         date: "16-10-2026",
-        title: "Bảng và ghim Pinterest",
+        title: "ViDrop 2.0.4: Bảng và ghim Pinterest",
         items: [
           "Dán link bảng Pinterest, ViDrop liệt kê mọi ghim để tải hết hoặc chỉ những ghim mày chọn. Ảnh tải về ở kích thước gốc, ghim video tải về dạng MP4. Link một ghim cũng dùng được.",
           "Bảng riêng tư dùng được trong app Mac, bằng tài khoản Pinterest mày đang đăng nhập trên trình duyệt. Bản web chỉ đọc được bảng công khai và sẽ báo rõ điều đó.",

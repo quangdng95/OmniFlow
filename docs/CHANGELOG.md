@@ -5,7 +5,7 @@ is the raw, engineering-facing history; the app itself also has an in-app **Chan
 (`frontend/src/pages/ChangelogPage.tsx`, header nav) with the same entries written for end users —
 keep both updated together when shipping a user-visible change.
 
-## 2026-10-16 · Pinterest boards and pins
+## 2026-10-16 · ViDrop 2.0.4: Pinterest boards and pins
 
 - [x] Paste a Pinterest board link (`pinterest.com/<user>/<board>/`) and every pin is listed for download, like a
   playlist: images at original size, video pins as MP4. A single `/pin/<id>/` link and `pin.it` short links work too.
